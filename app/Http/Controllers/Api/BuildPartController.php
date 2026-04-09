@@ -38,7 +38,7 @@ class BuildPartController extends Controller
         $this->authorize('update', $build);
 
         $validated = $request->validate([
-            'type' => 'required|string|in:wall,floor,roof,door,window,stairs',
+            'type' => 'required|string|in:wall,floor,roof,door,window,stairs,custom_floor,custom_roof',
             'variant' => 'required|string',
             'position_x' => 'required|numeric',
             'position_y' => 'required|numeric',
@@ -51,6 +51,7 @@ class BuildPartController extends Controller
             'color_front' => 'nullable|string',
             'color_back' => 'nullable|string',
             'material' => 'nullable|string|max:50',
+            'shape_points' => 'nullable|array',
             'floor_number' => 'integer|min:1|max:10',
             'z_index' => 'integer|min:0',
         ]);
@@ -80,6 +81,7 @@ class BuildPartController extends Controller
             'color_front' => 'nullable|string',
             'color_back' => 'nullable|string',
             'material' => 'nullable|string|max:50',
+            'shape_points' => 'nullable|array',
             'floor_number' => 'integer|min:1|max:10',
             'z_index' => 'integer|min:0',
         ]);

@@ -46,7 +46,13 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/builds/{build}', [BuildController::class, 'destroy'])->name('builds.destroy');
     Route::post('/builds/{build}/members', [BuildController::class, 'addMember'])->name('builds.members.add');
     Route::delete('/builds/{build}/members/{user}', [BuildController::class, 'removeMember'])->name('builds.members.remove');
+    Route::get('/users/search', [BuildController::class, 'searchUsers'])->name('users.search');
+    Route::post('/builds/{build}/share', [BuildController::class, 'createShare'])->name('builds.share.create');
     Route::get('/builds/{build}/export/{format}', [BuildController::class, 'export'])->name('builds.export');
+
+    // Chat API
+    Route::get('/api/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'index'])->name('api.builds.messages.index');
+    Route::post('/api/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'store'])->name('api.builds.messages.store');
 
     // Shared build view
     Route::get('/builds/{build}/shared/{token}', [BuildController::class, 'shared'])->name('builds.shared');

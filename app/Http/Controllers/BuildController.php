@@ -129,17 +129,51 @@ class BuildController extends Controller
         $this->authorize('update', $build);
 
         $validated = $request->validate([
-            'name' => 'required|string|exists:users,name',
-            'role' => 'required|in:viewer',
+            'email' => 'required|email|exists:users,email',
+            'role' => 'required|in:viewer,editor',
         ]);
 
-        $user = User::where('name', $validated['name'])->first();
+        $user = User::where('email', $validated['email'])->first();
 
         $build->members()->syncWithoutDetaching([
             $user->id => ['role' => $validated['role']],
         ]);
 
-        return back()->with('success', "{$user->name} added as {$validated['role']}.");
+        return response()->json([
+            'message' => "{$user->name} added as {$validated['role']}.",
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $validated['role'],
+            ]
+        ]);
+    }
+
+    public function searchUsers(Request $request)
+    {
+        $query = $request->get('q');
+        if (strlen($query) < 2) return response()->json([]);
+
+        $users = User::where('name', 'like', "%{$query}%")
+            ->orWhere('email', 'like', "%{$query}%")
+            ->take(5)
+            ->get(['id', 'name', 'email']);
+
+        return response()->json($users);
+    }
+
+    public function createShare(Build $build)
+    {
+        $this->authorize('update', $build);
+
+        $share = $build->shares()->firstOrCreate(
+            ['user_id' => Auth::id()],
+            ['token' => \App\Models\BuildShare::generateToken()]
+        );
+
+        return response()->json([
+            'url' => route('builds.shared', ['build' => $build, 'token' => $share->token])
+        ]);
     }
 
     public function removeMember(Build $build, User $user)

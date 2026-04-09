@@ -1,9 +1,4 @@
-<div {{ $attributes->class([
-    'avatar',
-    'avatar--sm' => ($size ?? 'md') === 'sm',
-    'avatar--lg' => ($size ?? 'md') === 'lg',
-    'avatar--xl' => ($size ?? 'md') === 'xl',
-]) }}>
+<div {{ $attributes->merge(['class' => 'avatar' . ($size ?? 'md' ? ' avatar--' . ($size ?? 'md') : '')]) }}>
     @if(isset($src) && $src)
         <img 
             src="{{ $src }}" 
@@ -11,8 +6,9 @@
             width="{{ ($size ?? 'md') === 'sm' ? 32 : (($size ?? 'md') === 'lg' ? 48 : (($size ?? 'md') === 'xl' ? 64 : 40)) }}"
             height="{{ ($size ?? 'md') === 'sm' ? 32 : (($size ?? 'md') === 'lg' ? 48 : (($size ?? 'md') === 'xl' ? 64 : 40)) }}"
             loading="lazy"
+            class="w-full h-full object-cover"
         >
     @else
-        {{ strtoupper(substr($name ?? 'U', 0, 1)) }}
+        <span class="avatar__initials">{{ strtoupper(substr($name ?? 'U', 0, 1)) }}</span>
     @endif
 </div>

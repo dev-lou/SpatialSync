@@ -20,6 +20,9 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Editor Styles -->
     <style>
         *, *::before, *::after {
@@ -520,8 +523,8 @@
         /* Keyboard Hints */
         .keyboard-hint {
             position: fixed;
-            bottom: 180px;
-            left: 16px;
+            bottom: 300px;
+            right: 16px;
             background: rgba(30, 41, 59, 0.9);
             color: #e2e8f0;
             padding: 12px 16px;
@@ -662,6 +665,285 @@
             color: white;
             border-color: var(--accent);
         }
+        /* Collaboration Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 48px;
+            left: -350px;
+            width: 350px;
+            height: calc(100vh - 48px);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            border-right: 1px solid var(--border);
+            z-index: 1000;
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 20px 0 50px rgba(0, 0, 0, 0.08), 
+                        1px 0 0 rgba(255, 255, 255, 0.2) inset;
+        }
+
+        .sidebar--open {
+            left: 0;
+        }
+
+        .sidebar__header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar__tabs {
+            display: flex;
+            padding: 4px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin: 12px 16px;
+        }
+
+        .sidebar__tab {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .sidebar__tab.active {
+            background: var(--surface);
+            color: var(--accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar__content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px 24px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-section__title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Search & Members */
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            background: var(--surface);
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--text-tertiary);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .search-results {
+            margin-top: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .search-result {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-result:hover {
+            background: var(--bg-secondary);
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .member-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .member-role {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: capitalize;
+        }
+
+        /* Ultra-Slim Pill Toasts */
+        .offset-toast-container {
+            top: 60px !important; /* Push container strictly below navbar */
+            padding: 0 !important;
+        }
+
+        .compact-toast.swal2-popup {
+            width: auto !important;
+            min-width: 100px !important;
+            padding: 4px 10px !important;
+            margin: 0 !important;
+            border-radius: 99px !important;
+            background: rgba(30, 41, 59, 0.95) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+            color: #ffffff !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 6px !important;
+        }
+
+        .compact-toast.swal2-popup .swal2-title {
+            font-size: 11px !important;
+            font-weight: 500 !important;
+            color: #ffffff !important;
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            white-space: nowrap !important;
+        }
+
+        /* Fully hide the bulky native icon containers for compact mode */
+        .compact-toast.swal2-popup .swal2-icon {
+            display: none !important;
+        }
+
+        .compact-toast.swal2-popup .swal2-timer-progress-bar {
+            background: #6366f1 !important;
+            height: 2px !important;
+        }
+
+        /* Chat */
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 10px 12px;
+            border-radius: 14px;
+            font-size: 13px;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .message--other {
+            align-self: flex-start;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message--mine {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message__user {
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .sidebar__footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        /* Content Push Logic */
+        .editor-layout {
+            transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .editor-layout.sidebar-open {
+            margin-left: 350px;
+        }
+
+        @media (max-width: 768px) {
+            .editor-layout.sidebar-open {
+                margin-left: 0;
+            }
+            .sidebar {
+                width: 100%;
+                left: -100%;
+            }
+        }
     </style>
 
     @stack('styles')
@@ -669,10 +951,82 @@
 <body>
     @yield('content')
 
-    <!-- Initialize Icons -->
+    <!-- Initialize Icons & Toasts -->
     <script>
+        function showSweetToast(message, type = 'success') {
+            if (typeof Swal !== 'undefined') {
+                const iconNames = { success: 'check-circle', error: 'alert-circle', info: 'info' };
+                const iconName = iconNames[type] || 'info';
+                
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    customClass: {
+                        container: 'offset-toast-container',
+                        popup: 'compact-toast'
+                    },
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        // Force Lucide re-render for the icon inside the title
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                });
+                
+                // Embed Lucide icon directly into the title for total size control
+                Toast.fire({ 
+                    title: `<i data-lucide="${iconName}" style="width: 14px; height: 14px;"></i> ${message}`
+                });
+            }
+        }
+
+        window.isConfirmingReload = false;
+
+        async function confirmReload() {
+            if (typeof Swal !== 'undefined') {
+                window.isConfirmingReload = true;
+                const result = await Swal.fire({
+                    title: 'Reload site?',
+                    text: 'Changes you made may not be saved.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Reload',
+                    cancelButtonText: 'Cancel',
+                    customClass: {
+                        container: 'swal-premium',
+                        confirmButton: 'swal-confirm-btn',
+                        cancelButton: 'swal-cancel-btn'
+                    }
+                });
+
+                if (result.isConfirmed) {
+                    if (typeof editor !== 'undefined') editor.hasUnsavedChanges = false;
+                    window.onbeforeunload = null; 
+                    location.reload();
+                } else {
+                    window.isConfirmingReload = false;
+                }
+            } else {
+                location.reload();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+
+            // Handle Laravel Session Flashes
+            @if(session('success'))
+                showSweetToast("{{ session('success') }}", 'success');
+            @endif
+            @if(session('error'))
+                showSweetToast("{{ session('error') }}", 'error');
+            @endif
+            @if(session('info'))
+                showSweetToast("{{ session('info') }}", 'info');
+            @endif
         });
     </script>
 

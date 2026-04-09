@@ -22,6 +22,7 @@ class BuildPart extends Model
         'color_front',
         'color_back',
         'material',
+        'shape_points',
         'floor_number',
         'z_index',
     ];
@@ -34,6 +35,7 @@ class BuildPart extends Model
         'height' => 'float',
         'depth' => 'float',
         'rotation_y' => 'integer',
+        'shape_points' => 'array',
         'floor_number' => 'integer',
         'z_index' => 'integer',
     ];

@@ -24,6 +24,8 @@ class BuildEditor {
         this.currentPreset = null;
         this.selectedPart = null;
         this.selectionOutline = null;
+        this.hoveredPartId = null;
+        this.hoverOutline = null;
         this.currentFloor = 1;
         this.maxFloors = 10;
         this.roofVisible = true;
@@ -49,11 +51,26 @@ class BuildEditor {
         this.paintColor = '#6B7280';
         this.materialMode = false;
         this.selectedMaterial = 'default';
+
+        // CUSTOM POLY DRAW MODE
+        this.isDrawingPoly = false;
+        this.polyPoints = [];
+        this.polyLines = [];
+        this.vertexMarkers = [];
+        this.tempLine = null;
+        this.drawPreviewMesh = null;
+        this.keysPressed = {};
+        this.drawType = 'floor';
         
         // TOOLS (Bloxburg 2026)
         this.currentTool = 'select'; // select, delete, move, clone
         this.isMoving = false;
         this.movingPartId = null;
+        
+        // Manual Save State
+        this.deletedIds = new Set();
+        this.dirtyPartIds = new Set();
+        this.isSaving = false;
         
         // Camera movement
         this.cameraSpeed = 0.5;
@@ -106,11 +123,14 @@ class BuildEditor {
         await this.setupScene();
         this.setupEventListeners();
         
+        // Push a state to history so we can intercept the Back button
+        window.history.pushState({ editor: true }, '', window.location.href);
+        
         if (DEBUG_MODE) console.log('[Editor] Loading parts...');
         await this.loadParts();
         
-        if (DEBUG_MODE) console.log('[Editor] Creating minimap...');
-        this.createMinimap();
+        // Minimap disabled per user request
+        // this.createMinimap();
         
         this.animate();
         
@@ -388,9 +408,9 @@ class BuildEditor {
         
         const platformGeometry = new THREE.BoxGeometry(this.gridUnits, 0.3, this.gridUnits);
         const platformMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
+            color: 0xf8fafc,
             transparent: true,
-            opacity: 0,
+            opacity: 0.5,
         });
         this.platform = new THREE.Mesh(platformGeometry, platformMaterial);
         this.platform.position.set(10, -0.15, 10);
@@ -611,10 +631,46 @@ class BuildEditor {
             case 'wall': return this.createWallMesh(width, height, depth, colorFront);
             case 'door': return this.createDoorMesh(width, height, depth, color);
             case 'window': return this.createWindowMesh(width, height, depth, color);
-            case 'roof': return this.createRoofMesh(width, height, depth, color, variant);
+            case 'roof': 
+                if (partData.shape_points) return this.createCustomPolyMesh(partData);
+                return this.createRoofMesh(width, height, depth, color, variant);
             case 'stairs': return this.createStairsMesh(width, height, depth, color);
-            default: return this.createFloorMesh(width, height, depth, color, variant);
+            case 'floor':
+            default: 
+                if (partData.shape_points) return this.createCustomPolyMesh(partData);
+                return this.createFloorMesh(width, height, depth, color, variant);
         }
+    }
+
+    createCustomPolyMesh(partData) {
+        if (!partData.shape_points || partData.shape_points.length < 3) {
+            return this.createFloorMesh(partData.width, partData.height, partData.depth, partData.color, partData.variant);
+        }
+        
+        const shape = new THREE.Shape();
+        const start = partData.shape_points[0];
+        shape.moveTo(start.x, -start.z);
+        
+        for (let i = 1; i < partData.shape_points.length; i++) {
+            const pt = partData.shape_points[i];
+            shape.lineTo(pt.x, -pt.z);
+        }
+        
+        const extrudeSettings = {
+            depth: partData.type === 'custom_floor' ? 0.2 : 0.5,
+            bevelEnabled: false,
+        };
+        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geometry.rotateX(Math.PI / 2);
+        
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        geometry.translate(-center.x, -center.y, -center.z);
+        
+        const mat = new THREE.MeshStandardMaterial({ color: partData.color, roughness: 0.8, side: THREE.DoubleSide });
+        return new THREE.Mesh(geometry, mat);
     }
     
     // ============ ADD PART TO SCENE ============
@@ -647,14 +703,15 @@ class BuildEditor {
         
         if (save) {
             this.hasUnsavedChanges = true;
-            this.savePartToAPI(mesh, tempId);
+            // Removed immediate save to API - Draft Mode active
+            this.showToastEvent('Draft Updated', 'info');
         }
         
         return mesh;
     }
     
-    async savePartToAPI(mesh, tempId) {
-        console.log('[savePartToAPI] Triggered fetch API...');
+    // This is now only called within saveBuild() loop
+    async createPartOnServer(mesh, tempId) {
         const data = {
             type: mesh.userData.type,
             variant: mesh.userData.variant,
@@ -670,6 +727,7 @@ class BuildEditor {
             color_back: mesh.userData.color_back,
             material: mesh.userData.material,
             floor_number: mesh.userData.floor_number,
+            shape_points: mesh.userData.shape_points || null,
         };
         
         try {
@@ -684,52 +742,36 @@ class BuildEditor {
                 body: JSON.stringify(data),
             });
             
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('[Editor] API Error:', response.status, errorText);
-                this.showToastEvent(`Save failed (${response.status})`, 'error');
-                return null;
-            }
+            if (!response.ok) return null;
             
             const savedPart = await response.json();
+            const newId = savedPart.id;
             
-            if (tempId && this.parts.has(tempId)) {
+            // Swap temp ID with real ID in the local map
+            if (this.parts.has(tempId)) {
                 this.parts.delete(tempId);
             }
             
-            mesh.userData.id = savedPart.id;
-            savedPart.position_x = mesh.position.x;
-            savedPart.position_y = mesh.position.y;
-            savedPart.position_z = mesh.position.z;
-            savedPart.rotation_y = Math.round(mesh.rotation.y * 180 / Math.PI);
-            this.parts.set(savedPart.id, { mesh, data: savedPart });
+            mesh.userData.id = newId;
+            this.parts.set(newId, { mesh, data: savedPart });
+            
+            // Update history to point to the new server ID
+            this.updateHistoryId(tempId, newId);
             
             return savedPart;
         } catch (error) {
-            console.error('[Editor] Network error saving part:', error);
-            this.showToastEvent('Network error — part not saved', 'error');
+            console.error('[Editor] Network error during commit:', error);
             return null;
         }
     }
     
     async updatePartAPI(partId, data) {
-        try {
-            const response = await fetch(`${this.api.parts}/${partId}`, {
-                method: 'PUT',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': this.csrfToken,
-                },
-                body: JSON.stringify(data),
-            });
-            if (!response.ok) {
-                console.error('[Editor] Update failed:', response.status);
-            }
-        } catch (error) {
-            console.error('[Editor] Error updating part:', error);
+        // MARK AS DIRTY - Draft Mode
+        if (typeof partId === 'number' || !String(partId).startsWith('temp_')) {
+            this.dirtyPartIds.add(partId);
         }
+        this.hasUnsavedChanges = true;
+        this.updateDebugInfo('Changes ready to save');
     }
     
     async deletePartAPI(partId) {
@@ -742,11 +784,10 @@ class BuildEditor {
                     'X-CSRF-TOKEN': this.csrfToken,
                 },
             });
-            if (!response.ok) {
-                console.error('[Editor] Delete failed:', response.status);
-            }
+            return response.ok;
         } catch (error) {
             console.error('[Editor] Error deleting part:', error);
+            return false;
         }
     }
     
@@ -766,9 +807,23 @@ class BuildEditor {
     // ============ TOAST HELPER ============
     
     showToastEvent(message, type = 'success') {
-        window.dispatchEvent(new CustomEvent('toast', { 
-            detail: { message, type } 
-        }));
+        if (typeof showSweetToast === 'function') {
+            showSweetToast(message, type);
+        } else if (typeof Swal !== 'undefined') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                customClass: {
+                    popup: 'swal-premium swal-toast compact-toast'
+                }
+            });
+            Toast.fire({ icon: type, title: message });
+        } else {
+            console.log(`[Toast] ${type}: ${message}`);
+        }
     }
     
     emitPartCount() {
@@ -1123,19 +1178,21 @@ class BuildEditor {
         // Save for undo
         this.saveUndoState('delete', { ...partData.data });
         
-        // Remove from scene
-        this.deletePartFromScene(partId);
+        // Remove from scene and local map
+        this.scene.remove(partData.mesh);
+        this.disposeGroup(partData.mesh);
+        this.parts.delete(partId);
         
-        // Remove from API
-        if (typeof partId === 'number') {
-            this.deletePartAPI(partId);
+        // If it was a real server part, track for batch deletion
+        if (typeof partId === 'number' || !String(partId).startsWith('temp_')) {
+            this.deletedIds.add(partId);
+            this.dirtyPartIds.delete(partId);
         }
         
         this.deselectPart();
         this.hasUnsavedChanges = true;
         this.emitPartCount();
-        this.showToastEvent('Part deleted', 'info');
-        this.updateDebugInfo('Part deleted — Ctrl+Z to undo');
+        this.showToastEvent('Deleted', 'info');
     }
     
     // MOVE TOOL
@@ -1268,6 +1325,325 @@ class BuildEditor {
         this.updateDebugInfo(`Cloning ${partData.data.type} — Click to place`);
     }
     
+    // ============ CUSTOM POLY DRAW MODE (Bloxburg Style) ============
+
+    toggleDrawMode(type = 'floor') {
+        if (this.isDrawingPoly && this.drawType === type) {
+            this.exitDrawMode();
+        } else {
+            if (this.isDrawingPoly) this.clearDrawGraphics();
+            this.enterDrawMode(type);
+        }
+    }
+    
+    enterDrawMode(type) {
+        this.exitPaintMode();
+        this.exitMaterialMode();
+        this.deselectPart();
+        if (this.isPlacing) {
+            this.isPlacing = false;
+            this.hidePreview();
+        }
+        
+        this.isDrawingPoly = true;
+        this.drawType = type;
+        this.polyPoints = [];
+        this.clearDrawGraphics();
+        
+        this.container.style.cursor = 'crosshair';
+        const label = type.charAt(0).toUpperCase() + type.slice(1);
+        this.updateDebugInfo(`DRAWING ${label}: Click points to layout. Click 1st point or 'Enter' to finish.`);
+        window.dispatchEvent(new CustomEvent('draw-mode-changed', { detail: { active: true, type } }));
+    }
+    
+    exitDrawMode() {
+        this.isDrawingPoly = false;
+        this.clearDrawGraphics();
+        this.container.style.cursor = 'default';
+        this.updateDebugInfo('Draw mode exited');
+        window.dispatchEvent(new CustomEvent('draw-mode-changed', { detail: { active: false } }));
+    }
+
+    // Helper: 2D Line intersection check (XZ plane)
+    doLinesIntersect(p1, p2, p3, p4) {
+        function ccw(A, B, C) {
+            return (C.z - A.z) * (B.x - A.x) > (B.z - A.z) * (C.x - A.x);
+        }
+        // Basic check for shared endpoints (adjacent segments don't count as intersecting)
+        const isShared = (
+            (p1.x === p3.x && p1.z === p3.z) || (p1.x === p4.x && p1.z === p4.z) ||
+            (p2.x === p3.x && p2.z === p3.z) || (p2.x === p4.x && p2.z === p4.z)
+        );
+        if (isShared) return false;
+
+        return (ccw(p1, p3, p4) !== ccw(p2, p3, p4)) && (ccw(p1, p2, p3) !== ccw(p1, p2, p4));
+    }
+
+    isDrawValid(newPoint = null) {
+        if (this.polyPoints.length < 2) return true;
+        
+        const pts = [...this.polyPoints];
+        if (newPoint) pts.push(newPoint);
+        
+        // Construct edges
+        const edges = [];
+        for (let i = 0; i < pts.length - 1; i++) {
+            edges.push({ a: pts[i], b: pts[i+1] });
+        }
+
+        // Check if the NEWEST edge intersects any PREVIOUS edges
+        if (edges.length > 1) {
+            const lastEdge = edges[edges.length - 1];
+            for (let i = 0; i < edges.length - 2; i++) { // Skip the edge right before it
+                if (this.doLinesIntersect(lastEdge.a, lastEdge.b, edges[i].a, edges[i].b)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    getGridIntersection() {
+        const rayTargets = [this.ground];
+        if (this.platform) rayTargets.push(this.platform);
+        const intersects = this.raycaster.intersectObjects(rayTargets);
+        if (intersects.length > 0) {
+            const intersect = intersects[0];
+            // Snap to grid for drawing
+            intersect.point.x = Math.round(intersect.point.x / this.gridSize) * this.gridSize;
+            intersect.point.z = Math.round(intersect.point.z / this.gridSize) * this.gridSize;
+            return intersect;
+        }
+        return null;
+    }
+
+    handleDrawClick() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersect = this.getGridIntersection();
+        if (!intersect) return;
+        
+        const pt = intersect.point.clone();
+        
+        // If clicking near the first point and we have >=3 points, close it!
+        if (this.polyPoints.length >= 3) {
+            const firstPt = this.polyPoints[0];
+            const dist = pt.distanceTo(firstPt);
+            if (dist < 1.5) { // Snapping tolerance
+                if (!this.isDrawValid(firstPt)) {
+                    this.showToastEvent('Cannot close: shape intersects itself!', 'error');
+                    return;
+                }
+                this.finishDrawPoly();
+                return; // Finished!
+            }
+        }
+        
+        this.polyPoints.push(pt);
+        
+        // Add visual vertex marker (Sphere)
+        const geo = new THREE.SphereGeometry(0.2, 8, 8);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green for markers
+        const marker = new THREE.Mesh(geo, mat);
+        marker.position.copy(pt);
+        this.scene.add(marker);
+        if (!this.vertexMarkers) this.vertexMarkers = [];
+        this.vertexMarkers.push(marker);
+        
+        // Solidify the last temp line if there's >1 point
+        if (this.polyPoints.length > 1) {
+            const p1 = this.polyPoints[this.polyPoints.length - 2];
+            const p2 = this.polyPoints[this.polyPoints.length - 1];
+            this.createSolidLine(p1, p2);
+        }
+    }
+    
+    handleDrawMove() {
+        if (this.polyPoints.length === 0) return;
+        
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersect = this.getGridIntersection();
+        if (!intersect) return;
+        
+        let pt = intersect.point.clone();
+        
+        // Visual Snapping to start point
+        let isValid = this.isDrawValid(pt);
+        
+        if (this.polyPoints.length >= 3) {
+            const firstPt = this.polyPoints[0];
+            if (pt.distanceTo(firstPt) < 1.5) {
+                pt = firstPt.clone();
+                isValid = this.isDrawValid(firstPt); // Re-validate if snapping to close
+            }
+        }
+        
+        const lastPt = this.polyPoints[this.polyPoints.length - 1];
+        const lineColor = isValid ? 0x00ff00 : 0xff0000;
+        
+        if (!this.tempLine) {
+            const mat = new THREE.LineDashedMaterial({ color: lineColor, dashSize: 0.5, gapSize: 0.2 });
+            const geo = new THREE.BufferGeometry().setFromPoints([lastPt, pt]);
+            this.tempLine = new THREE.Line(geo, mat);
+            this.tempLine.computeLineDistances();
+            this.scene.add(this.tempLine);
+        } else {
+            this.tempLine.material.color.setHex(lineColor);
+            const pos = this.tempLine.geometry.attributes.position;
+            pos.setXYZ(1, pt.x, pt.y, pt.z);
+            pos.needsUpdate = true;
+            this.tempLine.computeLineDistances();
+        }
+
+        if (this.polyPoints.length >= 2) {
+            this.updateDrawPreview(pt, isValid);
+        }
+    }
+
+    getFloorY() {
+        return (this.currentFloor - 1) * 3;
+    }
+
+    updateDrawPreview(currentMousePt, isValid) {
+        if (this.drawPreviewMesh) {
+            this.scene.remove(this.drawPreviewMesh);
+            this.drawPreviewMesh.geometry.dispose();
+            this.drawPreviewMesh = null;
+        }
+
+        const pts = [...this.polyPoints, currentMousePt];
+        if (pts.length < 3) return;
+
+        const shape = new THREE.Shape();
+        shape.moveTo(pts[0].x, pts[0].z); // Map world X,Z to shape X,Y
+        for (let i = 1; i < pts.length; i++) {
+            shape.lineTo(pts[i].x, pts[i].z);
+        }
+
+        const depthHeight = 0.15;
+        const geo = new THREE.ExtrudeGeometry(shape, { depth: depthHeight, bevelEnabled: false });
+        
+        // Rotate 90deg to lay flat on XZ plane. y_local becomes z_world.
+        geo.rotateX(Math.PI / 2);
+
+        const color = isValid ? 0x22C55E : 0xEF4444;
+        const mat = new THREE.MeshStandardMaterial({ 
+            color, 
+            transparent: true, 
+            opacity: 0.5, // More opaque
+            side: THREE.DoubleSide
+        });
+
+        this.drawPreviewMesh = new THREE.Mesh(geo, mat);
+        const floorY = this.getFloorY();
+        const finalY = (this.drawType === 'roof' ? floorY + 2.8 : floorY) + 0.05; 
+        this.drawPreviewMesh.position.set(0, finalY, 0); 
+        this.scene.add(this.drawPreviewMesh);
+    }
+
+    createSolidLine(p1, p2) {
+        const material = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
+        const points = [p1, p2];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, material);
+        this.scene.add(line);
+        this.polyLines.push(line);
+    }
+    
+    clearDrawGraphics() {
+        if (this.polyLines) {
+            this.polyLines.forEach(line => this.scene.remove(line));
+        }
+        this.polyLines = [];
+        if (this.tempLine) {
+            this.scene.remove(this.tempLine);
+            this.tempLine = null;
+        }
+        if (this.vertexMarkers) {
+            this.vertexMarkers.forEach(m => this.scene.remove(m));
+        }
+        this.vertexMarkers = [];
+        if (this.drawPreviewMesh) {
+            this.scene.remove(this.drawPreviewMesh);
+            if (this.drawPreviewMesh.geometry) this.drawPreviewMesh.geometry.dispose();
+            this.drawPreviewMesh = null;
+        }
+    }
+
+    finishDrawPoly() {
+        if (this.polyPoints.length < 3) return;
+        
+        // Create THREE.Shape from points (Map XZ world to XY shape)
+        const shape = new THREE.Shape();
+        const start = this.polyPoints[0];
+        shape.moveTo(start.x, start.z); 
+        
+        for (let i = 1; i < this.polyPoints.length; i++) {
+            const pt = this.polyPoints[i];
+            shape.lineTo(pt.x, pt.z);
+        }
+        
+        // Generate thickness using ExtrudeGeometry
+        const depthHeight = this.drawType === 'floor' ? 0.2 : 0.5;
+        const extrudeSettings = {
+            depth: depthHeight,
+            bevelEnabled: false,
+        };
+        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        
+        // Rotate +90 deg! 
+        geometry.rotateX(Math.PI / 2);
+        
+        // Center the geometry for pivot handling
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        geometry.translate(-center.x, 0, -center.z); // Center XZ, keep bottom at local 0
+        
+        const colorString = this.drawType === 'floor' ? '#8a8a8a' : '#555555';
+        const mat = new THREE.MeshStandardMaterial({ color: colorString, roughness: 0.8, side: THREE.DoubleSide });
+        const mesh = new THREE.Mesh(geometry, mat);
+        
+        // Position it!
+        const floorY = this.getFloorY();
+        const finalBaseY = this.drawType === 'roof' ? floorY + 3.0 : floorY;
+        mesh.position.set(center.x, finalBaseY, center.z);
+        
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        
+        // Serialize original points so it can be perfectly recreated on load!
+        const ptsData = this.polyPoints.map(p => ({ x: p.x, y: p.y, z: p.z }));
+        
+        const tempId = 'temp_' + Date.now();
+        mesh.userData = {
+            id: tempId,
+            type: this.drawType, // Just 'floor' or 'roof'
+            variant: 'custom', 
+            width: box.max.x - box.min.x,
+            height: depthHeight,
+            depth: box.max.z - box.min.z,
+            color: colorString,
+            color_front: colorString,
+            color_back: colorString,
+            material: 'default',
+            floor_number: this.currentFloor,
+            shape_points: ptsData
+        };
+        
+        this.scene.add(mesh);
+        this.parts.set(tempId, mesh);
+        
+        this.saveUndoState('create', { parts: [{ id: tempId, data: mesh.userData, position: mesh.position.clone(), rotation: mesh.rotation.clone() }] });
+        this.createPartOnServer(mesh, tempId);
+        
+        this.clearDrawGraphics();
+        const label = this.drawType.charAt(0).toUpperCase() + this.drawType.slice(1);
+        this.showToastEvent(`${label} placed!`, 'success');
+        this.polyPoints = []; 
+    }
+
     // ============ PAINT MODE ============
     
     enterPaintMode() {
@@ -1328,20 +1704,138 @@ class BuildEditor {
     // ============ APPLY PAINT/MATERIAL ============
     
     applyPaintToPart(mesh, color) {
+        const oldColor = mesh.userData.color_front || mesh.userData.color;
+        
+        // Save for undo
+        this.saveUndoState('paint', { 
+            id: mesh.userData.id, 
+            oldColor: oldColor,
+            newColor: color 
+        });
+
         mesh.userData.color = color;
         mesh.userData.color_front = color;
         mesh.userData.color_back = color;
         
+        // Update mesh visuals
+        const applyColor = (mat) => {
+            if (mat && mat.color && typeof mat.color.set === 'function') {
+                if (mat.transparent || mat.opacity < 1) return; // Ignore glass/translucent materials
+                mat.color.set(color);
+            }
+        };
+
+        if (mesh.isGroup) {
+            mesh.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(applyColor);
+                    } else {
+                        applyColor(child.material);
+                    }
+                }
+            });
+        } else if (mesh.material) {
+            if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(applyColor);
+            } else {
+                applyColor(mesh.material);
+            }
+        }
+
         this.updatePartAPI(mesh.userData.id, { color, color_front: color, color_back: color });
         this.hasUnsavedChanges = true;
-        this.showToastEvent('Painted!', 'success');
+        this.showToastEvent('Painted', 'info');
     }
     
     applyMaterialToPart(mesh, material) {
+        const oldMaterial = mesh.userData.variant || mesh.userData.material || 'default';
+        
+        // Save for undo
+        this.saveUndoState('material', { 
+            id: mesh.userData.id, 
+            oldMaterial: oldMaterial,
+            newMaterial: material 
+        });
+
+        mesh.userData.variant = material;
+        // Keep material mapped as well depending on legacy vs current backend logic
         mesh.userData.material = material;
-        this.updatePartAPI(mesh.userData.id, { material });
+        
+        // Update actual THREE material properties
+        let roughness = 0.7;
+        let metalness = 0.1;
+        let transparent = false;
+        let opacity = 1.0;
+        let textureMapUrl = null;
+
+        switch (material) {
+            case 'wood': roughness = 0.85; metalness = 0.0; textureMapUrl = '/img/textures/wood.png'; break;
+            case 'brick': roughness = 0.95; metalness = 0.0; textureMapUrl = '/img/textures/brick.png'; break;
+            case 'concrete': roughness = 0.85; metalness = 0.1; break;
+            case 'stone': roughness = 0.8; metalness = 0.1; break;
+            case 'marble': roughness = 0.2; metalness = 0.1; textureMapUrl = '/img/textures/marble.png'; break;
+            case 'metal': roughness = 0.3; metalness = 0.9; break;
+            case 'glass': roughness = 0.1; metalness = 0.8; transparent = true; opacity = 0.4; break;
+            case 'default': roughness = 0.7; metalness = 0.1; break;
+        }
+
+        let loadedTexture = null;
+        if (textureMapUrl) {
+            if (!this.textureLoader) this.textureLoader = new THREE.TextureLoader();
+            if (!this.textureCache) this.textureCache = {};
+            
+            if (this.textureCache[textureMapUrl]) {
+                loadedTexture = this.textureCache[textureMapUrl];
+            } else {
+                loadedTexture = this.textureLoader.load(textureMapUrl);
+                loadedTexture.wrapS = THREE.RepeatWrapping;
+                loadedTexture.wrapT = THREE.RepeatWrapping;
+                loadedTexture.repeat.set(2, 2); // Make it tile denser
+                this.textureCache[textureMapUrl] = loadedTexture;
+            }
+        }
+
+        const applyProps = (mat) => {
+            if (mat && mat.isMeshStandardMaterial) {
+                // If they explicitly picked glass, let it be transparent. Otherwise, if it was glass and they picked something else, make it solid again.
+                mat.transparent = transparent;
+                mat.opacity = opacity;
+                
+                mat.roughness = roughness;
+                mat.metalness = metalness;
+
+                if (loadedTexture) {
+                    mat.map = loadedTexture;
+                } else {
+                    mat.map = null;
+                }
+
+                mat.needsUpdate = true;
+            }
+        };
+
+        if (mesh.isGroup) {
+            mesh.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(applyProps);
+                    } else {
+                        applyProps(child.material);
+                    }
+                }
+            });
+        } else if (mesh.material) {
+            if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(applyProps);
+            } else {
+                applyProps(mesh.material);
+            }
+        }
+        
+        this.updatePartAPI(mesh.userData.id, { variant: material, material: material });
         this.hasUnsavedChanges = true;
-        this.showToastEvent(`Material: ${material}`, 'success');
+        this.showToastEvent('Material Changed', 'info');
     }
     
     // ============ CANCEL / EXIT ============
@@ -1383,12 +1877,94 @@ class BuildEditor {
         document.addEventListener('keyup', (e) => this.onKeyUp(e));
         
         window.addEventListener('beforeunload', (e) => {
-            if (this.hasUnsavedChanges) {
+            if (this.hasUnsavedChanges && !window.isConfirmingReload) {
                 e.preventDefault();
                 e.returnValue = 'You have unsaved changes.';
                 return e.returnValue;
             }
         });
+
+        // Intercept Refresh (F5, Ctrl+R) to show SweetAlert
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
+                if (this.hasUnsavedChanges) {
+                    e.preventDefault();
+                    window.isConfirmingReload = true; // Block native alert immediately
+                    if (typeof confirmReload === 'function') {
+                        confirmReload();
+                    }
+                }
+            }
+        });
+
+        // Intercept internal links with SweetAlert
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.href && !link.href.startsWith('#') && this.hasUnsavedChanges) {
+                // If it's a relative link or same domain
+                const url = new URL(link.href, window.location.origin);
+                if (url.origin === window.location.origin) {
+                    e.preventDefault();
+                    this.showUnsavedChangesModal().then((choice) => {
+                        if (choice === 'save') {
+                            this.saveBuild().then(() => {
+                                window.location.href = link.href;
+                            });
+                        } else if (choice === 'discard') {
+                            this.hasUnsavedChanges = false;
+                            window.location.href = link.href;
+                        }
+                    });
+                }
+            }
+        });
+
+        // Intercept browser BACK button
+        window.addEventListener('popstate', (e) => {
+            if (this.hasUnsavedChanges) {
+                // Show custom modern modal
+                this.showUnsavedChangesModal().then((choice) => {
+                    if (choice === 'save') {
+                        this.saveBuild().then(() => {
+                            window.history.back();
+                        });
+                    } else if (choice === 'discard') {
+                        this.hasUnsavedChanges = false;
+                        window.history.back();
+                    } else {
+                        // Stay on current page - push state back to prevent leaving
+                        window.history.pushState({ editor: true }, '', window.location.href);
+                    }
+                });
+            }
+        });
+    }
+
+    async showUnsavedChangesModal() {
+        // Modern custom popup using premium design tokens
+        const result = await Swal.fire({
+            title: 'Unsaved Changes',
+            html: 'You have some unsaved progress.<br>Would you like to save before leaving?',
+            icon: 'warning',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: 'Save & Exit',
+            denyButtonText: 'Discard & Exit',
+            cancelButtonText: 'Keep Editing',
+            customClass: {
+                popup: 'swal-premium',
+                actions: 'swal-premium-actions',
+                confirmButton: 'swal-confirm-btn',
+                denyButton: 'swal-deny-btn',
+                cancelButton: 'swal-cancel-btn'
+            },
+            buttonsStyling: false,
+            allowOutsideClick: false
+        });
+
+        if (result.isConfirmed) return 'save';
+        if (result.isDenied) return 'discard';
+        return 'cancel';
     }
     
     updateMouseCoords(event) {
@@ -1400,6 +1976,12 @@ class BuildEditor {
     onMouseMove(event) {
         this.updateMouseCoords(event);
         
+        // CUSTOM DRAW PREVIEW
+        if (this.isDrawingPoly) {
+            this.handleDrawMove();
+            return;
+        }
+
         // Preview while placing
         if (this.isPlacing && this.currentPreset && !this.isMoving) {
             this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -1432,6 +2014,99 @@ class BuildEditor {
                 }
             }
         }
+        
+        // HOVER SYSTEM (Bloxburg 2026 Style)
+        if (!this.isPlacing && !this.isMoving) {
+            const hitPart = this.raycastParts();
+            if (hitPart) {
+                const partId = hitPart.userData.id;
+                if (this.hoveredPartId !== partId) {
+                    this.hoveredPartId = partId;
+                    this.updateHoverOutline(hitPart);
+                }
+            } else {
+                if (this.hoveredPartId !== null) {
+                    this.hoveredPartId = null;
+                    this.clearHover();
+                }
+            }
+        }
+    }
+    
+    updateHoverOutline(mesh) {
+        this.clearHover();
+        
+        // Don't show hover on already selected parts
+        if (this.selectedPart === mesh.userData.id) return;
+
+        let targetGeo;
+        if (mesh.geometry) {
+            targetGeo = mesh.geometry;
+        } else if (mesh.children && mesh.children.length > 0) {
+            const box = new THREE.Box3().setFromObject(mesh);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            targetGeo = new THREE.BoxGeometry(size.x + 0.02, size.y + 0.02, size.z + 0.02);
+        }
+
+        if (targetGeo) {
+            // Color based on tool logic
+            let colorHex = 0x3B82F6; // Default Light Blue
+            if (this.currentTool === 'delete') colorHex = 0xEF4444; // Red for delete
+            if (this.currentTool === 'select') colorHex = 0xFFFFFF; // White for select
+            if (this.paintMode) colorHex = 0xFAB005; // Yellow for paint
+
+            // If DELETE tool, also tint the actual object
+            if (this.currentTool === 'delete') {
+                this.hoveredPartsEmissive = [];
+                const highlight = (obj) => {
+                    if (obj.material) {
+                        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+                        mats.forEach(m => {
+                            if (m.emissive) {
+                                this.hoveredPartsEmissive.push({ material: m, color: m.emissive.clone() });
+                                m.emissive.setHex(0xFF0000);
+                                m.emissiveIntensity = 0.5;
+                            }
+                        });
+                    }
+                    if (obj.children) obj.children.forEach(highlight);
+                };
+                highlight(mesh);
+            }
+
+            const edges = new THREE.EdgesGeometry(targetGeo);
+            const lineMat = new THREE.LineBasicMaterial({ color: colorHex, linewidth: 2, transparent: true, opacity: 0.8 });
+            this.hoverOutline = new THREE.LineSegments(edges, lineMat);
+            this.hoverOutline.position.copy(mesh.position);
+            this.hoverOutline.rotation.copy(mesh.rotation);
+            this.hoverOutline.scale.multiplyScalar(1.01); // Slightly larger to prevent z-fighting
+            this.hoverOutline.name = 'hover-outline';
+            this.scene.add(this.hoverOutline);
+        }
+        
+        this.container.style.cursor = this.currentTool === 'delete' ? 'crosshair' : 'pointer';
+    }
+
+    clearHover() {
+        if (this.hoverOutline) {
+            this.scene.remove(this.hoverOutline);
+            this.hoverOutline.geometry.dispose();
+            this.hoverOutline.material.dispose();
+            this.hoverOutline = null;
+        }
+
+        // Restore emissive if we were in delete mode
+        if (this.hoveredPartsEmissive) {
+            this.hoveredPartsEmissive.forEach(item => {
+                item.material.emissive.copy(item.color);
+                item.material.emissiveIntensity = 0;
+            });
+            this.hoveredPartsEmissive = null;
+        }
+        
+        const cursors = { select: 'default', delete: 'crosshair', move: 'grab', clone: 'copy' };
+        this.container.style.cursor = cursors[this.currentTool] || 'default';
     }
     
     onMouseDown(event) {
@@ -1443,6 +2118,12 @@ class BuildEditor {
         this.updateMouseCoords(event);
         
         console.log('[PointerDown] Click detected. Placing:', this.isPlacing, 'Preset:', !!this.currentPreset);
+        
+        // CUSTOM DRAW TOOL
+        if (this.isDrawingPoly) {
+            this.handleDrawClick();
+            return;
+        }
         
         // PLACEMENT MODE
         if (this.isPlacing && this.currentPreset && !this.isMoving) {
@@ -1573,7 +2254,17 @@ class BuildEditor {
         // Q / Escape — cancel / exit
         if (key === 'q' || key === 'escape') {
             event.preventDefault();
-            this.cancelSelection();
+            if (this.isDrawingPoly) {
+                this.exitDrawMode();
+            } else {
+                this.cancelSelection();
+            }
+        }
+
+        // Enter — Finish drawing
+        if (key === 'enter' && this.isDrawingPoly) {
+            event.preventDefault();
+            this.finishDrawPoly();
         }
         
         // R — rotate preview
@@ -1647,12 +2338,26 @@ class BuildEditor {
             this.enterBirdsEye();
         }
         
-        // Ctrl shortcuts
+        // Ctrl / Cmd shortcuts
         if (event.ctrlKey || event.metaKey) {
+            console.log(`[Editor] Capture Shortcut: Ctrl+${key}`);
+            
+            // REDO: Ctrl + Y or Ctrl + Shift + Z
+            if (key === 'y' || (key === 'z' && event.shiftKey)) {
+                event.preventDefault();
+                this.redo();
+                return;
+            }
+            
+            // UNDO: Ctrl + Z
+            if (key === 'z' && !event.shiftKey) {
+                event.preventDefault();
+                this.undo();
+                return;
+            }
+
             switch (key) {
                 case 's': event.preventDefault(); this.saveBuild(); break;
-                case 'z': event.preventDefault(); this.undo(); break;
-                case 'y': event.preventDefault(); this.redo(); break;
             }
         }
     }
@@ -1869,13 +2574,19 @@ class BuildEditor {
                     this.scene.remove(part.mesh);
                     this.disposeGroup(part.mesh);
                     this.parts.delete(state.data.id);
-                    this.deletePartAPI(state.data.id);
+                    // Remove from API if it has a real ID
+                    if (typeof state.data.id === 'number') this.deletePartAPI(state.data.id);
                 }
                 break;
             }
             case 'delete': {
-                // Re-add the deleted part
-                this.addPartToScene(state.data, true);
+                const partId = state.data.id;
+                // Re-add the deleted part. 
+                this.addPartToScene(state.data, false); // false = don't auto-save again
+                
+                // Remove from deleted pool so it's not deleted again on real save
+                this.deletedIds.delete(partId);
+                this.hasUnsavedChanges = true;
                 break;
             }
             case 'move': {
@@ -1894,6 +2605,30 @@ class BuildEditor {
                 }
                 break;
             }
+            case 'paint': {
+                const part = this.parts.get(state.data.id);
+                if (part) {
+                    const color = state.data.oldColor;
+                    part.mesh.userData.color_front = color;
+                    if (part.mesh.material) {
+                        if (Array.isArray(part.mesh.material)) {
+                            part.mesh.material.forEach(m => m.color.set(color));
+                        } else {
+                            part.mesh.material.color.set(color);
+                        }
+                    }
+                    this.updatePartAPI(state.data.id, { color, color_front: color, color_back: color });
+                }
+                break;
+            }
+            case 'material': {
+                const part = this.parts.get(state.data.id);
+                if (part) {
+                    part.userData.material = state.data.oldMaterial;
+                    this.updatePartAPI(state.data.id, { material: state.data.oldMaterial });
+                }
+                break;
+            }
         }
         
         this.deselectPart();
@@ -1909,14 +2644,21 @@ class BuildEditor {
         
         switch (state.action) {
             case 'add':
-                this.addPartToScene(state.data, false);
+                this.addPartToScene(state.data, true);
                 break;
             case 'delete': {
                 const part = this.parts.get(state.data.id);
                 if (part) {
+                    const partId = state.data.id;
                     this.scene.remove(part.mesh);
                     this.disposeGroup(part.mesh);
-                    this.parts.delete(state.data.id);
+                    this.parts.delete(partId);
+                    
+                    // Track for deletion again
+                    if (typeof partId === 'number' || !String(partId).startsWith('temp_')) {
+                        this.deletedIds.add(partId);
+                    }
+                    this.hasUnsavedChanges = true;
                 }
                 break;
             }
@@ -1936,19 +2678,164 @@ class BuildEditor {
                 }
                 break;
             }
+            case 'paint': {
+                const part = this.parts.get(state.data.id);
+                if (part) {
+                    const color = state.data.newColor;
+                    part.mesh.userData.color_front = color;
+                    if (part.mesh.material) {
+                        if (Array.isArray(part.mesh.material)) {
+                            part.mesh.material.forEach(m => m.color.set(color));
+                        } else {
+                            part.mesh.material.color.set(color);
+                        }
+                    }
+                    this.updatePartAPI(state.data.id, { color, color_front: color, color_back: color });
+                }
+                break;
+            }
+            case 'material': {
+                const part = this.parts.get(state.data.id);
+                if (part) {
+                    part.userData.material = state.data.newMaterial;
+                    this.updatePartAPI(state.data.id, { material: state.data.newMaterial });
+                }
+                break;
+            }
         }
         
         this.emitPartCount();
         this.showToastEvent('Redone', 'info');
     }
     
-    // ============ SAVE ============
+    updateHistoryId(oldId, newId) {
+        const updateStack = (stack) => {
+            stack.forEach(entry => {
+                if (entry.data && entry.data.id === oldId) {
+                    entry.data.id = newId;
+                }
+            });
+        };
+        updateStack(this.undoStack);
+        updateStack(this.redoStack);
+        console.log(`[History] Migrated ID ${oldId} -> ${newId} in stacks`);
+    }
     
-    saveBuild(showNotification = true) {
-        this.hasUnsavedChanges = false;
-        if (showNotification) {
-            this.showToastEvent('Build saved!', 'success');
+    // ============ SAVE (Draft to Server Commit) ============
+    
+    async saveBuild() {
+        if (!this.hasUnsavedChanges && this.deletedIds.size === 0 && this.dirtyPartIds.size === 0) {
+            this.showToastEvent('Nothing to save', 'info');
+            return;
         }
+
+        if (this.isSaving) return;
+        this.isSaving = true;
+
+        Swal.fire({
+            title: 'Saving Build...',
+            html: 'Uploading your masterwork to the server',
+            allowOutsideClick: false,
+            customClass: {
+                popup: 'swal-premium'
+            },
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            let successCount = 0;
+            let failCount = 0;
+
+            // 1. PROCESS DELETIONS
+            for (const id of this.deletedIds) {
+                const ok = await this.deletePartAPI(id);
+                if (ok) successCount++; else failCount++;
+            }
+            this.deletedIds.clear();
+
+            // 2. PROCESS CREATIONS (New parts with temp IDs)
+            const newParts = Array.from(this.parts.entries())
+                .filter(([id]) => String(id).startsWith('temp_'));
+            
+            for (const [tempId, part] of newParts) {
+                const result = await this.createPartOnServer(part.mesh, tempId);
+                if (result) successCount++; else failCount++;
+            }
+
+            // 3. PROCESS UPDATES (Existing parts modified post-load)
+            for (const id of this.dirtyPartIds) {
+                const part = this.parts.get(id);
+                if (part) {
+                    const data = {
+                        position_x: part.mesh.position.x,
+                        position_y: part.mesh.position.y,
+                        position_z: part.mesh.position.z,
+                        rotation_y: Math.round(part.mesh.rotation.y * 180 / Math.PI),
+                        color: part.mesh.userData.color,
+                        color_front: part.mesh.userData.color_front,
+                        color_back: part.mesh.userData.color_back,
+                        material: part.mesh.userData.material,
+                    };
+                    // We can't really track if updatePartAPI succeeded easily without return value
+                    // but we'll assume it's part of the sync
+                    await this.updatePartAPI_Real(id, data); 
+                    successCount++;
+                }
+            }
+            this.dirtyPartIds.clear();
+            this.deletedIds.clear();
+            this.hasUnsavedChanges = false;
+            
+            // Clear history after save to prevent temp_ ID conflicts
+            this.undoStack = [];
+            this.redoStack = [];
+            
+            Swal.fire({
+                icon: failCount === 0 ? 'success' : 'warning',
+                title: failCount === 0 ? 'Build Saved!' : 'Saved with Errors',
+                html: failCount === 0 
+                    ? 'All your changes have been successfully committed.' 
+                    : `Sync complete. ${successCount} succeeded, ${failCount} failed.`,
+                customClass: {
+                    popup: 'swal-premium',
+                    confirmButton: 'swal-confirm-btn'
+                },
+                buttonsStyling: false
+            });
+
+        } catch (error) {
+            console.error('[Editor] Fatal error during save:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Save Failed',
+                html: 'A critical error occurred while syncing.<br>Please check your connection.',
+                customClass: {
+                    popup: 'swal-premium',
+                    confirmButton: 'swal-confirm-btn'
+                },
+                buttonsStyling: false
+            });
+        } finally {
+            this.isSaving = false;
+        }
+    }
+
+    async updatePartAPI_Real(partId, data) {
+        try {
+            const response = await fetch(`${this.api.parts}/${partId}`, {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                },
+                body: JSON.stringify(data),
+            });
+            return response.ok;
+        } catch (e) { return false; }
     }
     
     exportPNG() {
@@ -2028,6 +2915,8 @@ class BuildEditor {
         const debugInfo = document.getElementById('debug-info');
         if (debugInfo) debugInfo.textContent = message;
     }
+    
+
     
     // ============ RESIZE ============
     

@@ -64,8 +64,8 @@
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4);
-    margin-bottom: var(--space-8);
+    gap: var(--space-6);
+    margin-bottom: var(--space-10);
 }
 
 @media (min-width: 768px) {
@@ -171,7 +171,7 @@
 .blueprints-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-6);
+    gap: var(--space-8);
 }
 
 @media (min-width: 768px) {
@@ -190,8 +190,8 @@
 .quick-actions {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-4);
-    margin-bottom: var(--space-8);
+    gap: var(--space-6);
+    margin-bottom: var(--space-12);
 }
 
 @media (max-width: 767px) {
