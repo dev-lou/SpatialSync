@@ -1,0 +1,39 @@
+{
+    "name": "blueprintflow/app",
+    "type": "project",
+    "description": "Collaborative blueprint application for architects and engineers",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0",
+        "laravel/jetstream": "^5.0",
+        "laravel/sanctum": "^4.3",
+        "livewire/livewire": "^3.0",
+        "saeedvir/supabase": "^1.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.13",
+        "fakerphp/faker": "^1.23",
+        "laravel/sail": "^1.26"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

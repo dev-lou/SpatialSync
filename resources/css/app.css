@@ -1,0 +1,82 @@
+﻿@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all;
+    }
+    .btn-primary {
+        @apply bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md;
+    }
+    .card {
+        @apply bg-white dark:bg-[#13151A] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden;
+    }
+    .input {
+        @apply w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 text-base focus:ring-2 focus:ring-blue-500 transition-shadow;
+    }
+}
+
+.swal-premium .swal2-popup {
+    background: var(--surface, #fff);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+}
+
+#blueprint-canvas { touch-action: none; opacity: 0; }
+
+@keyframes slide-in {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in { animation: slide-in 0.3s ease-out; }
+
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up { animation: fade-in-up 0.4s ease-out; }
+
+@keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.dark .skeleton {
+    background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+kbd {
+    @apply px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono shadow-sm;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--muted, #6C737A); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-2, #4A5060); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
