@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\User;
-
 return [
     'defaults' => [
         'guard' => 'web',
@@ -19,8 +17,8 @@ return [
     ],
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
-            'model' => User::class,
+            'driver' => 'database',
+            'table' => 'users',
         ],
     ],
     'passwords' => [

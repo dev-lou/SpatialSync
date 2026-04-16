@@ -63,8 +63,8 @@
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4);
-    margin-bottom: var(--space-8);
+    gap: var(--space-6);
+    margin-bottom: var(--space-10);
 }
 
 @media (min-width: 768px) {
@@ -170,7 +170,7 @@
 .blueprints-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-6);
+    gap: var(--space-8);
 }
 
 @media (min-width: 768px) {
@@ -189,8 +189,8 @@
 .quick-actions {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-4);
-    margin-bottom: var(--space-8);
+    gap: var(--space-6);
+    margin-bottom: var(--space-12);
 }
 
 @media (max-width: 767px) {
@@ -564,7 +564,7 @@
             <div class="welcome-card">
                 <div class="welcome-card__content">
                     <div class="welcome-card__text">
-                        <h2>Welcome back, <?php echo e(auth()->user()->name ?? 'Designer'); ?>!</h2>
+                        <h2>Welcome back, <?php echo e($auth_user_name ?? 'Designer'); ?>!</h2>
                         <p>Ready to create something amazing? Start a new build or continue where you left off.</p>
                     </div>
                 </div>
@@ -597,7 +597,7 @@
                         8%
                     </span>
                 </div>
-                <div class="kpi-card__value"><?php echo e($builds->sum(function($b) { return $b->collaborators ? $b->collaborators->count() : 0; }) + 1); ?></div>
+                <div class="kpi-card__value"><?php echo e($builds->count()); ?></div>
                 <div class="kpi-card__label">Team Members</div>
             </div>
 
@@ -724,7 +724,7 @@
 
                 <div class="activity-list">
                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $builds->sortByDesc('updated_at')->take(5); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <a href="<?php echo e(route('builds.show', $build)); ?>" class="activity-item">
+                        <a href="<?php echo e(route('builds.show', $build->id)); ?>" class="activity-item">
                             <div class="activity-item__icon">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </div>
@@ -733,7 +733,7 @@
                                     You edited <strong><?php echo e($build->name); ?></strong>
                                 </div>
                                 <div class="activity-item__time">
-                                    <?php echo e($build->updated_at->diffForHumans()); ?>
+                                    <?php echo e($build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'recently'); ?>
 
                                 </div>
                             </div>

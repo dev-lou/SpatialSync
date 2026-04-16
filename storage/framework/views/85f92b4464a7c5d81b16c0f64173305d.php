@@ -23,16 +23,13 @@
         </div>
 
         <div class="navbar__actions">
-            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
-                
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($auth_user): ?>
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!request()->routeIs('dashboard')): ?>
                     <a href="<?php echo e(route('dashboard')); ?>" class="btn btn--ghost btn--sm">
                         <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                         Dashboard
                     </a>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-
-                
                 <?php if (isset($component)) { $__componentOriginalcedb185ae97611e17ef6f86a5f08cf12 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalcedb185ae97611e17ef6f86a5f08cf12 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.profile-dropdown','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>

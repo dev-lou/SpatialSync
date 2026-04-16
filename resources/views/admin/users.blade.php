@@ -23,7 +23,6 @@
                     <th class="text-left p-4 font-semibold text-sm text-primary">User</th>
                     <th class="text-left p-4 font-semibold text-sm text-primary">Email</th>
                     <th class="text-left p-4 font-semibold text-sm text-primary">Role</th>
-                    <th class="text-left p-4 font-semibold text-sm text-primary">Builds</th>
                     <th class="text-left p-4 font-semibold text-sm text-primary">Joined</th>
                     <th class="text-right p-4 font-semibold text-sm text-primary">Actions</th>
                 </tr>
@@ -33,23 +32,22 @@
                     <tr class="border-t border-border hover:bg-secondary/50">
                         <td class="p-4">
                             <div class="flex items-center gap-3">
-                                <div class="avatar avatar--sm">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
-                                <span class="font-medium text-primary">{{ $user->name }}</span>
+                                <div class="avatar avatar--sm">{{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}</div>
+                                <span class="font-medium text-primary">{{ $user->name ?? 'Unknown' }}</span>
                             </div>
                         </td>
-                        <td class="p-4 text-secondary">{{ $user->email }}</td>
+                        <td class="p-4 text-secondary">{{ $user->email ?? '' }}</td>
                         <td class="p-4">
-                            @if($user->is_admin)
+                            @if($user->is_admin ?? false)
                                 <span class="badge badge--error">Admin</span>
                             @else
                                 <span class="badge badge--default">User</span>
                             @endif
                         </td>
-                        <td class="p-4 text-secondary">{{ $user->buildMemberships->count() }}</td>
-                        <td class="p-4 text-secondary">{{ $user->created_at->format('M j, Y') }}</td>
+                        <td class="p-4 text-secondary">{{ $user->created_at ? \Carbon\Carbon::parse($user->created_at)->format('M j, Y') : 'Unknown' }}</td>
                         <td class="p-4 text-right">
-                            @if(!$user->is_admin)
-                                <form action="{{ route('admin.users.delete', $user) }}" method="POST" class="inline" x-data @submit.prevent="
+                            @if(!($user->is_admin ?? false))
+                                <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" class="inline" x-data @submit.prevent="
                                     Swal.fire({
                                         title: 'Delete User?',
                                         text: 'This will also delete all their builds and data.',
@@ -73,7 +71,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="p-8 text-center text-secondary">No users found</td>
+                        <td colspan="5" class="p-8 text-center text-secondary">No users found</td>
                     </tr>
                 @endforelse
             </tbody>

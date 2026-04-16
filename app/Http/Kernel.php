@@ -3,11 +3,11 @@
 namespace App\Http;
 
 use App\Http\Middleware\AdminMiddleware;
-use Illuminate\Auth\Middleware\Authenticate;
+use App\Http\Middleware\RedirectIfSupabaseAuthenticated;
+use App\Http\Middleware\SupabaseAuthenticate;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
-use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -45,11 +45,11 @@ class Kernel extends HttpKernel
     ];
 
     protected $middlewareAliases = [
-        'auth' => Authenticate::class,
+        'auth' => SupabaseAuthenticate::class,
         'auth.basic' => AuthenticateWithBasicAuth::class,
         'auth.session' => AuthenticateSession::class,
         'can' => Authorize::class,
-        'guest' => RedirectIfAuthenticated::class,
+        'guest' => RedirectIfSupabaseAuthenticated::class,
         'throttle' => ThrottleRequests::class,
         'verified' => EnsureEmailIsVerified::class,
         'admin' => AdminMiddleware::class,

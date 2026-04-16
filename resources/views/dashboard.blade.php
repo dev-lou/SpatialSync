@@ -565,7 +565,7 @@
             <div class="welcome-card">
                 <div class="welcome-card__content">
                     <div class="welcome-card__text">
-                        <h2>Welcome back, {{ auth()->user()->name ?? 'Designer' }}!</h2>
+                        <h2>Welcome back, {{ $auth_user_name ?? 'Designer' }}!</h2>
                         <p>Ready to create something amazing? Start a new build or continue where you left off.</p>
                     </div>
                 </div>
@@ -598,7 +598,7 @@
                         8%
                     </span>
                 </div>
-                <div class="kpi-card__value">{{ $builds->sum(function($b) { return $b->collaborators ? $b->collaborators->count() : 0; }) + 1 }}</div>
+                <div class="kpi-card__value">{{ $builds->count() }}</div>
                 <div class="kpi-card__label">Team Members</div>
             </div>
 
@@ -706,7 +706,7 @@
 
                 <div class="activity-list">
                     @foreach($builds->sortByDesc('updated_at')->take(5) as $build)
-                        <a href="{{ route('builds.show', $build) }}" class="activity-item">
+                        <a href="{{ route('builds.show', $build->id) }}" class="activity-item">
                             <div class="activity-item__icon">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </div>
@@ -715,7 +715,7 @@
                                     You edited <strong>{{ $build->name }}</strong>
                                 </div>
                                 <div class="activity-item__time">
-                                    {{ $build->updated_at->diffForHumans() }}
+                                    {{ $build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'recently' }}
                                 </div>
                             </div>
                         </a>

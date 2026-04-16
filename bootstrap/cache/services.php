@@ -31,6 +31,7 @@
     27 => 'Carbon\\Laravel\\ServiceProvider',
     28 => 'Termwind\\Laravel\\TermwindServiceProvider',
     29 => 'Saeedvir\\Supabase\\SupabaseServiceProvider',
+    30 => 'App\\Providers\\ViewServiceProvider',
   ),
   'eager' => 
   array (
@@ -51,6 +52,7 @@
     14 => 'Carbon\\Laravel\\ServiceProvider',
     15 => 'Termwind\\Laravel\\TermwindServiceProvider',
     16 => 'Saeedvir\\Supabase\\SupabaseServiceProvider',
+    17 => 'App\\Providers\\ViewServiceProvider',
   ),
   'deferred' => 
   array (

@@ -15,6 +15,13 @@
             </a>
             <div class="editor-topbar__divider"></div>
             <span class="editor-topbar__title">{{ $build->name }}</span>
+            
+            <!-- Real-time Connection Indicator -->
+            <div class="rt-indicator" :title="'Connection: ' + rtStatus + (isReconnecting ? ' (Reconnecting...)' : '')">
+                <div class="rt-indicator__dot" :class="rtStatus" :class="{ 'reconnecting': isReconnecting }"></div>
+                <span class="rt-indicator__label" x-text="isReconnecting ? 'Reconnecting...' : (rtStatus === 'connected' ? 'Live' : (rtStatus === 'connecting' ? 'Syncing...' : 'Offline'))"></span>
+            </div>
+
             <button class="btn btn--ghost btn--sm" @click="confirmReload()" title="Refresh Editor">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             </button>
@@ -128,21 +135,41 @@
                     <div class="sidebar-section__title">
                         <i data-lucide="users"></i> Active Members
                     </div>
-                    <div class="member-list">
+                    <div class="member-list space-y-2">
                         <template x-for="member in members" :key="member.id">
-                            <div class="member-item">
+                            <div class="member-item group" x-data="{ isOpen: false }" @click.away="isOpen = false">
                                 <div class="member-info">
-                                    <div class="avatar avatar--sm" style="background: linear-gradient(135deg, var(--accent) 0%, #818CF8 100%); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; text-transform: uppercase;" x-text="member.name.substring(0, 1)"></div>
-                                    <div>
-                                        <div class="member-name" x-text="member.name"></div>
-                                        <div class="member-role" x-text="member.role"></div>
+                                    <div class="avatar avatar--sm" style="background: linear-gradient(135deg, var(--accent) 0%, #818CF8 100%); width: 32px; height: 32px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; text-transform: uppercase;" x-text="member.name.substring(0, 1)"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="member-name truncate font-semibold text-sm" x-text="member.name"></div>
+                                        <div class="member-role text-[10px] uppercase tracking-wider font-bold text-slate-400 group-hover:text-accent transition-colors" x-text="member.role"></div>
                                     </div>
                                 </div>
-                                <button class="btn btn--ghost btn--sm" 
-                                        x-show="userRole === 'admin' && member.id !== {{ Auth::id() }}"
-                                        @click="removeMember(member.id)">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 text-danger"></i>
-                                </button>
+                                
+                                <div class="flex items-center gap-1.5" x-show="userRole === 'owner' && String(member.id) !== '{{ $auth_user_id }}'">
+                                    <!-- Toggle Role Button (Camouflaged) -->
+                                    <button @click="toggleRole(member)" 
+                                            class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-200 border-none outline-none group/role hover:bg-accent/10 text-accent"
+                                            style="background: transparent !important;"
+                                            :title="member.role === 'editor' ? 'Set as Viewer' : 'Set as Editor'">
+                                        <!-- Eye Icon (Viewer mode) -->
+                                        <template x-if="member.role === 'editor'">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-hover/role:scale-110"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        </template>
+                                        <!-- Edit/Pencil Icon (Editor mode) -->
+                                        <template x-if="member.role !== 'editor'">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-hover/role:scale-110"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                        </template>
+                                    </button>
+
+                                    <!-- Remove Member Button (Camouflaged) -->
+                                    <button @click="removeMember(member.id)" 
+                                            class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-200 border-none outline-none group/rem hover:bg-red-500/10 text-red-500"
+                                            style="background: transparent !important;"
+                                            title="Remove Member">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-hover/rem:scale-110"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </template>
                     </div>
@@ -153,12 +180,47 @@
             <div x-show="sidebarTab === 'chat'" class="h-full flex flex-col">
                 <div class="sidebar-section__title mb-4">
                     <i data-lucide="message-square"></i> Project Chat
+                    <span x-show="rtStatus !== 'connected'" class="ml-2 text-xs text-yellow-500" title="Realtime offline - messages will still save but won't be live">
+                        <i data-lucide="wifi-off" class="w-3 h-3 inline"></i> Offline
+                    </span>
                 </div>
+                
+                <!-- Offline Notice -->
+                <div x-show="rtStatus !== 'connected' && rtStatus !== 'connecting'" 
+                     class="mx-4 mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <p class="font-medium">Realtime offline</p>
+                            <p class="text-yellow-600">Messages will save but live sync requires Supabase Realtime.</p>
+                            <p class="text-[10px] mt-1 text-yellow-500">
+                                Check console (F12) for diagnostics. Common fix: Database → Replication → Toggle Realtime OFF/ON
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="chat-messages" id="chat-messages">
-                    <template x-for="msg in chatMessages" :key="msg.id">
-                        <div class="message" :class="msg.user_id === {{ Auth::id() }} ? 'message--mine' : 'message--other'">
-                            <div class="message__user" x-show="msg.user_id !== {{ Auth::id() }}" x-text="msg.user.name"></div>
-                            <div x-text="msg.message"></div>
+                    <!-- Empty State -->
+                    <div x-show="chatMessages.length === 0" class="flex flex-col items-center justify-center h-full text-center p-6">
+                        <div class="w-16 h-16 mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                            <i data-lucide="message-circle" class="w-8 h-8 text-slate-400"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-600 mb-1">No messages yet</p>
+                        <p class="text-xs text-slate-400" x-show="rtStatus === 'connected'">Be the first to start the conversation!</p>
+                        <p class="text-xs text-slate-400" x-show="rtStatus !== 'connected'">Messages will appear here when you send them.</p>
+                    </div>
+                    
+                    <template x-for="msg in chatMessages" :key="msg.id || msg.temp_id">
+                        <div class="message-row">
+                            <div class="message"
+                                 :class="msg.user_id === '{{ $auth_user_id }}' ? 'message--mine' : 'message--other'">
+                                <div class="message__header" x-show="msg.user_id !== '{{ $auth_user_id }}'">
+                                    <span class="message__user" x-text="msg.user?.name || msg.user_name || 'Collaborator'"></span>
+                                </div>
+                                <div class="message__content" x-text="msg.message || msg.content || msg.text || ''"></div>
+                                <div class="message__time" x-show="msg.created_at" x-text="formatTime(msg.created_at)"></div>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -166,11 +228,19 @@
         </div>
 
         <div class="sidebar__footer" x-show="sidebarTab === 'chat'">
-            <input type="text" class="chat-input" placeholder="Type a message..." 
-                   x-model="newMessage" @keyup.enter="sendMessage()">
-            <button class="btn btn--primary" @click="sendMessage()">
-                <i data-lucide="send" class="w-4 h-4"></i>
-            </button>
+            <div class="flex flex-col w-full gap-1">
+                <div class="flex gap-2">
+                    <input type="text" class="chat-input" 
+                           :placeholder="rtStatus === 'connected' ? 'Type a message...' : 'Type a message (offline mode)...'" 
+                           x-model="newMessage" @keyup.enter="sendMessage()">
+                    <button class="btn btn--primary" @click="sendMessage()" :disabled="!newMessage.trim()">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div x-show="rtStatus !== 'connected'" class="text-[10px] text-slate-400 text-center">
+                    Working offline - messages save on send
+                </div>
+            </div>
         </div>
     </aside>
 
@@ -377,22 +447,22 @@
                 @foreach($items as $preset)
                     <button class="part-card"
                             x-show="activeTab === '{{ $type }}'"
-                            :class="{ active: selectedPresetId === {{ $preset->id }} }"
+                            :class="{ active: selectedPresetId === '{{ $preset['id'] ?? 0 }}' }"
                             @click="selectPreset({{ json_encode([
-                                'id' => $preset->id,
-                                'name' => $preset->name,
-                                'type' => $preset->type,
-                                'variant' => $preset->variant,
-                                'default_width' => $preset->default_width,
-                                'default_height' => $preset->default_height,
-                                'default_depth' => $preset->default_depth,
-                                'default_color' => $preset->default_color,
-                                'icon' => $preset->icon,
+                                'id' => isset($preset['id']) ? $preset['id'] : '',
+                                'name' => isset($preset['name']) ? $preset['name'] : '',
+                                'type' => isset($preset['type']) ? $preset['type'] : '',
+                                'variant' => isset($preset['variant']) ? $preset['variant'] : '',
+                                'default_width' => isset($preset['default_width']) ? $preset['default_width'] : 1,
+                                'default_height' => isset($preset['default_height']) ? $preset['default_height'] : 3,
+                                'default_depth' => isset($preset['default_depth']) ? $preset['default_depth'] : 0.2,
+                                'default_color' => isset($preset['default_color']) ? $preset['default_color'] : '',
+                                'icon' => isset($preset['icon']) ? $preset['icon'] : '',
                             ]) }})">
                         <div class="part-card__icon">
-                            <i data-lucide="{{ $preset->icon }}"></i>
+                            <i data-lucide="{{ $preset['icon'] ?? 'box' }}"></i>
                         </div>
-                        <span class="part-card__name">{{ $preset->name }}</span>
+                        <span class="part-card__name">{{ $preset['name'] ?? 'Unknown' }}</span>
                     </button>
                 @endforeach
             @endforeach
@@ -459,26 +529,304 @@ document.addEventListener('alpine:init', () => {
         userRole: '{{ $userRole }}',
         shareUrl: '',
         chatMessages: @json($messages),
+        initialMessagesCount: {{ count($messages) }},
         newMessage: '',
+        supabase: null,
+        rtChannel: null,
+        rtStatus: 'connecting', // connecting, connected, error, closed
+        tabId: Math.random().toString(36).substr(2, 9),
+        pendingSyncEvents: [], // Queue for sync events before editor ready
+        
+        // Connection resilience
+        reconnectAttempts: 0,
+        maxReconnectAttempts: 10,
+        reconnectDelay: 1000,
+        reconnectTimer: null,
+        isReconnecting: false,
+        activeChannelId: null, // Track which channel is currently active
         
         toolIcons: { select: 'mouse-pointer', delete: 'trash-2', move: 'move', clone: 'copy' },
         toolLabels: { select: 'Select Tool', delete: 'Delete Tool — Click to remove', move: 'Move Tool — Click to pick up', clone: 'Clone Tool — Click to duplicate' },
-        
-        init() {
-            // Chat & Sync Polling
-            setInterval(() => {
-                if (this.sidebarTab === 'chat' && this.sidebarOpen) {
-                    this.fetchMessages();
-                }
-            }, 3000);
 
-            window.addEventListener('part-placed', (e) => {
-                document.getElementById('parts-count').textContent = e.detail.count;
+        async init() {
+            // Initialize Supabase for Realtime
+            this.supabase = supabase.createClient(
+                '{{ config('supabase.url') }}',
+                '{{ config('supabase.anon_key') }}',
+                {
+                    realtime: {
+                        timeout: 20000,
+                        params: {
+                            eventsPerSecond: 10
+                        }
+                    }
+                }
+            );
+
+            console.log('Supabase client initialized:', this.supabase ? 'OK' : 'FAILED');
+            
+            // Test REST API connectivity first
+            try {
+                const { data, error } = await this.supabase.from('builds').select('id').limit(1);
+                if (error) {
+                    console.error('Supabase REST API test failed:', error);
+                    console.error('%c[DIAGNOSTIC] Cannot connect to Supabase REST API. Check:', 'color: #ff6b6b; font-weight: bold;');
+                    console.error('  - SUPABASE_URL in .env is correct');
+                    console.error('  - SUPABASE_ANON_KEY in .env is correct');
+                    console.error('  - Your project is not paused');
+                    console.error('  - Network connectivity to Supabase');
+                } else {
+                    console.log('Supabase REST API test: OK (connected to database)');
+                }
+            } catch (testErr) {
+                console.error('Supabase REST API test error:', testErr);
+            }
+
+            // Room-based channel for absolute real-time
+            const channelId = 'main_' + Date.now();
+            this.activeChannelId = channelId;
+            
+            this.rtChannel = this.supabase.channel('build:{{ $build->id }}', {
+                config: {
+                    broadcast: { self: false }, // Don't receive own broadcasts
+                    presence: { key: '{{ $auth_user_id }}' + '_' + this.tabId }
+                }
             });
             
+            console.log('RT Created new channel with ID:', channelId);
+
+            this.rtChannel
+                .on('presence', { event: 'sync' }, () => {
+                    const state = this.rtChannel.presenceState();
+                    if (window.editor) window.editor.updateRemoteCursors(state);
+                })
+                .on('broadcast', { event: 'chat' }, (payload) => {
+                    console.log('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
+
+                    // Supabase sends: payload.payload = { data: { message, user, user_id, ... } }
+                    // Try multiple possible payload structures
+                    let msg = payload.payload?.data || payload.payload || payload.data || payload;
+                    
+                    console.log('RT Extracted chat message:', msg);
+                    
+                    if (msg && (msg.message || msg.content || msg.text)) {
+                        // Ensure message has a unique key for Alpine
+                        const messageWithId = {
+                            ...msg,
+                            temp_id: msg.id || msg.temp_id || `rt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                            created_at: msg.created_at || new Date().toISOString()
+                        };
+                        
+                        // Avoid duplicates
+                        const exists = this.chatMessages.some(m => 
+                            (m.id && m.id === messageWithId.id) || 
+                            (m.temp_id && m.temp_id === messageWithId.temp_id)
+                        );
+                        
+                        if (!exists) {
+                            this.chatMessages.push(messageWithId);
+                            this.scrollToBottom();
+                            console.log('RT Chat message added:', messageWithId);
+                        } else {
+                            console.log('RT Chat: Duplicate message ignored');
+                        }
+                    } else {
+                        console.warn('RT Chat: Invalid message structure received', { payload, extractedMsg: msg });
+                    }
+                })
+                .on('broadcast', { event: 'sync-part' }, (payload) => {
+                    console.log('RT Received Sync-Part Envelope:', JSON.stringify(payload, null, 2));
+
+                    // Supabase sends: payload.payload = { action: 'add', data: {...} }
+                    const data = payload.payload;
+                    
+                    if (!data || !data.action) {
+                        console.warn('RT Sync: Invalid payload - missing action', { payload, extractedData: data });
+                        return;
+                    }
+
+                    // Queue event if editor not ready yet
+                    if (!window.editor) {
+                        console.log('RT Sync: Editor not ready, queuing event:', data.action, 'Queue size:', this.pendingSyncEvents.length + 1);
+                        this.pendingSyncEvents.push(data);
+                        
+                        // Also try to process queue immediately in case editor just became ready
+                        this.$nextTick(() => {
+                            if (window.editor && this.pendingSyncEvents.length > 0) {
+                                console.log('RT Editor now ready, processing', this.pendingSyncEvents.length, 'queued events');
+                                const events = [...this.pendingSyncEvents];
+                                this.pendingSyncEvents = [];
+                                events.forEach(evt => this.processSyncEvent(evt));
+                            }
+                        });
+                        return;
+                    }
+
+                    this.processSyncEvent(data);
+                })
+                .subscribe(async (status, err) => {
+                    // Check if this channel is still the active one
+                    if (channelId !== this.activeChannelId) {
+                        console.log(`RT Ignoring event from old channel ${channelId}, current is ${this.activeChannelId}`);
+                        return;
+                    }
+                    
+                    console.log('RT Subscription Status:', status, err ? 'Error:' + err.message : '');
+                    
+                    if (err) {
+                        console.error('RT Subscription Error:', err);
+                        
+                        // Specific diagnostic for common errors
+                        if (err.message && err.message.includes('UnableToConnectToProject')) {
+                            console.error('%c[DIAGNOSTIC] Supabase Realtime cannot connect to your project database.', 'color: #ff6b6b; font-weight: bold;');
+                            console.error('%c[DIAGNOSTIC] Solutions to try:', 'color: #ff6b6b;');
+                            console.error('  1. Check if your Supabase project is active (not paused)');
+                            console.error('  2. Go to Database → Replication and ensure Realtime is enabled');
+                            console.error('  3. Try re-enabling Realtime: Database → Replication → Toggle Realtime OFF then ON');
+                            console.error('  4. Check your .env SUPABASE_URL and SUPABASE_ANON_KEY are correct');
+                            console.error('  5. Your project might need to be restarted - contact Supabase support if issue persists');
+                        }
+                    }
+                    
+                    this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : (status === 'CLOSED' ? 'closed' : 'error');
+                    
+                    if (status === 'SUBSCRIBED') {
+                        // Reset reconnection attempts on successful connection
+                        this.reconnectAttempts = 0;
+                        this.isReconnecting = false;
+                        
+                        // Immediately track presence
+                        try {
+                            await this.rtChannel.track({
+                                online_at: new Date().toISOString(),
+                                name: '{{ $auth_user_name }}',
+                                role: this.userRole,
+                                tabId: this.tabId
+                            });
+                            console.log('RT Connected and presence tracked');
+                        } catch (trackErr) {
+                            console.error('RT Presence tracking failed:', trackErr);
+                        }
+                        
+                        // Sync any parts that may have been added while page was loading
+                        // Small delay to let editor finish initializing
+                        setTimeout(() => this.syncMissedParts(), 500);
+                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.warn('RT Connection lost (status: ' + status + ')');
+                        // Only trigger reconnection if not already reconnecting
+                        if (!this.isReconnecting && this.reconnectAttempts < this.maxReconnectAttempts) {
+                            console.log('RT Scheduling reconnection...');
+                            // Add delay before reconnection on localhost to prevent rapid reconnection loops
+                            const delay = this.reconnectAttempts === 0 ? 2000 : 1000;
+                            setTimeout(() => this.handleReconnection(), delay);
+                        } else if (this.isReconnecting) {
+                            console.log('RT Reconnection already in progress, skipping...');
+                        }
+                    }
+                });
+
+            // Link channel and role to editor
+            this.$nextTick(() => {
+                const self = this;
+                console.log('RT Starting editor check interval, editor exists:', !!window.editor);
+                const checkEditor = setInterval(() => {
+                    if (window.editor) {
+                        console.log('RT Editor found! Linking channel and processing', self.pendingSyncEvents.length, 'queued events');
+                        window.editor.rtChannel = self.rtChannel;
+                        window.editor.userRole = self.userRole;
+                        window.editor.myPresenceKey = '{{ $auth_user_id }}' + '_' + self.tabId;
+                        clearInterval(checkEditor);
+                        
+                        // Process any queued sync events
+                        const queueLength = self.pendingSyncEvents.length;
+                        if (queueLength > 0) {
+                            console.log('RT Processing', queueLength, 'queued sync events');
+                            const eventsToProcess = [...self.pendingSyncEvents];
+                            self.pendingSyncEvents = [];
+                            eventsToProcess.forEach(data => {
+                                try {
+                                    self.processSyncEvent(data);
+                                } catch (err) {
+                                    console.error('RT Error processing queued event:', err, data);
+                                }
+                            });
+                        }
+                    }
+                }, 100);
+            });
+
+            // Notify editor about role change
+            this.$watch('userRole', (val) => {
+                if (window.editor) window.editor.userRole = val;
+            });
+
+            window.addEventListener('part-placed', async (e) => {
+                // Broadcast to others if we placed it locally
+                if (e.detail.isLocal) {
+                    console.log('RT Sending Sync-Part (add)');
+                    const result = await this.sendBroadcast('sync-part', {
+                        action: 'add',
+                        data: e.detail.partData
+                    });
+                    if (result.success) {
+                        console.log('RT Sync-Part (add) broadcast sent via', result.method);
+                    } else {
+                        console.error('RT Failed to send sync-part broadcast:', result.error);
+                    }
+                }
+                document.getElementById('parts-count').textContent = e.detail.count;
+            });
+
+            window.addEventListener('part-deleted', async (e) => {
+                if (e.detail.isLocal) {
+                    console.log('RT Sending Sync-Part (delete)');
+                    const result = await this.sendBroadcast('sync-part', {
+                        action: 'delete',
+                        id: e.detail.id
+                    });
+                    if (result.success) {
+                        console.log('RT Sync-Part (delete) broadcast sent via', result.method);
+                    } else {
+                        console.error('RT Failed to send sync-part broadcast:', result.error);
+                    }
+                }
+            });
+
+            window.addEventListener('part-updated', async (e) => {
+                if (e.detail.isLocal) {
+                    console.log('RT Sending Sync-Part (update)');
+                    const result = await this.sendBroadcast('sync-part', {
+                        action: 'update',
+                        id: e.detail.id,
+                        data: e.detail.data
+                    });
+                    if (result.success) {
+                        console.log('RT Sync-Part (update) broadcast sent via', result.method);
+                    } else {
+                        console.error('RT Failed to send sync-part broadcast:', result.error);
+                    }
+                }
+            });
+
             window.addEventListener('floor-changed', (e) => {
                 this.currentFloor = e.detail.floor;
                 document.getElementById('current-floor').textContent = e.detail.floor;
+            });
+
+            // Fetch latest messages from API to get any messages sent while away
+            console.log(`Init: ${this.initialMessagesCount} messages loaded from server, fetching from API...`);
+            this.fetchMessages();
+            
+            // Poll for new messages every 30 seconds (fallback when realtime misses messages)
+            this.messagePollInterval = setInterval(() => {
+                this.fetchMessages();
+            }, 30000);
+            
+            // Also fetch when user returns to the tab
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    this.fetchMessages();
+                }
             });
             
             window.addEventListener('floor-added', (e) => {
@@ -538,6 +886,19 @@ document.addEventListener('alpine:init', () => {
                 lucide.createIcons();
                 this.scrollToBottom();
             });
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (this.reconnectTimer) {
+                    clearTimeout(this.reconnectTimer);
+                }
+                if (this.messagePollInterval) {
+                    clearInterval(this.messagePollInterval);
+                }
+                if (this.rtChannel) {
+                    this.rtChannel.unsubscribe();
+                }
+            });
         },
 
         // Sidebar Actions
@@ -579,6 +940,26 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        async toggleRole(member) {
+            const newRole = member.role === 'editor' ? 'viewer' : 'editor';
+            try {
+                const res = await fetch(`/builds/{{ $build->id }}/members/${member.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ role: newRole })
+                });
+                if (res.ok) {
+                    member.role = newRole;
+                    this.showToast(`Role updated to ${newRole}`);
+                }
+            } catch (err) {
+                this.showToast('Failed to update role', 'error');
+            }
+        },
+
         async removeMember(userId) {
             if (!confirm('Are you sure you want to remove this member?')) return;
             try {
@@ -617,9 +998,29 @@ document.addEventListener('alpine:init', () => {
         async fetchMessages() {
             try {
                 const res = await fetch(`/api/builds/{{ $build->id }}/messages`);
+                if (!res.ok) {
+                    console.error('Failed to fetch messages, status:', res.status);
+                    return;
+                }
                 const messages = await res.json();
-                if (messages.length > this.chatMessages.length) {
-                    this.chatMessages = messages;
+                
+                // Ensure messages have required fields
+                const processedMessages = messages.map(msg => ({
+                    ...msg,
+                    message: msg.message || msg.content || '',
+                    user: msg.user || { name: msg.user_name || 'Unknown' }
+                }));
+                
+                // Merge with existing messages, avoiding duplicates by server id first
+                const existingServerIds = new Set(this.chatMessages.filter(m => m.id).map(m => m.id));
+                const newMessages = processedMessages.filter(m => !existingServerIds.has(m.id));
+                
+                console.log(`Fetched ${messages.length} messages from server, ${newMessages.length} new, ${existingServerIds.size} existing`);
+                
+                if (newMessages.length > 0) {
+                    this.chatMessages = [...this.chatMessages, ...newMessages].sort((a, b) => 
+                        new Date(a.created_at || 0) - new Date(b.created_at || 0)
+                    );
                     this.scrollToBottom();
                 }
             } catch (err) {
@@ -629,9 +1030,9 @@ document.addEventListener('alpine:init', () => {
 
         async sendMessage() {
             if (!this.newMessage.trim()) return;
-            const message = this.newMessage;
+            const messageText = this.newMessage;
             this.newMessage = '';
-            
+
             try {
                 const res = await fetch(`/api/builds/{{ $build->id }}/messages`, {
                     method: 'POST',
@@ -639,23 +1040,315 @@ document.addEventListener('alpine:init', () => {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({ message })
+                    body: JSON.stringify({ message: messageText })
                 });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    console.error('Server error saving message:', res.status, errorData);
+                    this.newMessage = messageText; // Restore for retry
+                    this.showToast('Failed to save message: ' + (errorData.error || 'Server error'), 'error');
+                    return;
+                }
+                
                 const data = await res.json();
-                this.chatMessages.push(data);
-                this.scrollToBottom();
+                console.log('Message saved successfully:', data);
+                
+                if (!data.id) {
+                    console.error('CRITICAL: Message saved but no ID returned! Data:', data);
+                    this.showToast('Message may not have saved properly', 'warning');
+                }
+
+                // Ensure message text and user_id are included (server might not return them)
+                const messageData = {
+                    ...data,
+                    message: data.message || data.content || messageText,
+                    user_id: data.user_id || '{{ $auth_user_id }}',
+                    user: data.user || { name: '{{ $auth_user_name }}' },
+                    temp_id: data.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    created_at: data.created_at || new Date().toISOString()
+                };
+
+                // Broadcast instantly using payload key
+                console.log('RT Sending Chat broadcast:', messageData);
+                const result = await this.sendBroadcast('chat', { data: messageData });
+                console.log('RT Chat broadcast result:', result);
+                if (result && result.success) {
+                    console.log('RT Chat broadcast sent via', result.method);
+                } else {
+                    console.error('RT Failed to send chat broadcast:', result?.error || 'No result returned');
+                }
+
+                // Only add if not already in list (prevent duplicates from realtime)
+                const exists = this.chatMessages.some(m => m.id === messageData.id);
+                if (!exists) {
+                    this.chatMessages.push(messageData);
+                    this.scrollToBottom();
+                } else {
+                    console.log('Message already exists, skipping duplicate');
+                }
             } catch (err) {
-                this.showToast('Failed to send message', 'error');
+                console.error('Failed to send message:', err);
+                // Restore message so user can retry
+                this.newMessage = messageText;
+                this.showToast('Failed to send message. Check connection and try again.', 'error');
             }
         },
 
         scrollToBottom() {
             this.$nextTick(() => {
                 const el = document.getElementById('chat-messages');
-                if (el) el.scrollTop = el.scrollHeight;
+                // With column-reverse, newest messages are at visual bottom (scrollTop: 0)
+                if (el) el.scrollTop = 0;
             });
         },
-        
+
+        formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        },
+
+        processSyncEvent(data) {
+            try {
+                console.log('RT Processing action:', data.action, 'Data:', data);
+
+                if (data.action === 'add' && data.data) {
+                    console.log('RT Rendering Remote Part:', data.data);
+                    window.editor.addPartToScene(data.data, false);
+                } else if (data.action === 'delete' && data.id) {
+                    console.log('RT Deleting Remote Part ID:', data.id);
+                    window.editor.deletePartFromRealtime(data.id);
+                } else if (data.action === 'update' && data.id && data.data) {
+                    console.log('RT Updating Remote Part ID:', data.id);
+                    window.editor.updatePartInRealtime(data.id, data.data);
+                } else {
+                    console.warn('RT Sync: Unknown action or missing data fields', data);
+                }
+            } catch (err) {
+                console.error('RT Sync Error:', err);
+            }
+        },
+
+        async syncMissedParts() {
+            if (!window.editor) {
+                console.warn('RT Cannot sync parts - editor not ready');
+                return;
+            }
+            
+            console.log('RT Syncing missed parts from database...');
+            
+            try {
+                const response = await fetch(`/api/builds/{{ $build->id }}/parts`, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const parts = await response.json();
+                let addedCount = 0;
+                let skippedCount = 0;
+                
+                // Get existing part IDs from editor's parts Map
+                const existingIds = Array.from(window.editor.parts?.keys() || []);
+                
+                parts.forEach(partData => {
+                    // Check if part already exists (by UUID from database)
+                    const exists = existingIds.some(id => id.includes(partData.id) || id === partData.id);
+                    
+                    if (!exists) {
+                        console.log('RT Adding missed part:', partData.id);
+                        window.editor.addPartToScene(partData, false);
+                        addedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                });
+                
+                if (addedCount > 0) {
+                    console.log(`RT Synced ${addedCount} missed parts from database (${skippedCount} already existed)`);
+                    this.showToast(`Synced ${addedCount} parts that were added while you were offline`, 'success');
+                } else {
+                    console.log(`RT No missed parts to sync - all ${skippedCount} parts already up to date`);
+                }
+            } catch (error) {
+                console.error('RT Error syncing missed parts:', error);
+                this.showToast('Could not sync missed parts', 'warning');
+            }
+        },
+
+        handleReconnection() {
+            if (this.isReconnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
+                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                    console.error('RT Max reconnection attempts reached. Please refresh the page.');
+                    this.showToast('Connection lost. Please refresh the page.', 'error');
+                }
+                return;
+            }
+
+            this.isReconnecting = true;
+            this.reconnectAttempts++;
+            
+            // Exponential backoff: 3s, 6s, 12s, 24s, ... up to 60s max (slower for localhost stability)
+            const delay = Math.min(this.reconnectDelay * 3 * Math.pow(2, this.reconnectAttempts - 1), 60000);
+            
+            console.log(`RT Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
+            this.showToast(`Reconnecting... (attempt ${this.reconnectAttempts})`, 'warning');
+
+            this.reconnectTimer = setTimeout(() => {
+                console.log('RT Attempting to recreate channel...');
+                
+                // Generate new channel ID for this reconnection attempt
+                const reconnectionChannelId = 'reconn_' + Date.now() + '_' + this.reconnectAttempts;
+                const previousChannelId = this.activeChannelId;
+                this.activeChannelId = reconnectionChannelId;
+                console.log(`RT Switching from channel ${previousChannelId} to ${reconnectionChannelId}`);
+                
+                // Unsubscribe from old channel if exists
+                if (this.rtChannel) {
+                    this.rtChannel.unsubscribe();
+                }
+                
+                // Create new channel
+                this.rtChannel = this.supabase.channel('build:{{ $build->id }}', {
+                    config: {
+                        broadcast: { self: false },
+                        presence: { key: '{{ $auth_user_id }}' + '_' + this.tabId }
+                    }
+                });
+
+                // Re-attach all listeners
+                this.rtChannel
+                    .on('presence', { event: 'sync' }, () => {
+                        const state = this.rtChannel.presenceState();
+                        if (window.editor) window.editor.updateRemoteCursors(state);
+                    })
+                    .on('broadcast', { event: 'chat' }, (payload) => {
+                        console.log('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
+                        // Try multiple possible payload structures
+                        let msg = payload.payload?.data || payload.payload || payload.data || payload;
+                        console.log('RT Extracted chat message:', msg);
+                        
+                        if (msg && (msg.message || msg.content || msg.text)) {
+                            const messageWithId = {
+                                ...msg,
+                                temp_id: msg.id || msg.temp_id || `rt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                created_at: msg.created_at || new Date().toISOString()
+                            };
+                            
+                            const exists = this.chatMessages.some(m => 
+                                (m.id && m.id === messageWithId.id) || 
+                                (m.temp_id && m.temp_id === messageWithId.temp_id)
+                            );
+                            
+                            if (!exists) {
+                                this.chatMessages.push(messageWithId);
+                                this.scrollToBottom();
+                                console.log('RT Chat message added:', messageWithId);
+                            }
+                        }
+                    })
+                    .on('broadcast', { event: 'sync-part' }, (payload) => {
+                        console.log('RT Received Sync-Part Envelope:', JSON.stringify(payload, null, 2));
+                        const data = payload.payload;
+                        
+                        if (!data || !data.action) {
+                            console.warn('RT Sync: Invalid payload - missing action', { payload, extractedData: data });
+                            return;
+                        }
+
+                        if (!window.editor) {
+                            console.log('RT Sync: Editor not ready, queuing event:', data.action, 'Queue size:', this.pendingSyncEvents.length + 1);
+                            this.pendingSyncEvents.push(data);
+                            return;
+                        }
+
+                        this.processSyncEvent(data);
+                    })
+                    .subscribe(async (status) => {
+                        // Check if this reconnection channel is still the active one
+                        if (reconnectionChannelId !== this.activeChannelId) {
+                            console.log(`RT Ignoring reconnection event from old channel ${reconnectionChannelId}, current is ${this.activeChannelId}`);
+                            return;
+                        }
+                        
+                        console.log('RT Reconnection Status:', status);
+                        this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : (status === 'CLOSED' ? 'closed' : 'error');
+                        
+                        if (status === 'SUBSCRIBED') {
+                            this.reconnectAttempts = 0;
+                            this.isReconnecting = false;
+                            this.showToast('Reconnected successfully!', 'success');
+                            
+                            await this.rtChannel.track({
+                                online_at: new Date().toISOString(),
+                                name: '{{ $auth_user_name }}',
+                                role: this.userRole,
+                                tabId: this.tabId
+                            });
+                            
+                            // Update editor reference
+                            if (window.editor) {
+                                window.editor.rtChannel = this.rtChannel;
+                            }
+                            
+                            console.log('RT Reconnected and presence tracked');
+                            
+                            // Sync any parts that were added while we were offline
+                            await this.syncMissedParts();
+                        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                            this.isReconnecting = false;
+                            // Only trigger reconnection if this is still the active channel
+                            if (reconnectionChannelId === this.activeChannelId && !this.isReconnecting) {
+                                this.handleReconnection();
+                            }
+                        }
+                    });
+            }, delay);
+        },
+
+        async sendBroadcast(event, payload) {
+            // Try WebSocket first if connected
+            if (this.rtStatus === 'connected') {
+                try {
+                    await this.rtChannel.send({
+                        type: 'broadcast',
+                        event: event,
+                        payload: payload
+                    });
+                    return { success: true, method: 'websocket' };
+                } catch (err) {
+                    console.warn('RT WebSocket broadcast failed, falling back to REST:', err);
+                }
+            }
+            
+            // Fallback to REST API (works even when WebSocket is down)
+            try {
+                await this.rtChannel.send({
+                    type: 'broadcast',
+                    event: event,
+                    payload: payload
+                }, { httpSend: true });
+                console.log('RT Broadcast sent via REST API');
+                return { success: true, method: 'rest' };
+            } catch (err) {
+                console.error('RT Both WebSocket and REST broadcast failed:', err);
+                
+                // If connection is down, trigger reconnection
+                if (this.rtStatus === 'closed' || this.rtStatus === 'error') {
+                    this.handleReconnection();
+                }
+                
+                return { success: false, error: err };
+            }
+        },
+
         setFloor(floor) {
             this.currentFloor = floor;
             if (typeof editor !== 'undefined') editor.setFloor(floor);
@@ -861,6 +1554,69 @@ document.addEventListener('alpine:init', () => {
         background: var(--bg-tertiary);
         border-color: var(--accent);
     }
+
+    .material-btn.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    /* Real-time Indicator Styling */
+    .rt-indicator {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: var(--bg-secondary);
+        border-radius: 6px;
+        margin-left: 8px;
+    }
+
+    .rt-indicator__dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #94a3b8; /* Connecting/Initial */
+        position: relative;
+    }
+
+    .rt-indicator__dot.connecting {
+        background: #eab308;
+        box-shadow: 0 0 8px #eab308;
+        animation: rt-pulse 1.5s infinite;
+    }
+
+    .rt-indicator__dot.connected {
+        background: #22c55e;
+        box-shadow: 0 0 8px #22c55e;
+    }
+
+    .rt-indicator__dot.error, .rt-indicator__dot.closed {
+        background: #ef4444;
+        box-shadow: 0 0 8px #ef4444;
+    }
+
+    .rt-indicator__dot.reconnecting {
+        background: #f97316;
+        box-shadow: 0 0 8px #f97316;
+        animation: rt-pulse 1s infinite;
+    }
+
+    .rt-indicator__label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+    }
+
+    @keyframes rt-pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Collaboration Sidebar */
 
     .editor-topbar__center {
         flex: 1;
@@ -1229,6 +1985,75 @@ document.addEventListener('alpine:init', () => {
     .swal-toast {
         padding: 12px 20px !important;
         border-radius: 16px !important;
+    }
+
+    /* ============ MEMBER LIST PREMIUM STYLES ============ */
+    .member-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: 18px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        margin-bottom: 8px;
+    }
+
+    .member-item:hover {
+        background: var(--surface-up);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+    }
+
+    .member-item.group:hover .member-role {
+        color: var(--accent);
+    }
+
+    .member-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .avatar--sm {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 2px solid white;
+    }
+
+    /* BULLETPROOF DROPDOWN FIXES */
+    .member-item button {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Force horizontal layout for dropdown actions */
+    .dropdown-action-btn {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        height: auto !important;
+        padding: 8px 12px !important;
+        width: 100% !important;
+    }
+
+    .action-icon-box {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .member-dropdown-menu {
+        transform-origin: top right;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
     }
 </style>
 @endpush

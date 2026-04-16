@@ -9,11 +9,9 @@
         aria-label="User menu"
     >
         <div class="profile-dropdown__avatar">
-            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->profile_photo_path): ?>
-                <img src="<?php echo e(auth()->user()->profile_photo_url); ?>" alt="<?php echo e(auth()->user()->name); ?>" class="profile-dropdown__avatar-img">
-            <?php else: ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($auth_user && $auth_user->name): ?>
                 <span class="profile-dropdown__initials">
-                    <?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?><?php echo e(strtoupper(substr(explode(' ', auth()->user()->name)[1] ?? auth()->user()->name, 0, 1))); ?>
+                    <?php echo e(strtoupper(substr($auth_user->name ?? '', 0, 1))); ?><?php echo e(strtoupper(substr(explode(' ', $auth_user->name ?? '')[1] ?? '', 0, 1))); ?>
 
                 </span>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
@@ -35,8 +33,8 @@
     >
         
         <div class="profile-dropdown__header">
-            <div class="profile-dropdown__name"><?php echo e(auth()->user()->name); ?></div>
-            <div class="profile-dropdown__email"><?php echo e(auth()->user()->email); ?></div>
+            <div class="profile-dropdown__name"><?php echo e($auth_user->name ?? 'User'); ?></div>
+            <div class="profile-dropdown__email"><?php echo e($auth_user->email ?? ''); ?></div>
         </div>
 
         <div class="profile-dropdown__divider"></div>
@@ -57,7 +55,7 @@
             <span>Settings</span>
         </a>
 
-        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->is_admin ?? false): ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($auth_user && $auth_user->is_admin): ?>
             <a href="<?php echo e(route('admin.dashboard')); ?>" class="profile-dropdown__item profile-dropdown__item--admin" @click="open = false">
                 <i data-lucide="shield" class="profile-dropdown__icon"></i>
                 <span>Admin Dashboard</span>

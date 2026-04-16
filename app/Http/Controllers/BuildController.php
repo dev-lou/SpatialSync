@@ -2,33 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Build;
-use App\Models\PartPreset;
-use App\Models\User;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Services\SupabaseClient;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class BuildController extends Controller
 {
-    use AuthorizesRequests;
+    protected SupabaseClient $supabase;
 
-    public function index()
+    public function __construct()
     {
-        $user = Auth::user();
-        $teamId = $user->current_team_id ?? $user->ownedTeams()->first()?->id;
+        $this->supabase = app(SupabaseClient::class);
+    }
 
-        $builds = Build::where('team_id', $teamId)
-            ->with('creator')
-            ->latest()
-            ->get();
+    protected function getUserId(Request $request): string
+    {
+        return $request->session()->get('supabase_user_id');
+    }
+
+    protected function getUserName(Request $request): string
+    {
+        return $request->session()->get('supabase_user_name', 'User');
+    }
+
+    public function index(Request $request)
+    {
+        $userId = $this->getUserId($request);
+
+        // 1. Get builds owned by the user
+        $allBuilds = $this->supabase->select('builds', ['*'], []);
+        $ownedBuilds = array_filter($allBuilds, function ($build) use ($userId) {
+            return isset($build['created_by']) && $build['created_by'] === $userId;
+        });
+
+        // 2. Get builds where user is a member (Invited)
+        $memberships = $this->supabase->select('build_members', ['build_id', 'role'], ['user_id' => $userId]);
+        $sharedBuildIds = array_column($memberships, 'build_id');
+        $roleMap = array_column($memberships, 'role', 'build_id');
+        
+        $invitedBuilds = array_filter($allBuilds, function ($build) use ($sharedBuildIds, $userId) {
+            // Avoid duplicates if owner is also in members table
+            return in_array($build['id'], $sharedBuildIds) && $build['created_by'] !== $userId;
+        });
+
+        // 3. Combine and flag roles
+        $combined = [];
+        foreach ($ownedBuilds as $b) {
+            $b['user_role'] = 'owner';
+            $combined[] = (object) $b;
+        }
+        foreach ($invitedBuilds as $b) {
+            $b['user_role'] = $roleMap[$b['id']] ?? 'viewer';
+            $combined[] = (object) $b;
+        }
+
+        // 4. Sort by created_at descending
+        usort($combined, function ($a, $b) {
+            return ($b->created_at ?? '') <=> ($a->created_at ?? '');
+        });
+
+        $builds = collect($combined);
 
         return view('builds.index', compact('builds'));
     }
 
     public function create()
     {
-        $presets = PartPreset::active()->orderBy('type')->orderBy('name')->get()->groupBy('type');
+        $presetsData = $this->supabase->select('part_presets', ['*'], ['is_active' => 'true']);
+        $presets = collect($presetsData)->groupBy('type');
 
         return view('builds.create', compact('presets'));
     }
@@ -40,188 +81,365 @@ class BuildController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $user = Auth::user();
-        $teamId = $user->current_team_id ?? $user->ownedTeams()->first()?->id;
+        $userId = $this->getUserId($request);
 
-        $build = Build::create([
-            'team_id' => $teamId,
+        $buildData = [
+            'id' => Str::uuid()->toString(),
+            'team_id' => null,
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'created_by' => Auth::id(),
+            'created_by' => $userId,
             'current_floor' => 1,
             'roof_visible' => true,
-            'canvas_json' => ['version' => '1.0', 'parts' => []],
-        ]);
+            'canvas_json' => json_encode(['version' => '1.0', 'parts' => []]),
+        ];
 
-        $build->members()->attach(Auth::id(), ['role' => 'editor']);
+        try {
+            $build = $this->supabase->insert('builds', $buildData);
 
-        return redirect()->route('builds.show', $build);
+            if (! $build) {
+                \Log::error('Supabase insert failed for build: '.json_encode($buildData));
+
+                return back()->with('error', 'Failed to create build. Please try again.');
+            }
+
+            return redirect()->route('builds.show', ['build' => $build['id']]);
+        } catch (\Exception $e) {
+            \Log::error('Exception in BuildController@store: '.$e->getMessage());
+
+            return back()->with('error', 'An error occurred while creating the build.');
+        }
     }
 
-    public function show(Build $build)
+    public function show(Request $request, $buildId)
     {
-        $this->authorize('view', $build);
+        $userId = $this->getUserId($request);
+        $userName = $this->getUserName($request);
 
-        $members = $build->members()->withPivot('role')->get();
-        $messages = $build->messages()->with('user')->latest()->take(50)->get()->reverse()->values();
-        $userRole = $build->userRole(Auth::user());
+        // 1. Fetch the Build
+        $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
+        if (empty($builds)) {
+            abort(404, 'Build not found');
+        }
+        $build = (object) $builds[0];
 
-        // Get part presets for the UI
-        $presets = PartPreset::active()->orderBy('type')->orderBy('name')->get()->groupBy('type');
+        // 2. Determine Role & Privacy Check
+        $userRole = 'viewer';
+        if ($build->created_by === $userId) {
+            $userRole = 'owner';
+        } else {
+            // Check if invited
+            $memberships = $this->supabase->select('build_members', ['role'], [
+                'build_id' => $buildId,
+                'user_id' => $userId
+            ]);
 
-        // Prepare members array for JavaScript
-        $membersData = array_merge(
-            [['id' => Auth::id(), 'name' => Auth::user()->name, 'role' => $userRole, 'isOnline' => true, 'isEditing' => false, 'color' => '#0066FF', 'color2' => '#818CF8']],
-            $members->map(function ($m) {
-                return [
-                    'id' => $m->id,
-                    'name' => $m->name,
-                    'role' => $m->pivot->role ?? 'viewer',
-                    'isOnline' => false,
-                    'isEditing' => false,
-                    'color' => '#10B981',
-                    'color2' => '#34D399',
-                ];
-            })->toArray()
-        );
+            if (empty($memberships)) {
+                // Strict Privacy: Only owner and invitees can enter
+                abort(403, 'You do not have permission to access this build.');
+            }
+            $userRole = $memberships[0]['role'];
+        }
 
-        return view('builds.show', compact('build', 'members', 'messages', 'userRole', 'membersData', 'presets'));
+        // 3. Fetch Members (Persistence)
+        $rawMembers = $this->supabase->select('build_members', ['*'], ['build_id' => $buildId]);
+        
+        // We need player names, so let's get all users who are members
+        $allUsers = $this->supabase->select('users', ['id', 'name'], []); // Ideally use a join or IN query if supported
+        $userMap = collect($allUsers)->keyBy('id');
+
+        $membersData = [];
+        
+        // Add the owner first
+        $ownerUser = $userMap->get($build->created_by);
+        $membersData[] = [
+            'id' => $build->created_by,
+            'name' => ($ownerUser['name'] ?? 'Owner') . ($userId === $build->created_by ? ' (You)' : ''),
+            'role' => 'owner',
+            'isOnline' => true, // Default for now
+            'color' => '#0066FF',
+            'color2' => '#818CF8'
+        ];
+
+        // Add invited members
+        foreach ($rawMembers as $m) {
+            if ($m['user_id'] === $build->created_by) continue; // Skip if owner is also in members table redundant
+            
+            $u = $userMap->get($m['user_id']);
+            $membersData[] = [
+                'id' => $m['user_id'],
+                'name' => ($u['name'] ?? 'Guest') . ($userId === $m['user_id'] ? ' (You)' : ''),
+                'role' => $m['role'],
+                'isOnline' => false,
+                'color' => '#6B7280',
+                'color2' => '#9CA3AF'
+            ];
+        }
+
+        // 4. Fetch Chat History (Persistence)
+        $messages = $this->supabase->select('build_messages', ['*'], ['build_id' => $buildId]);
+        // Sort by time or take last 50
+        $messages = collect($messages)->sortBy('created_at')->values()->all();
+
+        // 5. Fetch Presets for editor
+        $presetsData = $this->supabase->select('part_presets', ['*'], ['is_active' => 'true']);
+        $presets = collect($presetsData)->groupBy('type');
+
+        $auth_user_id = $userId;
+        $auth_user_name = $userName;
+
+        return view('builds.show', compact(
+            'build', 
+            'userRole', 
+            'membersData', 
+            'messages', 
+            'presets', 
+            'auth_user_id',
+            'auth_user_name'
+        ));
     }
 
-    public function update(Request $request, Build $build)
+    public function update(Request $request, $buildId)
     {
-        $this->authorize('update', $build);
-
         $validated = $request->validate([
             'current_floor' => 'integer|min:1|max:10',
             'roof_visible' => 'boolean',
         ]);
 
-        $build->update($validated);
+        $updateData = [];
+        if (isset($validated['current_floor'])) {
+            $updateData['current_floor'] = $validated['current_floor'];
+        }
+        if (isset($validated['roof_visible'])) {
+            $updateData['roof_visible'] = $validated['roof_visible'];
+        }
 
-        return response()->json($build);
+        $this->supabase->update('builds', $updateData, ['id' => $buildId]);
+
+        return response()->json(['success' => true]);
     }
 
-    public function duplicate(Build $build)
+    public function duplicate(Request $request, $buildId)
     {
-        $this->authorize('view', $build);
+        $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
 
-        $copy = $build->replicate();
-        $copy->name = $build->name.' (Copy)';
-        $copy->save();
+        if (empty($builds)) {
+            abort(404, 'Build not found');
+        }
 
-        $copy->members()->attach(Auth::id(), ['role' => 'editor']);
+        $original = $builds[0];
+        $userId = $this->getUserId($request);
 
-        return redirect()->route('builds.show', $copy);
+        $copyData = [
+            'id' => Str::uuid()->toString(),
+            'team_id' => $original['team_id'] ?? null,
+            'name' => ($original['name'] ?? 'Build').' (Copy)',
+            'description' => $original['description'] ?? null,
+            'created_by' => $userId,
+            'current_floor' => $original['current_floor'] ?? 1,
+            'roof_visible' => $original['roof_visible'] ?? true,
+            'canvas_json' => $original['canvas_json'] ?? json_encode(['version' => '1.0', 'parts' => []]),
+        ];
+
+        $this->supabase->insert('builds', $copyData);
+
+        return redirect()->route('builds.show', ['build' => $copyData['id']]);
     }
 
-    public function destroy(Build $build)
+    public function destroy(Request $request, $buildId)
     {
-        $this->authorize('delete', $build);
+        try {
+            // Cascade delete: Clean up dependent tables first
+            // Note: In a production Supabase setup, you'd ideally use "ON DELETE CASCADE" in the DB.
+            // But doing it here ensures reliability during our migration transition.
+            
+            $this->supabase->delete('build_parts', ['build_id' => $buildId]);
+            $this->supabase->delete('build_members', ['build_id' => $buildId]);
+            $this->supabase->delete('build_messages', ['build_id' => $buildId]);
 
-        $build->delete();
+            // Finally, delete the build record
+            $deleted = $this->supabase->delete('builds', ['id' => $buildId]);
 
-        return redirect()->route('dashboard');
+            if (! $deleted) {
+                \Log::error('Failed to delete build from Supabase after cleanup: build_id='.$buildId);
+
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json(['error' => 'Failed to delete build.'], 500);
+                }
+                return back()->with('error', 'Failed to delete build. Please try again.');
+            }
+
+            \Log::info('Build and related data deleted successfully: build_id='.$buildId);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Build deleted successfully.']);
+            }
+            return redirect()->route('dashboard')->with('success', 'Build deleted successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Exception in BuildController@destroy: '.$e->getMessage());
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'An error occurred while deleting the build.'], 500);
+            }
+            return back()->with('error', 'An error occurred while deleting the build.');
+        }
     }
 
-    public function addMember(Request $request, Build $build)
+    public function addMember(Request $request, $buildId)
     {
-        $this->authorize('update', $build);
-
         $validated = $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email',
             'role' => 'required|in:viewer,editor',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $users = $this->supabase->select('users', ['*'], ['email' => $validated['email']]);
 
-        $build->members()->syncWithoutDetaching([
-            $user->id => ['role' => $validated['role']],
-        ]);
+        if (empty($users)) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
+        $user = $users[0];
+
+        $memberData = [
+            'id' => Str::uuid()->toString(),
+            'build_id' => $buildId,
+            'user_id' => $user['id'],
+            'role' => $validated['role'],
+        ];
+
+        $this->supabase->insert('build_members', $memberData);
 
         return response()->json([
-            'message' => "{$user->name} added as {$validated['role']}.",
+            'message' => "{$user['name']} added as {$validated['role']}.",
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
+                'id' => $user['id'],
+                'name' => $user['name'],
                 'role' => $validated['role'],
-            ]
+            ],
+        ]);
+    }
+
+    public function updateMemberRole(Request $request, $buildId, $userId)
+    {
+        $validated = $request->validate([
+            'role' => 'required|in:viewer,editor',
+        ]);
+
+        // Find the member record in Supabase
+        $this->supabase->update('build_members', 
+            ['role' => $validated['role']], 
+            ['build_id' => $buildId, 'user_id' => $userId]
+        );
+
+        return response()->json([
+            'message' => 'Member role updated successfully.',
+            'role' => $validated['role']
         ]);
     }
 
     public function searchUsers(Request $request)
     {
         $query = $request->get('q');
-        if (strlen($query) < 2) return response()->json([]);
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
 
-        $users = User::where('name', 'like', "%{$query}%")
-            ->orWhere('email', 'like', "%{$query}%")
-            ->take(5)
-            ->get(['id', 'name', 'email']);
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'email'], []);
+
+        $filtered = array_filter($allUsers, function ($user) use ($query) {
+            $name = strtolower($user['name'] ?? '');
+            $email = strtolower($user['email'] ?? '');
+            $q = strtolower($query);
+
+            return str_contains($name, $q) || str_contains($email, $q);
+        });
+
+        $users = array_slice(array_values($filtered), 0, 5);
 
         return response()->json($users);
     }
 
-    public function createShare(Build $build)
+    public function createShare($buildId)
     {
-        $this->authorize('update', $build);
+        $token = Str::random(32);
 
-        $share = $build->shares()->firstOrCreate(
-            ['user_id' => Auth::id()],
-            ['token' => \App\Models\BuildShare::generateToken()]
-        );
+        $shareData = [
+            'id' => Str::uuid()->toString(),
+            'build_id' => $buildId,
+            'share_token' => $token,
+            'access_level' => 'view',
+        ];
+
+        $this->supabase->insert('build_shares', $shareData);
 
         return response()->json([
-            'url' => route('builds.shared', ['build' => $build, 'token' => $share->token])
+            'url' => route('builds.shared', ['build' => $buildId, 'token' => $token]),
         ]);
     }
 
-    public function removeMember(Build $build, User $user)
+    public function removeMember($buildId, $userId)
     {
-        $this->authorize('update', $build);
+        $this->supabase->delete('build_members', [
+            'build_id' => $buildId,
+            'user_id' => $userId
+        ]);
 
-        if ($user->id === Auth::id()) {
-            return back()->with('error', 'You cannot remove yourself.');
-        }
-
-        $build->members()->detach($user->id);
-
-        return back()->with('success', "{$user->name} removed.");
+        return response()->json(['success' => true, 'message' => 'Member removed.']);
     }
 
-    public function export(Build $build, string $format)
+    public function export($buildId, string $format)
     {
-        $this->authorize('view', $build);
+        $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
+
+        if (empty($builds)) {
+            abort(404, 'Build not found');
+        }
+
+        $build = $builds[0];
+        $parts = $this->supabase->select('build_parts', ['*'], ['build_id' => $buildId]);
 
         if ($format === 'json') {
             $exportData = [
-                'name' => $build->name,
-                'description' => $build->description,
+                'name' => $build['name'],
+                'description' => $build['description'],
                 'version' => '1.0',
                 'exported_at' => now()->toIso8601String(),
-                'current_floor' => $build->current_floor,
-                'roof_visible' => $build->roof_visible,
-                'parts' => $build->parts()->get()->toArray(),
+                'current_floor' => $build['current_floor'],
+                'roof_visible' => $build['roof_visible'],
+                'parts' => $parts,
             ];
 
             return response()->json($exportData)
-                ->header('Content-Disposition', 'attachment; filename='.$build->name.'.json');
+                ->header('Content-Disposition', 'attachment; filename='.$build['name'].'.json');
         }
 
         abort(404, 'Export format not supported');
     }
 
-    public function shared(Build $build, string $token)
+    public function shared($buildId, string $token)
     {
-        $share = $build->shares()->where('token', $token)->first();
+        $shares = $this->supabase->select('build_shares', ['*'], [
+            'build_id' => $buildId,
+            'share_token' => $token,
+        ]);
 
-        if (! $share) {
+        if (empty($shares)) {
             abort(403, 'Invalid share link.');
         }
 
-        $members = $build->members()->withPivot('role')->get();
-        $messages = $build->messages()->with('user')->latest()->take(50)->get()->reverse()->values();
-        $presets = PartPreset::active()->orderBy('type')->orderBy('name')->get()->groupBy('type');
+        $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
+
+        if (empty($builds)) {
+            abort(404, 'Build not found');
+        }
+
+        $build = (object) $builds[0];
+
+        $presetsData = $this->supabase->select('part_presets', ['*'], ['is_active' => 'true']);
+        $presets = collect($presetsData)->groupBy('type');
+
+        $members = collect([]);
+        $messages = collect([]);
 
         return view('builds.shared', compact('build', 'members', 'messages', 'presets'));
     }

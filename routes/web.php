@@ -46,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/builds/{build}', [BuildController::class, 'destroy'])->name('builds.destroy');
     Route::post('/builds/{build}/members', [BuildController::class, 'addMember'])->name('builds.members.add');
     Route::delete('/builds/{build}/members/{user}', [BuildController::class, 'removeMember'])->name('builds.members.remove');
+    Route::patch('/builds/{build}/members/{user}', [BuildController::class, 'updateMemberRole'])->name('builds.members.updateRole');
     Route::get('/users/search', [BuildController::class, 'searchUsers'])->name('users.search');
     Route::post('/builds/{build}/share', [BuildController::class, 'createShare'])->name('builds.share.create');
     Route::get('/builds/{build}/export/{format}', [BuildController::class, 'export'])->name('builds.export');

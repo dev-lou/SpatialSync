@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ConstructHub') — 3D House Builder</title>
     <meta name="description" content="@yield('description', 'Build houses and buildings together with real-time collaboration. Perfect for anyone who wants to create their dream home.')">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230066FF'/><path d='M25 70 L50 30 L75 70 Z' fill='white'/></svg>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

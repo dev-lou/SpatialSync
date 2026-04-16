@@ -2,15 +2,16 @@
 // Bloxburg 2026 Build Mode — Full Feature Set
 // UPDATED: 2026-04-09
 
-const DEBUG_MODE = false;
+const DEBUG_MODE = true;
 
 class BuildEditor {
     constructor(container, buildId, csrfToken) {
         if (DEBUG_MODE) console.log('[Editor] Initializing with build ID:', buildId);
         
-        this.buildId = buildId;
-        this.csrfToken = csrfToken;
         this.container = container;
+        this.rtChannel = null;
+        this.myPresenceKey = null;
+        this.userRole = 'editor';
         
         // State
         this.scene = null;
@@ -98,6 +99,12 @@ class BuildEditor {
         this.minBound = 0.5;
         this.maxBound = 19.5;
         
+        // COLLABORATION STATE
+        this.rtChannel = null;
+        this.userRole = 'viewer';
+        this.remoteCursors = new Map(); // userId -> { mesh, label }
+        this.lastPresenceSent = 0;
+        
         // Platform mesh
         this.platform = null;
         this.platformEdges = null;
@@ -126,6 +133,8 @@ class BuildEditor {
         // Push a state to history so we can intercept the Back button
         window.history.pushState({ editor: true }, '', window.location.href);
         
+        // Supabase Realtime is now handled by Alpine.js in show.blade.php
+        
         if (DEBUG_MODE) console.log('[Editor] Loading parts...');
         await this.loadParts();
         
@@ -138,6 +147,134 @@ class BuildEditor {
         
         if (DEBUG_MODE) console.log('[Editor] Initialization complete');
     }
+    
+    // ============ SUPABASE REALTIME ============
+    
+    trackPresence(mousePos) {
+        if (!this.rtChannel) return;
+        
+        const now = Date.now();
+        if (now - this.lastPresenceSent < 50) return; // Throttling 20fps
+        
+        // Use the title from the page or a fallback
+        const userName = document.querySelector('.editor-topbar__title')?.textContent.split(' - ')[1] || 'Collaborator';
+        
+        if (DEBUG_MODE) console.log('[RT] Tracking presence:', userName, mousePos);
+
+        this.rtChannel.track({
+            cursor: { x: mousePos.x, y: mousePos.y, z: mousePos.z },
+            name: userName,
+            role: this.userRole
+        });
+        
+        this.lastPresenceSent = now;
+    }
+
+    updateRemoteCursors(presenceState) {
+        if (DEBUG_MODE) console.log('[RT] Presence Sync Received:', presenceState);
+        // Clear old ones not in state
+        const currentIds = new Set(Object.keys(presenceState));
+        for (const [userId, cursor] of this.remoteCursors.entries()) {
+            if (!currentIds.has(userId)) {
+                this.scene.remove(cursor.mesh);
+                this.remoteCursors.delete(userId);
+            }
+        }
+
+        // Update/Create
+        for (const userId in presenceState) {
+            // Don't draw our own
+            if (userId === this.myPresenceKey) continue;
+
+            const userState = presenceState[userId][0];
+            if (!userState || !userState.cursor) continue;
+
+            let cursor = this.remoteCursors.get(userId);
+            if (!cursor) {
+                cursor = this.createRemoteCursorMesh(userState.name);
+                this.scene.add(cursor.mesh);
+                this.remoteCursors.set(userId, cursor);
+            }
+
+            cursor.mesh.position.set(userState.cursor.x, userState.cursor.y, userState.cursor.z);
+        }
+    }
+
+    createRemoteCursorMesh(name) {
+        // Simple pointer (Cone)
+        const geometry = new THREE.ConeGeometry(0.1, 0.3, 8);
+        geometry.rotateX(Math.PI); // Point down
+        const material = new THREE.MeshPhongMaterial({ color: 0x3b82f6, emissive: 0x1d4ed8 });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        // Name tag (Billboard CSS renderer style but simplified for this demo as a sprite)
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.roundRect(0, 0, 128, 32, 8);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 16px Plus Jakarta Sans';
+        ctx.textAlign = 'center';
+        ctx.fillText(name, 64, 22);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.position.y = 0.5;
+        sprite.scale.set(1, 0.25, 1);
+        mesh.add(sprite);
+
+        return { mesh };
+    }
+
+    deletePartFromRealtime(id) {
+        const part = this.parts.get(id);
+        if (part) {
+            this.scene.remove(part.mesh);
+            this.parts.delete(id);
+        }
+    }
+
+    updatePartInRealtime(partId, newData) {
+        const part = this.parts.get(partId);
+        if (!part) return;
+
+        // Apply visual updates
+        if (newData.position_x !== undefined) {
+            part.mesh.position.set(newData.position_x, newData.position_y, newData.position_z);
+            part.data.position_x = newData.position_x;
+            part.data.position_y = newData.position_y;
+            part.data.position_z = newData.position_z;
+        }
+
+        if (newData.rotation_y !== undefined) {
+            part.mesh.rotation.y = (newData.rotation_y || 0) * Math.PI / 180;
+            part.data.rotation_y = newData.rotation_y;
+        }
+
+        if (newData.color !== undefined) {
+            part.mesh.userData.color = newData.color;
+            part.data.color = newData.color;
+            
+            const applyColor = (mat) => {
+                if (mat && mat.color && typeof mat.color.set === 'function') {
+                    if (mat.transparent || mat.opacity < 1) return;
+                    mat.color.set(newData.color);
+                }
+            };
+            part.mesh.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(applyColor);
+                    else applyColor(child.material);
+                }
+            });
+        }
+    }
+
+    // ============ SCENE SETUP ============
     
     // ============ DISPOSAL HELPERS ============
     
@@ -176,24 +313,26 @@ class BuildEditor {
         const gs = this.gridSize;
         
         // Find distance to nearest vertical line (multiples of gs)
-        const snapXLine = Math.round(x / gs) * gs;
-        const distToVertEdge = Math.abs(x - snapXLine);
+        const vLineX = Math.round(x / gs) * gs;
+        const distToVLine = Math.abs(x - vLineX);
         
         // Find distance to nearest horizontal line (multiples of gs)
-        const snapZLine = Math.round(z / gs) * gs;
-        const distToHorizEdge = Math.abs(z - snapZLine);
+        const hLineZ = Math.round(z / gs) * gs;
+        const distToHLine = Math.abs(z - hLineZ);
         
         let snapX, snapZ, isVertical;
         
-        if (distToVertEdge <= distToHorizEdge) {
-            // Snap to vertical edge: X is exactly on the line, Z is halfway between lines
-            snapX = snapXLine;
+        if (distToVLine <= distToHLine) {
+            // We are closer to a vertical grid line.
+            // Snap X to the line, and Z to the center of the nearest grid cell segment.
+            snapX = vLineX;
             snapZ = Math.floor(z / gs) * gs + gs / 2;
             isVertical = true;
         } else {
-            // Snap to horizontal edge: Z is exactly on the line, X is halfway between lines
+            // We are closer to a horizontal grid line.
+            // Snap Z to the line, and X to the center of the nearest grid cell segment.
             snapX = Math.floor(x / gs) * gs + gs / 2;
-            snapZ = snapZLine;
+            snapZ = hLineZ;
             isVertical = false;
         }
         
@@ -674,16 +813,18 @@ class BuildEditor {
     }
     
     // ============ ADD PART TO SCENE ============
-    
+
     addPartToScene(partData, save = true) {
+        console.log(`[Editor] addPartToScene called - save=${save}, partData=`, partData);
+
         const tempId = partData.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         partData.id = tempId;
-        
+
         const mesh = this.createPartMesh(partData);
-        
+
         mesh.position.set(partData.position_x, partData.position_y, partData.position_z);
         mesh.rotation.y = (partData.rotation_y || 0) * Math.PI / 180;
-        
+
         mesh.userData = {
             id: tempId,
             type: partData.type,
@@ -697,16 +838,27 @@ class BuildEditor {
             material: partData.material || 'default',
             floor_number: partData.floor_number || 1,
         };
-        
+
         this.scene.add(mesh);
         this.parts.set(tempId, { mesh, data: partData });
-        
+
+        // BROADCAST for Realtime
         if (save) {
+            window.dispatchEvent(new CustomEvent('part-placed', {
+                detail: {
+                    count: this.parts.size,
+                    isLocal: true,
+                    partData: partData
+                }
+            }));
+
             this.hasUnsavedChanges = true;
-            // Removed immediate save to API - Draft Mode active
             this.showToastEvent('Draft Updated', 'info');
+            console.log('[Editor] Local part placed and broadcast:', tempId);
+        } else {
+            console.log('[Editor] RT Rendered Remote Part:', tempId, partData);
         }
-        
+
         return mesh;
     }
     
@@ -801,6 +953,15 @@ class BuildEditor {
         }
         
         this.parts.delete(partId);
+
+        // Dispatch for Realtime broadcast
+        window.dispatchEvent(new CustomEvent('part-deleted', { 
+            detail: { 
+                id: partId,
+                isLocal: true
+            } 
+        }));
+
         return true;
     }
     
@@ -1172,6 +1333,12 @@ class BuildEditor {
     
     // DELETE TOOL
     deletePart(partId) {
+        // ROLE CHECK
+        if (this.userRole === 'viewer') {
+            this.showToastEvent('Only Editors can delete!', 'error');
+            return;
+        }
+
         const partData = this.parts.get(partId);
         if (!partData) return;
         
@@ -1189,6 +1356,9 @@ class BuildEditor {
             this.dirtyPartIds.delete(partId);
         }
         
+        // Dispatch for Realtime broadcast
+        window.dispatchEvent(new CustomEvent('part-deleted', { detail: { id: partId } }));
+
         this.deselectPart();
         this.hasUnsavedChanges = true;
         this.emitPartCount();
@@ -1197,6 +1367,12 @@ class BuildEditor {
     
     // MOVE TOOL
     startMove(partId) {
+        // ROLE CHECK
+        if (this.userRole === 'viewer') {
+            this.showToastEvent('Only Editors can move parts!', 'error');
+            return;
+        }
+
         const partData = this.parts.get(partId);
         if (!partData) return;
         
@@ -1272,6 +1448,20 @@ class BuildEditor {
         
         this.saveUndoState('move', { id: this.movingPartId, oldData, newData: { ...partData.data } });
         
+        // BROADCAST for Realtime
+        window.dispatchEvent(new CustomEvent('part-updated', { 
+            detail: { 
+                id: this.movingPartId, 
+                isLocal: true,
+                data: {
+                    position_x: partData.data.position_x,
+                    position_y: partData.data.position_y,
+                    position_z: partData.data.position_z,
+                    rotation_y: partData.data.rotation_y
+                }
+            } 
+        }));
+
         this.isMoving = false;
         this.movingPartId = null;
         this.container.style.cursor = 'grab';
@@ -1704,6 +1894,12 @@ class BuildEditor {
     // ============ APPLY PAINT/MATERIAL ============
     
     applyPaintToPart(mesh, color) {
+        // ROLE CHECK
+        if (this.userRole === 'viewer') {
+            this.showToastEvent('Only Editors can paint!', 'error');
+            return;
+        }
+
         const oldColor = mesh.userData.color_front || mesh.userData.color;
         
         // Save for undo
@@ -1982,9 +2178,15 @@ class BuildEditor {
             return;
         }
 
+        // Track Presence
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObject(this.ground);
+        if (intersects.length > 0) {
+            this.trackPresence(intersects[0].point);
+        }
+
         // Preview while placing
         if (this.isPlacing && this.currentPreset && !this.isMoving) {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
             const intersects = this.raycaster.intersectObject(this.ground);
             
             if (intersects.length > 0) {
@@ -2967,6 +3169,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (container && buildId && csrfToken) {
         editor = new BuildEditor(container, buildId, csrfToken);
+        window.editor = editor;
+        console.log('[Editor] Assigned to window.editor');
     } else {
         console.error('[Editor] Missing required elements!');
     }

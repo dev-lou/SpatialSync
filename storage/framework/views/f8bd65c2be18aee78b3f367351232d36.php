@@ -191,8 +191,8 @@
         <!-- Header -->
         <div class="builds-header reveal">
             <div>
-                <h1 class="builds-header__title">My Builds</h1>
-                <p class="builds-header__subtitle"><?php echo e($builds->count()); ?> project<?php echo e($builds->count() !== 1 ? 's' : ''); ?> total</p>
+                <h1 class="builds-header__title">Workspace Projects</h1>
+                <p class="builds-header__subtitle"><?php echo e($builds->count()); ?> active project<?php echo e($builds->count() !== 1 ? 's' : ''); ?> (Personal & Shared)</p>
             </div>
             <div class="builds-header__actions">
                 <a href="<?php echo e(route('builds.create')); ?>" class="btn btn--primary btn-glow">

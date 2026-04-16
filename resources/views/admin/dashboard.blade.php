@@ -86,12 +86,12 @@
             <h2 class="text-lg font-semibold text-primary mb-4">Recent Activity</h2>
             @forelse($recentActivity->take(5) as $activity)
                 <div class="flex items-center gap-3 py-3 border-b border-border last:border-0">
-                    <div class="avatar avatar--sm">{{ strtoupper(substr($activity->user->name, 0, 1)) }}</div>
+                    <div class="avatar avatar--sm">{{ strtoupper(substr($activity->user_name ?? 'U', 0, 1)) }}</div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-primary truncate">
-                            <span class="font-medium">{{ $activity->user->name }}</span> sent a message
+                            <span class="font-medium">{{ $activity->user_name ?? 'User' }}</span> sent a message
                         </p>
-                        <p class="text-xs text-tertiary">{{ $activity->created_at->diffForHumans() }}</p>
+                        <p class="text-xs text-tertiary">{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->diffForHumans() : 'recently' }}</p>
                     </div>
                 </div>
             @empty

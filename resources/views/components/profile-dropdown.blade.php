@@ -9,11 +9,9 @@
         aria-label="User menu"
     >
         <div class="profile-dropdown__avatar">
-            @if(auth()->user()->profile_photo_path)
-                <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" class="profile-dropdown__avatar-img">
-            @else
+            @if($auth_user && $auth_user->name)
                 <span class="profile-dropdown__initials">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', auth()->user()->name)[1] ?? auth()->user()->name, 0, 1)) }}
+                    {{ strtoupper(substr($auth_user->name ?? '', 0, 1)) }}{{ strtoupper(substr(explode(' ', $auth_user->name ?? '')[1] ?? '', 0, 1)) }}
                 </span>
             @endif
         </div>
@@ -34,8 +32,8 @@
     >
         {{-- User Info Header --}}
         <div class="profile-dropdown__header">
-            <div class="profile-dropdown__name">{{ auth()->user()->name }}</div>
-            <div class="profile-dropdown__email">{{ auth()->user()->email }}</div>
+            <div class="profile-dropdown__name">{{ $auth_user->name ?? 'User' }}</div>
+            <div class="profile-dropdown__email">{{ $auth_user->email ?? '' }}</div>
         </div>
 
         <div class="profile-dropdown__divider"></div>
@@ -56,7 +54,7 @@
             <span>Settings</span>
         </a>
 
-        @if(auth()->user()->is_admin ?? false)
+        @if($auth_user && $auth_user->is_admin)
             <a href="{{ route('admin.dashboard') }}" class="profile-dropdown__item profile-dropdown__item--admin" @click="open = false">
                 <i data-lucide="shield" class="profile-dropdown__icon"></i>
                 <span>Admin Dashboard</span>

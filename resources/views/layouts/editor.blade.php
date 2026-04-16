@@ -17,6 +17,9 @@
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Supabase JS for Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 

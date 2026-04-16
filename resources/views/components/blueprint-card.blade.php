@@ -5,11 +5,12 @@
         height: 100%;
         background: var(--surface);
         border-radius: var(--radius-xl);
-        overflow: hidden;
+        overflow: visible;
         position: relative;
         text-decoration: none;
         transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
         box-shadow: var(--shadow-sm);
+        z-index: 1;
     }
 
     .blueprint-card:hover {
@@ -145,20 +146,143 @@
         gap: var(--space-4);
     }
 
-    .blueprint-card__status {
+    .blueprint-card__role-badge {
+        position: absolute;
+        top: var(--space-4);
+        left: var(--space-4);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: 6px 12px;
+        background: rgba(var(--accent-rgb), 0.9);
+        color: white;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--success);
-        background: var(--success-light);
-        padding: 2px 6px;
-        border-radius: var(--radius-sm);
+        border-radius: var(--radius-full);
+        box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
+        backdrop-filter: blur(8px);
+    }
+
+    .blueprint-card__role-badge i {
+        width: 12px;
+        height: 12px;
+    }
+
+    /* 3-dot dropdown styles */
+    .build-options {
+        position: absolute;
+        top: var(--space-4);
+        right: var(--space-4);
+        z-index: 10;
+    }
+
+    .build-options__btn {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        transition: all var(--dur-micro);
+        backdrop-filter: blur(8px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .build-options__btn:hover {
+        background: white;
+        color: var(--text-primary);
+    }
+
+    .build-options__dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: var(--space-2);
+        min-width: 160px;
+        background: var(--surface);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all var(--dur-base);
+        z-index: 50;
+    }
+
+    .build-options__dropdown.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .build-options__item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        width: 100%;
+        padding: var(--space-3) var(--space-4);
+        border: none;
+        background: none;
+        color: var(--text-secondary);
+        font-size: var(--text-sm);
+        cursor: pointer;
+        transition: all var(--dur-micro);
+        text-align: left;
+    }
+
+    .build-options__item:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .build-options__item--danger {
+        color: var(--error);
+    }
+
+    .build-options__item--danger:hover {
+        background: var(--error-light);
+        color: var(--error);
+    }
+
+    .build-options__item i {
+        width: 16px;
+        height: 16px;
     }
 </style>
 
-<a href="{{ route('builds.show', $blueprint) }}" class="blueprint-card">
-    <div class="blueprint-card__thumb">
+<div class="blueprint-card" style="position: relative;">
+    <!-- Identity Badge (Owner/Collaborator) -->
+    @if(isset($blueprint->user_role) && $blueprint->user_role !== 'owner')
+        <div class="blueprint-card__role-badge">
+            <i data-lucide="users"></i>
+            {{ ucfirst($blueprint->user_role) }}
+        </div>
+    @endif
+
+    <!-- 3-dot Options Button (Hide if not owner) -->
+    @if(!isset($blueprint->user_role) || $blueprint->user_role === 'owner')
+    <div class="build-options">
+        <button class="build-options__btn" onclick="toggleBuildOptions(this, event)">
+            <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+        </button>
+        <div class="build-options__dropdown">
+            <button class="build-options__item build-options__item--danger" onclick="deleteBuild('{{ $blueprint->id }}', '{{ addslashes($blueprint->name) }}')">
+                <i data-lucide="trash-2"></i>
+                Delete Build
+            </button>
+        </div>
+    </div>
+    @endif
+
+    <a href="{{ route('builds.show', $blueprint->id) }}" class="blueprint-card__thumb" style="display: block;">
         <div class="blueprint-card__grid">
             <svg width="100%" height="100%">
                 <defs>
@@ -175,16 +299,16 @@
                 <i data-lucide="layout" class="text-accent"></i>
             </div>
         </div>
-    </div>
+    </a>
 
     <div class="blueprint-card__body">
         <div class="blueprint-card__header">
-            <h3 class="blueprint-card__title">{{ $blueprint->name }}</h3>
+            <a href="{{ route('builds.show', $blueprint->id) }}" class="blueprint-card__title">{{ $blueprint->name }}</a>
             
             <div class="blueprint-card__avatar-stack">
                 @php 
-                    $members = $blueprint->members->take(3);
-                    $totalMembers = $blueprint->members->count();
+                    $members = isset($blueprint->members) ? ($blueprint->members->take(3) ?? collect([])) : collect([]);
+                    $totalMembers = isset($blueprint->members) ? ($blueprint->members->count() ?? 0) : 0;
                 @endphp
                 
                 @if($totalMembers > 3)
@@ -206,18 +330,98 @@
         <div class="blueprint-card__footer">
             <div class="blueprint-card__meta-item">
                 <i data-lucide="clock"></i>
-                <span>{{ $blueprint->updated_at->diffForHumans() }}</span>
+                <span>{{ $blueprint->updated_at ? \Carbon\Carbon::parse($blueprint->updated_at)->diffForHumans() : 'Recently' }}</span>
             </div>
             <div class="blueprint-card__meta-group">
                 <div class="blueprint-card__meta-item">
                     <i data-lucide="users"></i>
-                    <span style="font-weight: 700; color: var(--text-secondary);">{{ $blueprint->members->count() }}</span>
+                    <span style="font-weight: 700; color: var(--text-secondary);">{{ $totalMembers }}</span>
                 </div>
-                @if($blueprint->is_public)
+                @if(isset($blueprint->is_public) && $blueprint->is_public)
                     <span class="blueprint-card__status">Public</span>
                 @endif
             </div>
         </div>
     </div>
-</a>
+</div>
+
+<script>
+function toggleBuildOptions(btn, event) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    const dropdown = btn.nextElementSibling;
+    const isShowing = dropdown.classList.contains('show');
+    
+    // Close all other dropdowns first
+    document.querySelectorAll('.build-options__dropdown.show').forEach(d => d.classList.remove('show'));
+    
+    // Toggle this one
+    if (!isShowing) {
+        dropdown.classList.add('show');
+    }
+}
+
+function deleteBuild(buildId, buildName) {
+    // Close dropdown first
+    document.querySelectorAll('.build-options__dropdown.show').forEach(d => d.classList.remove('show'));
+    
+    Swal.fire({
+        title: 'Delete Build?',
+        text: `Are you sure you want to delete "${buildName}"? This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        customClass: {
+            confirmButton: 'btn btn--danger',
+            cancelButton: 'btn btn--secondary'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send DELETE request
+            fetch(`/builds/${buildId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'Build has been deleted.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        // Reload the page to reflect changes
+                        window.location.reload();
+                    });
+                } else {
+                    return response.json();
+                }
+            })
+            .then(data => {
+                if (data && data.error) {
+                    Swal.fire('Error', data.error, 'error');
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+                console.error('Delete error:', error);
+            });
+        }
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.build-options')) {
+        document.querySelectorAll('.build-options__dropdown.show').forEach(d => d.classList.remove('show'));
+    }
+});
+</script>
 

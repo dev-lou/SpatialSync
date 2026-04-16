@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Services\SupabaseUserService;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +12,9 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, Notifiable;
+
+    protected $table = 'users';
 
     protected $fillable = [
         'name',
@@ -36,6 +38,7 @@ class User extends Authenticatable
         ];
     }
 
+    // Relationships (these still work with local SQLite for now)
     public function ownedTeams(): HasMany
     {
         return $this->hasMany(Team::class, 'owner_id');
@@ -68,5 +71,33 @@ class User extends Authenticatable
     public function buildShares(): HasMany
     {
         return $this->hasMany(BuildShare::class);
+    }
+
+    // Override to sync with Supabase on save
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            // Also create in Supabase
+            $supabaseUser = app(SupabaseUserService::class)->create([
+                'name' => $user->name,
+                'email' => $user->email,
+                'password' => $user->password,
+                'is_admin' => $user->is_admin ?? false,
+            ]);
+
+            if ($supabaseUser && isset($supabaseUser['id'])) {
+                $user->supabase_id = $supabaseUser['id'];
+            }
+        });
+    }
+
+    protected $appends = ['supabase_id'];
+
+    public function getSupabaseIdAttribute()
+    {
+        // We'll store Supabase ID in a separate column or use email as identifier
+        return null;
     }
 }

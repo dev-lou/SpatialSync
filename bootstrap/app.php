@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\RedirectIfSupabaseAuthenticated;
+use App\Http\Middleware\SupabaseAuthenticate;
+use App\Providers\ViewServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,13 +16,18 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withProviders([
+        ViewServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
         ]);
 
-        // Register middleware aliases
+        // Register middleware aliases - override Laravel defaults for Supabase auth
         $middleware->alias([
+            'auth' => SupabaseAuthenticate::class,
+            'guest' => RedirectIfSupabaseAuthenticated::class,
             'admin' => AdminMiddleware::class,
         ]);
     })
