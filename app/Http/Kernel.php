@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\CheckBuildPermission;
 use App\Http\Middleware\RedirectIfSupabaseAuthenticated;
 use App\Http\Middleware\SupabaseAuthenticate;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
@@ -53,5 +54,6 @@ class Kernel extends HttpKernel
         'throttle' => ThrottleRequests::class,
         'verified' => EnsureEmailIsVerified::class,
         'admin' => AdminMiddleware::class,
+        'build.permission' => CheckBuildPermission::class,
     ];
 }

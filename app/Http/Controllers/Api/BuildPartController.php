@@ -15,8 +15,67 @@ class BuildPartController extends Controller
         $this->supabase = app(SupabaseClient::class);
     }
 
-    public function index($buildId)
+    /**
+     * Check if user has access to build
+     */
+    protected function checkBuildAccess(Request $request, $buildId): bool
     {
+        $userId = $request->session()->get('supabase_user_id');
+
+        // Get build to check ownership
+        $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
+        if (empty($builds)) {
+            return false;
+        }
+
+        // Owner has access
+        if ($builds[0]['created_by'] === $userId) {
+            return true;
+        }
+
+        // Check if user is a member
+        $members = $this->supabase->select('build_members', ['role'], [
+            'build_id' => $buildId,
+            'user_id' => $userId
+        ]);
+
+        return !empty($members);
+    }
+
+    /**
+     * Check if user can modify build (owner or editor)
+     */
+    protected function canModifyBuild(Request $request, $buildId): bool
+    {
+        $userId = $request->session()->get('supabase_user_id');
+
+        // Get build to check ownership
+        $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
+        if (empty($builds)) {
+            return false;
+        }
+
+        // Owner can modify
+        if ($builds[0]['created_by'] === $userId) {
+            return true;
+        }
+
+        // Check if user is an editor
+        $members = $this->supabase->select('build_members', ['role'], [
+            'build_id' => $buildId,
+            'user_id' => $userId
+        ]);
+
+        return !empty($members) && $members[0]['role'] === 'editor';
+    }
+
+    public function index(Request $request, $buildId)
+    {
+        // Check access
+        if (!$this->checkBuildAccess($request, $buildId)) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
+
         // Get build to check current floor
         $builds = $this->supabase->select('builds', ['current_floor'], ['id' => $buildId]);
         if (empty($builds)) {
@@ -34,8 +93,13 @@ class BuildPartController extends Controller
         return response()->json($parts);
     }
 
-    public function allParts($buildId)
+    public function allParts(Request $request, $buildId)
     {
+        // Check access
+        if (!$this->checkBuildAccess($request, $buildId)) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
+
         $parts = $this->supabase->select('build_parts', ['*'], ['build_id' => $buildId]);
 
         // Sort by floor_number then z_index
@@ -53,6 +117,11 @@ class BuildPartController extends Controller
 
     public function store(Request $request, $buildId)
     {
+        // Check modify permission
+        if (!$this->canModifyBuild($request, $buildId)) {
+            return response()->json(['error' => 'Access denied - editor role required'], 403);
+        }
+
         $validated = $request->validate([
             'type' => 'required|string|in:wall,floor,roof,door,window,stairs',
             'variant' => 'required|string',
@@ -85,6 +154,11 @@ class BuildPartController extends Controller
 
     public function update(Request $request, $buildId, $partId)
     {
+        // Check modify permission
+        if (!$this->canModifyBuild($request, $buildId)) {
+            return response()->json(['error' => 'Access denied - editor role required'], 403);
+        }
+
         $validated = $request->validate([
             'position_x' => 'numeric',
             'position_y' => 'numeric',
@@ -117,8 +191,13 @@ class BuildPartController extends Controller
         return response()->json($parts[0] ?? []);
     }
 
-    public function destroy($buildId, $partId)
+    public function destroy(Request $request, $buildId, $partId)
     {
+        // Check modify permission
+        if (!$this->canModifyBuild($request, $buildId)) {
+            return response()->json(['error' => 'Access denied - editor role required'], 403);
+        }
+
         $deleted = $this->supabase->delete('build_parts', [
             'id' => $partId,
             'build_id' => $buildId,

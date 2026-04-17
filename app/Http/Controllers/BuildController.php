@@ -188,6 +188,9 @@ class BuildController extends Controller
         $auth_user_id = $userId;
         $auth_user_name = $userName;
 
+        // Calculate permissions based on role
+        $userPermissions = $this->calculatePermissions($userRole);
+
         return view('builds.show', compact(
             'build', 
             'userRole', 
@@ -195,7 +198,8 @@ class BuildController extends Controller
             'messages', 
             'presets', 
             'auth_user_id',
-            'auth_user_name'
+            'auth_user_name',
+            'userPermissions'
         ));
     }
 
@@ -442,5 +446,52 @@ class BuildController extends Controller
         $messages = collect([]);
 
         return view('builds.shared', compact('build', 'members', 'messages', 'presets'));
+    }
+
+    /**
+     * Calculate permissions based on user role
+     */
+    protected function calculatePermissions(string $role): array
+    {
+        $permissionMatrix = [
+            'owner' => [
+                'can_edit_geometry' => true,
+                'can_delete_parts' => true,
+                'can_manage_members' => true,
+                'can_add_comments' => true,
+                'can_export_build' => true,
+                'can_change_settings' => true,
+                'can_view_build' => true,
+            ],
+            'admin' => [
+                'can_edit_geometry' => true,
+                'can_delete_parts' => true,
+                'can_manage_members' => true,
+                'can_add_comments' => true,
+                'can_export_build' => true,
+                'can_change_settings' => true,
+                'can_view_build' => true,
+            ],
+            'editor' => [
+                'can_edit_geometry' => true,
+                'can_delete_parts' => true,
+                'can_manage_members' => false,
+                'can_add_comments' => true,
+                'can_export_build' => true,
+                'can_change_settings' => false,
+                'can_view_build' => true,
+            ],
+            'viewer' => [
+                'can_edit_geometry' => false,
+                'can_delete_parts' => false,
+                'can_manage_members' => false,
+                'can_add_comments' => true,
+                'can_export_build' => false,
+                'can_change_settings' => false,
+                'can_view_build' => true,
+            ],
+        ];
+
+        return $permissionMatrix[$role] ?? $permissionMatrix['viewer'];
     }
 }
