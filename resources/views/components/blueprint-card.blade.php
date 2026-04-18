@@ -155,15 +155,14 @@
         align-items: center;
         gap: var(--space-2);
         padding: 6px 12px;
-        background: rgba(var(--accent-rgb), 0.9);
-        color: white;
+        background: var(--text-primary);
+        color: var(--surface);
         font-size: 10px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         border-radius: var(--radius-full);
-        box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
-        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .blueprint-card__role-badge i {

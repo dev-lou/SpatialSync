@@ -21,7 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->api(prepend: [
-            EnsureFrontendRequestsAreStateful::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
         ]);
 
         // Register middleware aliases - override Laravel defaults for Supabase auth
@@ -29,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => SupabaseAuthenticate::class,
             'guest' => RedirectIfSupabaseAuthenticated::class,
             'admin' => AdminMiddleware::class,
+            'build.permission' => \App\Http\Middleware\CheckBuildPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -56,7 +56,45 @@ class BuildController extends Controller
             $combined[] = (object) $b;
         }
 
-        // 4. Sort by created_at descending
+        // 4. Attach members to each build for avatar stacking
+        // First get all relevant memberships
+        $allMemberships = $this->supabase->select('build_members', ['build_id', 'user_id', 'role'], []);
+        
+        // Then get all users
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'email'], []);
+        $userMap = collect($allUsers)->keyBy('id');
+
+        foreach ($combined as $b) {
+            $membersData = collect([]);
+            
+            // Add owner
+            $ownerUser = $userMap->get($b->created_by);
+            if ($ownerUser) {
+                $membersData->push((object)[
+                    'id' => $b->created_by,
+                    'name' => $ownerUser['name'],
+                    'role' => 'owner'
+                ]);
+            }
+            
+            // Add other members
+            foreach ($allMemberships as $m) {
+                if ($m['build_id'] === $b->id && $m['user_id'] !== $b->created_by) {
+                    $u = $userMap->get($m['user_id']);
+                    if ($u) {
+                        $membersData->push((object)[
+                            'id' => $u['id'],
+                            'name' => $u['name'],
+                            'role' => $m['role']
+                        ]);
+                    }
+                }
+            }
+            
+            $b->members = $membersData;
+        }
+
+        // 5. Sort by created_at descending
         usort($combined, function ($a, $b) {
             return ($b->created_at ?? '') <=> ($a->created_at ?? '');
         });
@@ -181,7 +219,46 @@ class BuildController extends Controller
         // Sort by time or take last 50
         $messages = collect($messages)->sortBy('created_at')->values()->all();
 
-        // 5. Fetch Presets for editor
+        // 5. Fetch Issues for build
+        $rawIssues = $this->supabase->select('build_issues', ['*'], ['build_id' => $buildId]);
+        \Log::info('Raw issues from Supabase: ' . json_encode($rawIssues));
+        $issues = collect($rawIssues);
+        // Get user names for issues
+        $userMap = collect($allUsers)->keyBy('id');
+        $issues = collect($issues)->map(function ($issue) use ($userMap) {
+            $issue['creator_name'] = $userMap->get($issue['created_by'])['name'] ?? 'Unknown';
+            $issue['status_color'] = match($issue['status']) {
+                'open' => '#ef4444',
+                'in_progress' => '#eab308',
+                'resolved' => '#22c55e',
+                'closed' => '#6b7280',
+                default => '#6b7280',
+            };
+            $issue['priority_color'] = match($issue['priority']) {
+                'critical' => '#dc2626',
+                'high' => '#f97316',
+                'medium' => '#eab308',
+                'low' => '#22c55e',
+                default => '#6b7280',
+            };
+            $issue['priority_label'] = match($issue['priority']) {
+                'critical' => 'Critical',
+                'high' => 'High',
+                'medium' => 'Medium',
+                'low' => 'Low',
+                default => 'Medium',
+            };
+            $issue['status_label'] = match($issue['status']) {
+                'open' => 'Open',
+                'in_progress' => 'In Progress',
+                'resolved' => 'Resolved',
+                'closed' => 'Closed',
+                default => 'Open',
+            };
+            return $issue;
+        })->values()->all();
+
+        // 6. Fetch Presets for editor
         $presetsData = $this->supabase->select('part_presets', ['*'], ['is_active' => 'true']);
         $presets = collect($presetsData)->groupBy('type');
 
@@ -196,6 +273,7 @@ class BuildController extends Controller
             'userRole', 
             'membersData', 
             'messages', 
+            'issues',
             'presets', 
             'auth_user_id',
             'auth_user_name',

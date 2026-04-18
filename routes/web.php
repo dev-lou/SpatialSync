@@ -31,8 +31,8 @@ Route::middleware('guest')->group(function () {
 // Logout
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout')->middleware('auth');
 
-// Authenticated routes
-Route::middleware(['auth'])->group(function () {
+// Authenticated routes (web middleware first for CSRF, then auth)
+Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -51,9 +51,27 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/builds/{build}/share', [BuildController::class, 'createShare'])->name('builds.share.create');
     Route::get('/builds/{build}/export/{format}', [BuildController::class, 'export'])->name('builds.export');
 
+    // Editor API routes (using /editor/ prefix to get web middleware CSRF)
+    Route::get('/editor/builds/{buildId}/parts', [\App\Http\Controllers\Api\BuildPartController::class, 'allParts']);
+    Route::get('/editor/builds/{buildId}/parts/floor', [\App\Http\Controllers\Api\BuildPartController::class, 'index']);
+    Route::post('/editor/builds/{buildId}/parts', [\App\Http\Controllers\Api\BuildPartController::class, 'store'])
+        ->middleware('build.permission:edit_geometry');
+    Route::put('/editor/builds/{buildId}/parts/{partId}', [\App\Http\Controllers\Api\BuildPartController::class, 'update'])
+        ->middleware('build.permission:edit_geometry');
+    Route::delete('/editor/builds/{buildId}/parts/{partId}', [\App\Http\Controllers\Api\BuildPartController::class, 'destroy'])
+        ->middleware('build.permission:delete_parts');
+    
+    // Issue API routes
+    Route::get('/editor/builds/{buildId}/issues', [\App\Http\Controllers\Api\BuildIssueController::class, 'index']);
+    Route::post('/editor/builds/{buildId}/issues', [\App\Http\Controllers\Api\BuildIssueController::class, 'store']);
+    Route::get('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'show']);
+    Route::put('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'update']);
+    Route::delete('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'destroy']);
+    Route::patch('/editor/builds/{buildId}/issues/{issueId}/status', [\App\Http\Controllers\Api\BuildIssueController::class, 'updateStatus']);
+
     // Chat API
-    Route::get('/api/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'index'])->name('api.builds.messages.index');
-    Route::post('/api/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'store'])->name('api.builds.messages.store');
+    Route::get('/editor/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'index'])->name('api.builds.messages.index');
+    Route::post('/editor/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'store'])->name('api.builds.messages.store');
 
     // Shared build view
     Route::get('/builds/{build}/shared/{token}', [BuildController::class, 'shared'])->name('builds.shared');
