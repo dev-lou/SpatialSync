@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Build;
-use App\Services\SupabaseService;
+use App\Services\SupabaseClient;
 use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
     protected $supabase;
 
-    public function __construct(SupabaseService $supabase)
+    public function __construct(SupabaseClient $supabase)
     {
         $this->supabase = $supabase;
     }

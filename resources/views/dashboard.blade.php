@@ -623,33 +623,11 @@
             </div>
         </div>
 
-        <!-- Quick Actions (Removed New Build - it's now a FAB) -->
-        <div class="quick-actions stagger">
-            <a href="{{ route('builds.index') }}" class="quick-action glow-card reveal">
-                <div class="quick-action__icon">
-                    <i data-lucide="folder" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">All Builds</span>
-            </a>
-            <a href="{{ route('builds.index') }}?filter=shared" class="quick-action glow-card reveal">
-                <div class="quick-action__icon">
-                    <i data-lucide="users" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">Shared With Me</span>
-            </a>
-            <button type="button" class="quick-action glow-card reveal" @click="openModal()">
-                <div class="quick-action__icon">
-                    <i data-lucide="plus" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">New Build</span>
-            </button>
-        </div>
-
-        <!-- Builds Section -->
+        <!-- Builds Section: Recent Builds (Own) -->
         <div class="dashboard-header">
             <div>
                 <h2 class="dashboard-header__title">Recent Builds</h2>
-                <p class="dashboard-header__subtitle">Your most recently updated projects</p>
+                <p class="dashboard-header__subtitle">Your most recently updated personal projects</p>
             </div>
             <div class="dashboard-header__actions">
                 <button type="button" class="btn btn--primary btn--sm btn-glow" @click="openModal()">
@@ -664,26 +642,17 @@
         </div>
 
         @if($builds->count() > 0)
-            <div class="blueprints-grid stagger">
-                @foreach($builds->take(6) as $build)
+            <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
+                @foreach($builds->take(3) as $build)
                     <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
                 @endforeach
             </div>
-
-            @if($builds->count() > 6)
-                <div class="text-center mt-8">
-                    <a href="{{ route('builds.index') }}" class="btn btn--secondary">
-                        View all {{ $builds->count() }} builds
-                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </a>
-                </div>
-            @endif
         @else
-            <div class="dashboard-empty reveal">
+            <div class="dashboard-empty reveal" style="margin-bottom: var(--space-12);">
                 <div class="dashboard-empty__icon">
                     <i data-lucide="folder-plus" class="w-8 h-8"></i>
                 </div>
-                <h3 class="dashboard-empty__title">No builds yet</h3>
+                <h3 class="dashboard-empty__title">No personal builds yet</h3>
                 <p class="dashboard-empty__description">
                     Create your first build to start designing houses, buildings, and architectural designs.
                 </p>
@@ -694,25 +663,55 @@
             </div>
         @endif
 
-        <!-- Recent Activity (if user has builds) -->
-        @if($builds->count() > 0)
+        <!-- Builds Section: Shared With Me -->
+        @if(isset($sharedBuilds) && $sharedBuilds->count() > 0)
+            <div class="dashboard-header reveal">
+                <div>
+                    <h2 class="dashboard-header__title">Shared With Me</h2>
+                    <p class="dashboard-header__subtitle">Projects you have been invited to collaborate on</p>
+                </div>
+                <div class="dashboard-header__actions">
+                    <a href="{{ route('builds.index') }}?filter=shared" class="btn btn--secondary btn--sm">
+                        View All
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
+                @foreach($sharedBuilds->take(3) as $build)
+                    <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
+                @endforeach
+            </div>
+        @endif
+
+
+        @php
+            $allActivity = $builds->concat($sharedBuilds ?? collect())->sortByDesc('updated_at')->take(5);
+        @endphp
+
+        <!-- Recent Activity -->
+        @if($allActivity->count() > 0)
             <div class="activity-section reveal">
                 <div class="dashboard-header">
                     <div>
                         <h2 class="dashboard-header__title">Recent Activity</h2>
-                        <p class="dashboard-header__subtitle">Latest updates across your projects</p>
+                        <p class="dashboard-header__subtitle">Latest updates across your personal and shared projects</p>
                     </div>
                 </div>
 
                 <div class="activity-list">
-                    @foreach($builds->sortByDesc('updated_at')->take(5) as $build)
+                    @foreach($allActivity as $build)
                         <a href="{{ route('builds.show', $build->id) }}" class="activity-item">
                             <div class="activity-item__icon">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </div>
                             <div class="activity-item__content">
                                 <div class="activity-item__text">
-                                    You edited <strong>{{ $build->name }}</strong>
+                                    <strong>{{ $build->name }}</strong> was updated 
+                                    @if(isset($build->user_role) && $build->user_role !== 'owner')
+                                        <span class="text-xs text-tertiary">(Shared)</span>
+                                    @endif
                                 </div>
                                 <div class="activity-item__time">
                                     {{ $build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'recently' }}

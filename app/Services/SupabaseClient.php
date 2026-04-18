@@ -58,7 +58,7 @@ class SupabaseClient
         }
 
         try {
-            $response = Http::withHeaders($this->anonHeaders())->timeout(30)->get($url);
+            $response = Http::withHeaders($this->serviceHeaders())->timeout(30)->get($url);
 
             return $response->successful() ? $response->json() : [];
         } catch (\Exception $e) {

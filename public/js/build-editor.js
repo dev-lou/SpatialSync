@@ -9,6 +9,7 @@ class BuildEditor {
         if (DEBUG_MODE) console.log('[Editor] Initializing with build ID:', buildId);
         
         this.container = container;
+        this.csrfToken = csrfToken;
         this.rtChannel = null;
         this.myPresenceKey = null;
         this.userRole = 'editor';
@@ -114,10 +115,10 @@ class BuildEditor {
         this.CENTER_PLACED_TYPES = ['floor', 'roof', 'stairs'];
         this.WALL_ATTACHED_TYPES = ['door', 'window'];
         
-        // API endpoints
+        // API endpoints (using /editor/ prefix for proper CSRF handling)
         this.api = {
-            parts: `/api/builds/${buildId}/parts`,
-            build: `/api/builds/${buildId}`,
+            parts: `/editor/builds/${buildId}/parts`,
+            build: `/editor/builds/${buildId}`,
         };
         
         if (DEBUG_MODE) console.log('[Editor] Calling init...');
@@ -1223,14 +1224,15 @@ class BuildEditor {
         this.previewMesh.userData.isValid = pos.isValid;
         this.scene.add(this.previewMesh);
         
-        // Ground marker
+        // Ground marker at current floor grid level
         const markerGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16);
         const markerMat = new THREE.MeshBasicMaterial({ 
             color: pos.isValid ? 0x22C55E : 0xEF4444,
             transparent: true, opacity: 0.9
         });
         this.previewMarker = new THREE.Mesh(markerGeo, markerMat);
-        this.previewMarker.position.set(pos.x, 0.025, pos.z);
+        const gridY = (this.currentFloor - 1) * 3 + 0.025;
+        this.previewMarker.position.set(pos.x, gridY, pos.z);
         this.scene.add(this.previewMarker);
     }
     
@@ -2373,11 +2375,20 @@ class BuildEditor {
     onContextMenu(event) {
         event.preventDefault();
         
-        // Right-click delete (Bloxburg quick-delete)
+        // Right-click to create issue on part
         this.updateMouseCoords(event);
         const hitPart = this.raycastParts();
         if (hitPart) {
-            this.deletePart(hitPart.userData.id);
+            // Select the part first
+            this.selectPart(hitPart.userData.id);
+            
+            // Dispatch event to open issue modal
+            window.dispatchEvent(new CustomEvent('open-issue-modal', { 
+                detail: { 
+                    partId: hitPart.userData.id,
+                    partType: hitPart.userData.type
+                } 
+            }));
         }
     }
     
@@ -2721,10 +2732,31 @@ class BuildEditor {
     setFloor(floor) {
         this.currentFloor = floor;
         
+        // Move grid to floor level
+        if (this.gridHelper) {
+            const gridY = (floor - 1) * 3 + 0.16;
+            this.gridHelper.position.y = gridY;
+        }
+        
+        // Show ALL parts from ALL floors - ghost mode for non-current floors
         this.parts.forEach(({ mesh }) => {
-            mesh.visible = mesh.userData.floor_number === floor;
+            const partFloor = mesh.userData.floor_number || 1;
+            mesh.visible = true;
+            
+            if (partFloor === floor) {
+                // Current floor - fully visible and interactive
+                mesh.material.opacity = 1;
+                mesh.material.transparent = false;
+                mesh.userData.isGhost = false;
+            } else {
+                // Other floors (above or below) - visible but ghosted
+                mesh.material.opacity = 0.35;
+                mesh.material.transparent = true;
+                mesh.userData.isGhost = true;
+            }
         });
         
+        // Move camera to see the floor
         const targetY = (floor - 1) * 3;
         this.camera.position.y = 12 + targetY;
         if (this.controls) {
@@ -2934,17 +2966,25 @@ class BuildEditor {
         if (this.isSaving) return;
         this.isSaving = true;
 
-        Swal.fire({
-            title: 'Saving Build...',
-            html: 'Uploading your masterwork to the server',
-            allowOutsideClick: false,
-            customClass: {
-                popup: 'swal-premium'
-            },
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
+        // Use custom DOM overlay instead of Swal so it isn't destroyed by connection toasts!
+        const overlay = document.createElement('div');
+        overlay.id = 'build-editor-saving-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.75)';
+        overlay.style.backdropFilter = 'blur(8px)';
+        overlay.style.zIndex = '9999';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.innerHTML = `
+            <div style="width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <div style="font-size: 20px; font-weight: 700; color: #1e293b;">Saving Build...</div>
+            <div style="font-size: 14px; font-weight: 500; color: #64748b; margin-top: 8px;">Uploading your masterwork to the server</div>
+            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+        `;
+        document.body.appendChild(overlay);
 
         try {
             let successCount = 0;
@@ -3021,6 +3061,8 @@ class BuildEditor {
             });
         } finally {
             this.isSaving = false;
+            const overlay = document.getElementById('build-editor-saving-overlay');
+            if (overlay) overlay.remove();
         }
     }
 
@@ -3157,6 +3199,216 @@ class BuildEditor {
             this.frameCount = 0;
         }
     }
+    
+    // ============ ISSUE PINS SYSTEM ============
+    
+    addIssuePin(issueData) {
+        if (!issueData.position_x && !issueData.part_id) {
+            console.log('[Editor] Issue has no position, skipping pin');
+            return null;
+        }
+        
+        // Get position from issue data or part
+        let position;
+        if (issueData.position_x !== null && issueData.position_y !== null && issueData.position_z !== null) {
+            position = new THREE.Vector3(issueData.position_x, issueData.position_y, issueData.position_z);
+        } else if (issueData.part_id && this.parts.has(issueData.part_id)) {
+            const partData = this.parts.get(issueData.part_id);
+            position = partData.mesh.position.clone();
+        } else {
+            console.log('[Editor] Cannot determine position for issue pin');
+            return null;
+        }
+        
+        // Create pin geometry (sphere)
+        const geometry = new THREE.SphereGeometry(0.3, 16, 16);
+        
+        // Get color based on status
+        const color = this.getIssueColor(issueData.status);
+        
+        const material = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: issueData.status === 'resolved' || issueData.status === 'closed' ? 0.5 : 0.9,
+        });
+        
+        const pin = new THREE.Mesh(geometry, material);
+        
+        // Position pin at center of the part
+        pin.position.copy(position);
+        pin.position.y += 0.5; // Slightly above center for visibility
+        
+        // Store original position for animation
+        pin.userData = {
+            id: issueData.id,
+            issueId: issueData.id,
+            type: 'issue_pin',
+            status: issueData.status,
+            originalY: pin.position.y,
+            floatOffset: Math.random() * Math.PI * 2, // Random start phase
+        };
+        
+        // Add to scene
+        this.scene.add(pin);
+        
+        // Store in issues map
+        if (!this.issuePins) this.issuePins = new Map();
+        this.issuePins.set(issueData.id, pin);
+        
+        // Start floating animation
+        this.animateIssuePin(pin);
+        
+        console.log('[Editor] Added issue pin:', issueData.id);
+        return pin;
+    }
+    
+    removeIssuePin(issueId) {
+        if (!this.issuePins || !this.issuePins.has(issueId)) {
+            return;
+        }
+        
+        const pin = this.issuePins.get(issueId);
+        
+        // Remove from scene
+        this.scene.remove(pin);
+        
+        // Dispose geometry and materials
+        pin.geometry.dispose();
+        pin.material.dispose();
+        
+        // Dispose children (line)
+        pin.children.forEach(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+        });
+        
+        // Remove from map
+        this.issuePins.delete(issueId);
+        
+        console.log('[Editor] Removed issue pin:', issueId);
+    }
+    
+    updateIssuePin(issueId, status) {
+        if (!this.issuePins || !this.issuePins.has(issueId)) {
+            return;
+        }
+        
+        const pin = this.issuePins.get(issueId);
+        const newColor = this.getIssueColor(status);
+        
+        // Update material color
+        pin.material.color.setHex(newColor);
+        pin.material.opacity = status === 'resolved' || status === 'closed' ? 0.5 : 0.9;
+        
+        // Update line color
+        const line = pin.children[0];
+        if (line && line.material) {
+            line.material.color.setHex(newColor);
+        }
+        
+        // Update userData
+        pin.userData.status = status;
+        
+        console.log('[Editor] Updated issue pin:', issueId, 'status:', status);
+    }
+    
+    clearIssuePins() {
+        if (!this.issuePins) return;
+        
+        this.issuePins.forEach((pin, issueId) => {
+            this.removeIssuePin(issueId);
+        });
+        
+        this.issuePins.clear();
+    }
+    
+    showIssuePinsForFloor(floorNumber) {
+        if (!this.issuePins) return;
+        
+        this.issuePins.forEach((pin, issueId) => {
+            // Get issue data to check floor
+            // For now, show all pins - in a full implementation, 
+            // you'd filter by floor based on the attached part's floor
+            pin.visible = true;
+        });
+    }
+    
+    getIssueColor(status) {
+        const colors = {
+            open: 0xef4444,      // Red
+            in_progress: 0xeab308, // Yellow
+            resolved: 0x22c55e,   // Green
+            closed: 0x6b7280,    // Gray
+        };
+        return colors[status] || colors.closed;
+    }
+    
+    animateIssuePin(pin) {
+        const self = this;
+        const floatSpeed = 2;
+        const floatHeight = 0.2;
+        
+        function animate() {
+            if (!pin.parent) return; // Stop if removed from scene
+            
+            const time = Date.now() * 0.001;
+            const offset = pin.userData.floatOffset;
+            
+            pin.position.y = pin.userData.originalY + Math.sin(time * floatSpeed + offset) * floatHeight;
+            pin.rotation.y += 0.01; // Slow rotation
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    }
+    
+    focusOnPosition(x, y, z) {
+        // Smoothly move camera to focus on position
+        const targetPosition = new THREE.Vector3(x, y + 5, z + 10);
+        const lookAtTarget = new THREE.Vector3(x, y, z);
+        
+        // Store current camera state
+        const startPosition = this.camera.position.clone();
+        const startTarget = this.controls.target.clone();
+        
+        // Animate camera
+        const duration = 1000; // ms
+        const startTime = Date.now();
+        
+        const self = this;
+        function animate() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function (ease-in-out)
+            const ease = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            
+            // Interpolate camera position
+            self.camera.position.lerpVectors(startPosition, targetPosition, ease);
+            self.controls.target.lerpVectors(startTarget, lookAtTarget, ease);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        }
+        
+        animate();
+    }
+    
+    loadIssuePins(issues) {
+        // Clear existing pins
+        this.clearIssuePins();
+        
+        // Add pins for all issues
+        issues.forEach(issue => {
+            this.addIssuePin(issue);
+        });
+        
+        console.log('[Editor] Loaded', issues.length, 'issue pins');
+    }
 }
 
 // Initialize editor
@@ -3167,11 +3419,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const buildId = container?.dataset.buildId;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     
+    console.log('[CSRF Debug] Token found:', csrfToken ? 'YES (length: ' + csrfToken.length + ')' : 'NO');
+    console.log('[CSRF Debug] Container:', container ? 'YES' : 'NO');
+    console.log('[CSRF Debug] Build ID:', buildId ? 'YES' : 'NO');
+    
     if (container && buildId && csrfToken) {
         editor = new BuildEditor(container, buildId, csrfToken);
         window.editor = editor;
         console.log('[Editor] Assigned to window.editor');
     } else {
-        console.error('[Editor] Missing required elements!');
+        console.error('[Editor] Missing required elements! Container:', !!container, 'BuildID:', !!buildId, 'CSRF:', !!csrfToken);
     }
 });

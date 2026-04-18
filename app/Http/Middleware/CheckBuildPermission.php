@@ -5,13 +5,13 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Services\SupabaseService;
+use App\Services\SupabaseClient;
 
 class CheckBuildPermission
 {
     protected $supabase;
 
-    public function __construct(SupabaseService $supabase)
+    public function __construct(SupabaseClient $supabase)
     {
         $this->supabase = $supabase;
     }

@@ -149,6 +149,11 @@ class BuildPartController extends Controller
             return response()->json(['error' => 'Failed to create part'], 500);
         }
 
+        // Touch build updated_at
+        $this->supabase->update('builds', [
+            'updated_at' => now()->toIso8601String()
+        ], ['id' => $buildId]);
+
         return response()->json($part, 201);
     }
 
@@ -188,6 +193,11 @@ class BuildPartController extends Controller
         // Get updated part
         $parts = $this->supabase->select('build_parts', ['*'], ['id' => $partId]);
 
+        // Touch build updated_at
+        $this->supabase->update('builds', [
+            'updated_at' => now()->toIso8601String()
+        ], ['id' => $buildId]);
+
         return response()->json($parts[0] ?? []);
     }
 
@@ -206,6 +216,11 @@ class BuildPartController extends Controller
         if (! $deleted) {
             return response()->json(['error' => 'Failed to delete part'], 500);
         }
+
+        // Touch build updated_at
+        $this->supabase->update('builds', [
+            'updated_at' => now()->toIso8601String()
+        ], ['id' => $buildId]);
 
         return response()->json(['message' => 'Part deleted successfully']);
     }
