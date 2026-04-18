@@ -179,8 +179,37 @@
             <div x-show="sidebarTab === 'chat'" class="h-full flex flex-col">
                 <div class="sidebar-section__title mb-4">
                     <i data-lucide="message-square"></i> Project Chat
+                    <span x-show="rtStatus !== 'connected'" class="ml-2 text-xs text-yellow-500" title="Realtime offline - messages will still save but won't be live">
+                        <i data-lucide="wifi-off" class="w-3 h-3 inline"></i> Offline
+                    </span>
                 </div>
+                
+                <!-- Offline Notice -->
+                <div x-show="rtStatus !== 'connected' && rtStatus !== 'connecting'" 
+                     class="mx-4 mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <p class="font-medium">Realtime offline</p>
+                            <p class="text-yellow-600">Messages will save but live sync requires Supabase Realtime.</p>
+                            <p class="text-[10px] mt-1 text-yellow-500">
+                                Check console (F12) for diagnostics. Common fix: Database → Replication → Toggle Realtime OFF/ON
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="chat-messages" id="chat-messages">
+                    <!-- Empty State -->
+                    <div x-show="chatMessages.length === 0" class="flex flex-col items-center justify-center h-full text-center p-6">
+                        <div class="w-16 h-16 mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                            <i data-lucide="message-circle" class="w-8 h-8 text-slate-400"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-600 mb-1">No messages yet</p>
+                        <p class="text-xs text-slate-400" x-show="rtStatus === 'connected'">Be the first to start the conversation!</p>
+                        <p class="text-xs text-slate-400" x-show="rtStatus !== 'connected'">Messages will appear here when you send them.</p>
+                    </div>
+                    
                     <template x-for="msg in chatMessages" :key="msg.id || msg.temp_id">
                         <div class="message-row">
                             <div class="message"
@@ -198,11 +227,19 @@
         </div>
 
         <div class="sidebar__footer" x-show="sidebarTab === 'chat'">
-            <input type="text" class="chat-input" placeholder="Type a message..." 
-                   x-model="newMessage" @keyup.enter="sendMessage()">
-            <button class="btn btn--primary" @click="sendMessage()">
-                <i data-lucide="send" class="w-4 h-4"></i>
-            </button>
+            <div class="flex flex-col w-full gap-1">
+                <div class="flex gap-2">
+                    <input type="text" class="chat-input" 
+                           :placeholder="rtStatus === 'connected' ? 'Type a message...' : 'Type a message (offline mode)...'" 
+                           x-model="newMessage" @keyup.enter="sendMessage()">
+                    <button class="btn btn--primary" @click="sendMessage()" :disabled="!newMessage.trim()">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div x-show="rtStatus !== 'connected'" class="text-[10px] text-slate-400 text-center">
+                    Working offline - messages save on send
+                </div>
+            </div>
         </div>
     </aside>
 
@@ -492,6 +529,7 @@ document.addEventListener('alpine:init', () => {
         userRole: '<?php echo e($userRole); ?>',
         shareUrl: '',
         chatMessages: <?php echo json_encode($messages, 15, 512) ?>,
+        initialMessagesCount: <?php echo e(count($messages)); ?>,
         newMessage: '',
         supabase: null,
         rtChannel: null,
@@ -505,24 +543,57 @@ document.addEventListener('alpine:init', () => {
         reconnectDelay: 1000,
         reconnectTimer: null,
         isReconnecting: false,
+        activeChannelId: null, // Track which channel is currently active
         
         toolIcons: { select: 'mouse-pointer', delete: 'trash-2', move: 'move', clone: 'copy' },
         toolLabels: { select: 'Select Tool', delete: 'Delete Tool — Click to remove', move: 'Move Tool — Click to pick up', clone: 'Clone Tool — Click to duplicate' },
 
-        init() {
+        async init() {
             // Initialize Supabase for Realtime
             this.supabase = supabase.createClient(
                 '<?php echo e(config('supabase.url')); ?>',
-                '<?php echo e(config('supabase.anon_key')); ?>'
+                '<?php echo e(config('supabase.anon_key')); ?>',
+                {
+                    realtime: {
+                        timeout: 20000,
+                        params: {
+                            eventsPerSecond: 10
+                        }
+                    }
+                }
             );
 
+            console.log('Supabase client initialized:', this.supabase ? 'OK' : 'FAILED');
+            
+            // Test REST API connectivity first
+            try {
+                const { data, error } = await this.supabase.from('builds').select('id').limit(1);
+                if (error) {
+                    console.error('Supabase REST API test failed:', error);
+                    console.error('%c[DIAGNOSTIC] Cannot connect to Supabase REST API. Check:', 'color: #ff6b6b; font-weight: bold;');
+                    console.error('  - SUPABASE_URL in .env is correct');
+                    console.error('  - SUPABASE_ANON_KEY in .env is correct');
+                    console.error('  - Your project is not paused');
+                    console.error('  - Network connectivity to Supabase');
+                } else {
+                    console.log('Supabase REST API test: OK (connected to database)');
+                }
+            } catch (testErr) {
+                console.error('Supabase REST API test error:', testErr);
+            }
+
             // Room-based channel for absolute real-time
+            const channelId = 'main_' + Date.now();
+            this.activeChannelId = channelId;
+            
             this.rtChannel = this.supabase.channel('build:<?php echo e($build->id); ?>', {
                 config: {
                     broadcast: { self: false }, // Don't receive own broadcasts
                     presence: { key: '<?php echo e($auth_user_id); ?>' + '_' + this.tabId }
                 }
             });
+            
+            console.log('RT Created new channel with ID:', channelId);
 
             this.rtChannel
                 .on('presence', { event: 'sync' }, () => {
@@ -593,8 +664,30 @@ document.addEventListener('alpine:init', () => {
 
                     this.processSyncEvent(data);
                 })
-                .subscribe(async (status) => {
-                    console.log('RT Subscription Status:', status);
+                .subscribe(async (status, err) => {
+                    // Check if this channel is still the active one
+                    if (channelId !== this.activeChannelId) {
+                        console.log(`RT Ignoring event from old channel ${channelId}, current is ${this.activeChannelId}`);
+                        return;
+                    }
+                    
+                    console.log('RT Subscription Status:', status, err ? 'Error:' + err.message : '');
+                    
+                    if (err) {
+                        console.error('RT Subscription Error:', err);
+                        
+                        // Specific diagnostic for common errors
+                        if (err.message && err.message.includes('UnableToConnectToProject')) {
+                            console.error('%c[DIAGNOSTIC] Supabase Realtime cannot connect to your project database.', 'color: #ff6b6b; font-weight: bold;');
+                            console.error('%c[DIAGNOSTIC] Solutions to try:', 'color: #ff6b6b;');
+                            console.error('  1. Check if your Supabase project is active (not paused)');
+                            console.error('  2. Go to Database → Replication and ensure Realtime is enabled');
+                            console.error('  3. Try re-enabling Realtime: Database → Replication → Toggle Realtime OFF then ON');
+                            console.error('  4. Check your .env SUPABASE_URL and SUPABASE_ANON_KEY are correct');
+                            console.error('  5. Your project might need to be restarted - contact Supabase support if issue persists');
+                        }
+                    }
+                    
                     this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : (status === 'CLOSED' ? 'closed' : 'error');
                     
                     if (status === 'SUBSCRIBED') {
@@ -603,20 +696,32 @@ document.addEventListener('alpine:init', () => {
                         this.isReconnecting = false;
                         
                         // Immediately track presence
-                        await this.rtChannel.track({
-                            online_at: new Date().toISOString(),
-                            name: '<?php echo e($auth_user_name); ?>',
-                            role: this.userRole,
-                            tabId: this.tabId
-                        });
-                        console.log('RT Connected and presence tracked');
+                        try {
+                            await this.rtChannel.track({
+                                online_at: new Date().toISOString(),
+                                name: '<?php echo e($auth_user_name); ?>',
+                                role: this.userRole,
+                                tabId: this.tabId
+                            });
+                            console.log('RT Connected and presence tracked');
+                        } catch (trackErr) {
+                            console.error('RT Presence tracking failed:', trackErr);
+                        }
                         
                         // Sync any parts that may have been added while page was loading
                         // Small delay to let editor finish initializing
                         setTimeout(() => this.syncMissedParts(), 500);
-                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                        console.warn('RT Connection lost, attempting reconnection...');
-                        this.handleReconnection();
+                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.warn('RT Connection lost (status: ' + status + ')');
+                        // Only trigger reconnection if not already reconnecting
+                        if (!this.isReconnecting && this.reconnectAttempts < this.maxReconnectAttempts) {
+                            console.log('RT Scheduling reconnection...');
+                            // Add delay before reconnection on localhost to prevent rapid reconnection loops
+                            const delay = this.reconnectAttempts === 0 ? 2000 : 1000;
+                            setTimeout(() => this.handleReconnection(), delay);
+                        } else if (this.isReconnecting) {
+                            console.log('RT Reconnection already in progress, skipping...');
+                        }
                     }
                 });
 
@@ -707,6 +812,22 @@ document.addEventListener('alpine:init', () => {
                 this.currentFloor = e.detail.floor;
                 document.getElementById('current-floor').textContent = e.detail.floor;
             });
+
+            // Fetch latest messages from API to get any messages sent while away
+            console.log(`Init: ${this.initialMessagesCount} messages loaded from server, fetching from API...`);
+            this.fetchMessages();
+            
+            // Poll for new messages every 30 seconds (fallback when realtime misses messages)
+            this.messagePollInterval = setInterval(() => {
+                this.fetchMessages();
+            }, 30000);
+            
+            // Also fetch when user returns to the tab
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    this.fetchMessages();
+                }
+            });
             
             window.addEventListener('floor-added', (e) => {
                 if (!this.floors.includes(e.detail.floor)) {
@@ -770,6 +891,9 @@ document.addEventListener('alpine:init', () => {
             window.addEventListener('beforeunload', () => {
                 if (this.reconnectTimer) {
                     clearTimeout(this.reconnectTimer);
+                }
+                if (this.messagePollInterval) {
+                    clearInterval(this.messagePollInterval);
                 }
                 if (this.rtChannel) {
                     this.rtChannel.unsubscribe();
@@ -874,19 +998,24 @@ document.addEventListener('alpine:init', () => {
         async fetchMessages() {
             try {
                 const res = await fetch(`/api/builds/<?php echo e($build->id); ?>/messages`);
+                if (!res.ok) {
+                    console.error('Failed to fetch messages, status:', res.status);
+                    return;
+                }
                 const messages = await res.json();
                 
-                // Add temp_id to server messages and ensure they have required fields
+                // Ensure messages have required fields
                 const processedMessages = messages.map(msg => ({
                     ...msg,
-                    temp_id: msg.id || `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     message: msg.message || msg.content || '',
-                    user: msg.user || { name: 'Unknown' }
+                    user: msg.user || { name: msg.user_name || 'Unknown' }
                 }));
                 
-                // Merge with existing messages, avoiding duplicates by temp_id or id
-                const existingIds = new Set(this.chatMessages.map(m => m.id || m.temp_id));
-                const newMessages = processedMessages.filter(m => !existingIds.has(m.id || m.temp_id));
+                // Merge with existing messages, avoiding duplicates by server id first
+                const existingServerIds = new Set(this.chatMessages.filter(m => m.id).map(m => m.id));
+                const newMessages = processedMessages.filter(m => !existingServerIds.has(m.id));
+                
+                console.log(`Fetched ${messages.length} messages from server, ${newMessages.length} new, ${existingServerIds.size} existing`);
                 
                 if (newMessages.length > 0) {
                     this.chatMessages = [...this.chatMessages, ...newMessages].sort((a, b) => 
@@ -913,7 +1042,22 @@ document.addEventListener('alpine:init', () => {
                     },
                     body: JSON.stringify({ message: messageText })
                 });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    console.error('Server error saving message:', res.status, errorData);
+                    this.newMessage = messageText; // Restore for retry
+                    this.showToast('Failed to save message: ' + (errorData.error || 'Server error'), 'error');
+                    return;
+                }
+                
                 const data = await res.json();
+                console.log('Message saved successfully:', data);
+                
+                if (!data.id) {
+                    console.error('CRITICAL: Message saved but no ID returned! Data:', data);
+                    this.showToast('Message may not have saved properly', 'warning');
+                }
 
                 // Ensure message text and user_id are included (server might not return them)
                 const messageData = {
@@ -935,10 +1079,19 @@ document.addEventListener('alpine:init', () => {
                     console.error('RT Failed to send chat broadcast:', result?.error || 'No result returned');
                 }
 
-                this.chatMessages.push(messageData);
-                this.scrollToBottom();
+                // Only add if not already in list (prevent duplicates from realtime)
+                const exists = this.chatMessages.some(m => m.id === messageData.id);
+                if (!exists) {
+                    this.chatMessages.push(messageData);
+                    this.scrollToBottom();
+                } else {
+                    console.log('Message already exists, skipping duplicate');
+                }
             } catch (err) {
-                this.showToast('Failed to send message', 'error');
+                console.error('Failed to send message:', err);
+                // Restore message so user can retry
+                this.newMessage = messageText;
+                this.showToast('Failed to send message. Check connection and try again.', 'error');
             }
         },
 
@@ -1051,6 +1204,12 @@ document.addEventListener('alpine:init', () => {
             this.reconnectTimer = setTimeout(() => {
                 console.log('RT Attempting to recreate channel...');
                 
+                // Generate new channel ID for this reconnection attempt
+                const reconnectionChannelId = 'reconn_' + Date.now() + '_' + this.reconnectAttempts;
+                const previousChannelId = this.activeChannelId;
+                this.activeChannelId = reconnectionChannelId;
+                console.log(`RT Switching from channel ${previousChannelId} to ${reconnectionChannelId}`);
+                
                 // Unsubscribe from old channel if exists
                 if (this.rtChannel) {
                     this.rtChannel.unsubscribe();
@@ -1113,6 +1272,12 @@ document.addEventListener('alpine:init', () => {
                         this.processSyncEvent(data);
                     })
                     .subscribe(async (status) => {
+                        // Check if this reconnection channel is still the active one
+                        if (reconnectionChannelId !== this.activeChannelId) {
+                            console.log(`RT Ignoring reconnection event from old channel ${reconnectionChannelId}, current is ${this.activeChannelId}`);
+                            return;
+                        }
+                        
                         console.log('RT Reconnection Status:', status);
                         this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : (status === 'CLOSED' ? 'closed' : 'error');
                         
@@ -1139,7 +1304,10 @@ document.addEventListener('alpine:init', () => {
                             await this.syncMissedParts();
                         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
                             this.isReconnecting = false;
-                            this.handleReconnection();
+                            // Only trigger reconnection if this is still the active channel
+                            if (reconnectionChannelId === this.activeChannelId && !this.isReconnecting) {
+                                this.handleReconnection();
+                            }
                         }
                     });
             }, delay);

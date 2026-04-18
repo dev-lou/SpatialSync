@@ -22,6 +22,12 @@
                 <span class="rt-indicator__label" x-text="isReconnecting ? 'Reconnecting...' : (rtStatus === 'connected' ? 'Live' : (rtStatus === 'connecting' ? 'Syncing...' : 'Offline'))"></span>
             </div>
 
+            <!-- View Only Badge for Viewers -->
+            <div class="view-only-badge" x-show="userRole === 'viewer'" title="You have view-only access">
+                <i data-lucide="eye" class="w-3 h-3"></i>
+                <span>View Only</span>
+            </div>
+
             <button class="btn btn--ghost btn--sm" @click="confirmReload()" title="Refresh Editor">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             </button>
@@ -95,7 +101,8 @@
         <div class="sidebar__content">
             <!-- Collaboration Tab -->
             <div x-show="sidebarTab === 'collab'">
-                <div class="sidebar-section">
+                <!-- Invite Members - Admin Only -->
+                <div class="sidebar-section" x-show="userPermissions.can_manage_members">
                     <div class="sidebar-section__title">
                         <i data-lucide="user-plus"></i> Invite Members
                     </div>
@@ -119,7 +126,8 @@
                     </div>
                 </div>
 
-                <div class="sidebar-section">
+                <!-- Share Link - Admin Only -->
+                <div class="sidebar-section" x-show="userPermissions.can_manage_members">
                     <div class="sidebar-section__title">
                         <i data-lucide="share-2"></i> Share Link
                     </div>
@@ -128,6 +136,19 @@
                         <button class="btn btn--secondary btn--sm" @click="getShareUrl()">
                             <i data-lucide="copy" class="w-4 h-4"></i>
                         </button>
+                    </div>
+                </div>
+
+                <!-- View Only Message for Viewers -->
+                <div class="sidebar-section" x-show="!userPermissions.can_manage_members && userRole === 'viewer'">
+                    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="flex items-center gap-2 text-yellow-700 mb-2">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span class="font-semibold text-sm">View Only Access</span>
+                        </div>
+                        <p class="text-xs text-yellow-600">
+                            You can view this build and participate in chat, but cannot edit or invite members. Contact the owner for edit access.
+                        </p>
                     </div>
                 </div>
 
@@ -146,7 +167,8 @@
                                     </div>
                                 </div>
                                 
-                                <div class="flex items-center gap-1.5" x-show="userRole === 'owner' && String(member.id) !== '{{ $auth_user_id }}'">
+                                <!-- Role Management Buttons - Admin Only -->
+                                <div class="flex items-center gap-1.5" x-show="userPermissions.can_manage_members && String(member.id) !== '{{ $auth_user_id }}'">
                                     <!-- Toggle Role Button (Camouflaged) -->
                                     <button @click="toggleRole(member)" 
                                             class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-200 border-none outline-none group/role hover:bg-accent/10 text-accent"
@@ -256,35 +278,45 @@
                     <i data-lucide="mouse-pointer" class="w-5 h-5"></i>
                     <span class="tooltip">Select</span>
                 </button>
-                <button class="floating-tool-btn" :class="{ active: currentTool === 'move' }" 
-                        @click="setTool('move')" title="Move Tool (T)">
+                <button class="floating-tool-btn" :class="{ active: currentTool === 'move', 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && setTool('move')" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Move Tool (T)">
                     <i data-lucide="move" class="w-5 h-5"></i>
-                    <span class="tooltip">Move</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Move' : 'Move (No Permission)'"></span>
                 </button>
-                <button class="floating-tool-btn" :class="{ active: currentTool === 'clone' }" 
-                        @click="setTool('clone')" title="Clone Tool (C)">
+                <button class="floating-tool-btn" :class="{ active: currentTool === 'clone', 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && setTool('clone')" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Clone Tool (C)">
                     <i data-lucide="copy" class="w-5 h-5"></i>
-                    <span class="tooltip">Clone</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Clone' : 'Clone (No Permission)'"></span>
                 </button>
-                <button class="floating-tool-btn" :class="{ active: currentTool === 'delete' }" 
-                        @click="setTool('delete')" title="Delete Tool (G)">
+                <button class="floating-tool-btn" :class="{ active: currentTool === 'delete', 'opacity-50 cursor-not-allowed': !userPermissions.can_delete_parts }" 
+                        @click="userPermissions.can_delete_parts && setTool('delete')" 
+                        :disabled="!userPermissions.can_delete_parts"
+                        title="Delete Tool (G)">
                     <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    <span class="tooltip">Delete</span>
+                    <span class="tooltip" x-text="userPermissions.can_delete_parts ? 'Delete' : 'Delete (No Permission)'"></span>
                 </button>
             </div>
 
             <div class="floating-toolbar__divider"></div>
 
             <div class="floating-toolbar__group">
-                <button class="floating-tool-btn" :class="{ 'btn--primary': paintModeActive }" 
-                        @click="togglePaintMode()" title="Paint Mode">
+                <button class="floating-tool-btn" :class="{ 'btn--primary': paintModeActive, 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && togglePaintMode()" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Paint Mode">
                     <i data-lucide="paintbrush" class="w-5 h-5"></i>
-                    <span class="tooltip">Paint</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Paint' : 'Paint (No Permission)'"></span>
                 </button>
-                <button class="floating-tool-btn" :class="{ 'btn--primary': materialModeActive }" 
-                        @click="toggleMaterialMode()" title="Material Mode">
+                <button class="floating-tool-btn" :class="{ 'btn--primary': materialModeActive, 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && toggleMaterialMode()" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Material Mode">
                     <i data-lucide="layers" class="w-5 h-5"></i>
-                    <span class="tooltip">Material</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Material' : 'Material (No Permission)'"></span>
                 </button>
                 <button class="floating-tool-btn" :class="{ 'btn--primary': !roofVisible }" 
                         @click="toggleRoof()" title="Toggle Roof">
@@ -447,8 +479,8 @@
                 @foreach($items as $preset)
                     <button class="part-card"
                             x-show="activeTab === '{{ $type }}'"
-                            :class="{ active: selectedPresetId === '{{ $preset['id'] ?? 0 }}' }"
-                            @click="selectPreset({{ json_encode([
+                            :class="{ active: selectedPresetId === '{{ $preset['id'] ?? 0 }}', 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }"
+                            @click="userPermissions.can_edit_geometry && selectPreset({{ json_encode([
                                 'id' => isset($preset['id']) ? $preset['id'] : '',
                                 'name' => isset($preset['name']) ? $preset['name'] : '',
                                 'type' => isset($preset['type']) ? $preset['type'] : '',
@@ -458,7 +490,8 @@
                                 'default_depth' => isset($preset['default_depth']) ? $preset['default_depth'] : 0.2,
                                 'default_color' => isset($preset['default_color']) ? $preset['default_color'] : '',
                                 'icon' => isset($preset['icon']) ? $preset['icon'] : '',
-                            ]) }})">
+                            ]) }})"
+                            :disabled="!userPermissions.can_edit_geometry">
                         <div class="part-card__icon">
                             <i data-lucide="{{ $preset['icon'] ?? 'box' }}"></i>
                         </div>
@@ -527,6 +560,7 @@ document.addEventListener('alpine:init', () => {
         searchResults: [],
         members: @json($membersData),
         userRole: '{{ $userRole }}',
+        userPermissions: @json($userPermissions),
         shareUrl: '',
         chatMessages: @json($messages),
         initialMessagesCount: {{ count($messages) }},
@@ -1614,6 +1648,27 @@ document.addEventListener('alpine:init', () => {
         0% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.5; transform: scale(1.2); }
         100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* View Only Badge */
+    .view-only-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        background: rgba(234, 179, 8, 0.1);
+        border: 1px solid rgba(234, 179, 8, 0.3);
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #eab308;
+        margin-left: 8px;
+    }
+
+    .view-only-badge i {
+        stroke: #eab308;
     }
 
     /* Collaboration Sidebar */

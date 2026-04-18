@@ -39,27 +39,11 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        // Create user in Supabase only - hash the password
+        // Create user in Supabase - hash the password
         $supabaseUser = $this->supabaseUser->create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'is_admin' => false,
-        ]);
-
-        // Check if user already exists in Supabase
-        $existingUser = $this->supabaseUser->findByEmail($validated['email']);
-        if ($existingUser) {
-            return back()->withErrors([
-                'email' => 'A user with this email already exists.',
-            ]);
-        }
-
-        // Create user in Supabase only
-        $supabaseUser = $this->supabaseUser->create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
             'is_admin' => false,
         ]);
 
@@ -94,6 +78,7 @@ class RegisteredUserController extends Controller
             $request->session()->put('supabase_user_id', $user['id']);
             $request->session()->put('supabase_user_email', $user['email']);
             $request->session()->put('supabase_user_name', $user['name']);
+            $request->session()->put('supabase_user_admin', $user['is_admin'] ?? false);
         }
 
         return redirect()->route('builds.index');
