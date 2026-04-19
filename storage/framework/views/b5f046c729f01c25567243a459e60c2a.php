@@ -1,25 +1,25 @@
 <?php $__env->startSection('title', 'About'); ?>
-<?php $__env->startSection('description', 'Learn about ConstructHub - the team behind the collaborative blueprint editor for architects and engineers.'); ?>
+<?php $__env->startSection('description', 'Learn about SpatialSync — a collaborative 3D building design platform built by ISUFST students.'); ?>
 
 <?php $__env->startPush('styles'); ?>
 <style>
 /* ── ABOUT PAGE STYLES ───────────────────────── */
 .about-hero {
     position: relative;
-    padding: var(--space-20) 0;
-    background: linear-gradient(135deg, var(--bg) 0%, var(--bg-secondary) 100%);
+    padding: calc(80px + var(--space-8)) 0 var(--space-20);
+    background: radial-gradient(circle at 50% -20%, var(--accent-muted) 0%, var(--bg) 60%);
     overflow: hidden;
+    border-bottom: 1px solid var(--border-default);
 }
 
 .about-hero::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: 
-        linear-gradient(to right, var(--border-default) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--border-default) 1px, transparent 1px);
-    background-size: 60px 60px;
-    opacity: 0.3;
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(0, 102, 255, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 80% 30%, rgba(129, 140, 248, 0.05) 0%, transparent 40%);
+    pointer-events: none;
 }
 
 .about-hero__content {
@@ -47,11 +47,25 @@
 
 .about-hero__title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 400;
+    font-size: clamp(3rem, 7vw, 5rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
     color: var(--text-primary);
     margin-bottom: var(--space-6);
-    line-height: 1.2;
+    line-height: 1.05;
+}
+
+.about-hero__title span {
+    background: linear-gradient(to right, var(--accent), #9333EA, var(--accent));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: text-shine 4s linear infinite;
+}
+
+@keyframes text-shine {
+    to { background-position: 200% center; }
 }
 
 .about-hero__subtitle {
@@ -62,9 +76,9 @@
     margin: 0 auto;
 }
 
-/* ── STORY SECTION ───────────────────────────── */
+/* ── STORY ───────────────────────────────────── */
 .story-section {
-    padding: var(--space-20) 0;
+    padding: var(--space-24) 0;
     background: var(--bg);
 }
 
@@ -78,26 +92,6 @@
 @media (min-width: 1024px) {
     .story-grid {
         grid-template-columns: 1fr 1fr;
-    }
-}
-
-.story-content {
-    order: 2;
-}
-
-@media (min-width: 1024px) {
-    .story-content {
-        order: 1;
-    }
-}
-
-.story-video {
-    order: 1;
-}
-
-@media (min-width: 1024px) {
-    .story-video {
-        order: 2;
     }
 }
 
@@ -138,9 +132,21 @@
     margin: var(--space-8) 0;
 }
 
-/* ── VALUES SECTION ──────────────────────────── */
+.story-image {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.story-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ── VALUES ──────────────────────────────────── */
 .values-section {
-    padding: var(--space-20) 0;
+    padding: var(--space-24) 0;
     background: var(--bg-secondary);
 }
 
@@ -171,29 +177,42 @@
 }
 
 @media (min-width: 768px) {
-    .values-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    .values-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (min-width: 1024px) {
-    .values-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
+    .values-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .value-card {
     padding: var(--space-8);
-    background: var(--surface);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
+    border-radius: 32px;
+    box-shadow: var(--shadow-sm);
     transition: border-color var(--dur-base), box-shadow var(--dur-base), transform var(--dur-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.value-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .value-card:hover {
     border-color: var(--accent);
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -10px rgba(0, 102, 255, 0.15);
+    transform: translateY(-8px);
+}
+
+.value-card:hover::before {
+    opacity: 1;
 }
 
 .value-card__icon {
@@ -221,19 +240,19 @@
     line-height: 1.7;
 }
 
-/* ── TIMELINE SECTION ────────────────────────── */
-.timeline-section {
-    padding: var(--space-20) 0;
+/* ── TECH STACK ──────────────────────────────── */
+.tech-section {
+    padding: var(--space-24) 0;
     background: var(--bg);
 }
 
-.timeline-section__header {
+.tech-section__header {
     text-align: center;
     max-width: 640px;
     margin: 0 auto var(--space-12);
 }
 
-.timeline-section__title {
+.tech-section__title {
     font-family: var(--font-display);
     font-size: var(--text-3xl);
     font-weight: 400;
@@ -241,463 +260,274 @@
     margin-bottom: var(--space-4);
 }
 
-.timeline-section__subtitle {
+.tech-section__subtitle {
     font-size: var(--text-lg);
     color: var(--text-secondary);
-    line-height: 1.7;
 }
 
-.timeline-wrapper {
-    max-width: 700px;
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+    max-width: 800px;
     margin: 0 auto;
 }
 
-/* ── TEAM SECTION ────────────────────────────── */
-.team-section {
-    padding: var(--space-20) 0;
+@media (min-width: 768px) {
+    .tech-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.tech-item {
+    text-align: center;
+    padding: var(--space-8) var(--space-6);
     background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 28px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.team-section__header {
-    text-align: center;
-    max-width: 640px;
-    margin: 0 auto var(--space-12);
+.tech-item:hover {
+    border-color: var(--accent);
+    background: var(--surface);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1);
 }
 
-.team-section__title {
-    font-family: var(--font-display);
-    font-size: var(--text-3xl);
-    font-weight: 400;
+.tech-item__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto var(--space-3);
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: var(--radius-lg);
+}
+
+.tech-item__name {
+    font-size: var(--text-sm);
+    font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--space-4);
 }
 
-.team-section__subtitle {
-    font-size: var(--text-lg);
-    color: var(--text-secondary);
-    line-height: 1.7;
-}
-
-/* ── STATS SECTION ───────────────────────────── */
-.stats-section {
-    padding: var(--space-16) 0;
-    background: linear-gradient(135deg, var(--accent) 0%, #0052CC 100%);
-    color: white;
-}
-
-.stats-section .stat-counter__number {
-    color: white;
-}
-
-.stats-section .stat-counter__label {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.stats-section .stat-counter__icon {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-}
-
-/* ── CTA SECTION ─────────────────────────────── */
+/* ── CTA ─────────────────────────────────────── */
 .about-cta {
-    padding: var(--space-20) 0;
-    background: var(--bg);
+    padding: var(--space-24) 0;
+    background: linear-gradient(135deg, var(--accent) 0%, #4338CA 100%);
     text-align: center;
+    color: white;
 }
 
 .about-cta__title {
     font-family: var(--font-display);
-    font-size: var(--text-3xl);
+    font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 400;
-    color: var(--text-primary);
     margin-bottom: var(--space-4);
 }
 
 .about-cta__subtitle {
     font-size: var(--text-lg);
-    color: var(--text-secondary);
+    opacity: 0.9;
     margin-bottom: var(--space-8);
     max-width: 500px;
     margin-inline: auto;
+}
+
+.about-cta .btn {
+    background: white;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.about-cta .btn:hover {
+    background: var(--bg-secondary);
+    transform: translateY(-2px);
+}
+
+/* ── GSAP ─────────────────────────────────────── */
+.gs-fade { opacity: 0; transform: translateY(40px); }
+
+@media (prefers-reduced-motion: reduce) {
+    .gs-fade { opacity: 1 !important; transform: none !important; }
 }
 </style>
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startSection('content'); ?>
-<!-- Hero Section -->
+<!-- Hero -->
 <section class="about-hero">
     <div class="container">
-        <div class="about-hero__content reveal">
-            <span class="about-hero__badge">About Us</span>
-            <h1 class="about-hero__title">Building the future of architectural design</h1>
+        <div class="about-hero__content hero-fade">
+            <span class="about-hero__badge">About SpatialSync</span>
+            <h1 class="about-hero__title">Building the future of <span>collaborative 3D design</span></h1>
             <p class="about-hero__subtitle">
-                We're on a mission to make professional blueprint design accessible to every architect, 
-                engineer, and designer — no expensive software required.
+                SpatialSync is a premium web-based platform that empowers teams to design buildings together in a shared, ultra-fast, real-time 3D workspace.
             </p>
         </div>
     </div>
 </section>
 
-<!-- Our Story with Video -->
+<!-- Story -->
 <section class="story-section">
     <div class="container">
         <div class="story-grid">
-            <div class="story-content reveal">
+            <div class="gs-fade">
                 <span class="story-content__badge">Our Story</span>
-                <h2 class="story-content__title">From frustration to innovation</h2>
+                <h2 class="story-content__title">Born from a real need</h2>
                 <p class="story-content__text">
-                    ConstructHub was born in 2022 when our founders, both architects, grew tired of expensive, 
-                    clunky CAD software that required endless updates and licenses.
+                    SpatialSync was built specifically to solve a real, pervasive problem in the industry: 
+                    how do you let multiple people work on an architectural design at the exact same time 
+                    — fully in 3D — without requiring expensive desktop software, heavy downloads, or messy file versioning?
                 </p>
                 <p class="story-content__text">
-                    They envisioned a world where architects could collaborate in real-time, share their work 
-                    instantly, and access professional-grade tools from any device — for free.
+                    The answer: a browser-based 3D editor with real-time sync, role-based access, 
+                    built-in chat, and an issue tracking system — all powered by Supabase's real-time 
+                    infrastructure and a custom Three.js-powered 3D viewport.
                 </p>
                 <blockquote class="story-content__quote">
-                    "Architecture should be about creativity, not software licenses."
+                    "Collaboration shouldn't require expensive licenses. It should be as simple as sharing a link."
                 </blockquote>
             </div>
-            <div class="story-video reveal">
-                <?php if (isset($component)) { $__componentOriginalb1f8fa33ff8600d3f2a6183c89419c25 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalb1f8fa33ff8600d3f2a6183c89419c25 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.video-player','data' => ['youtubeId' => 'dQw4w9WgXcQ','poster' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&h=450&fit=crop','title' => 'Our Story']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('video-player'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['youtubeId' => 'dQw4w9WgXcQ','poster' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&h=450&fit=crop','title' => 'Our Story']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalb1f8fa33ff8600d3f2a6183c89419c25)): ?>
-<?php $attributes = $__attributesOriginalb1f8fa33ff8600d3f2a6183c89419c25; ?>
-<?php unset($__attributesOriginalb1f8fa33ff8600d3f2a6183c89419c25); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalb1f8fa33ff8600d3f2a6183c89419c25)): ?>
-<?php $component = $__componentOriginalb1f8fa33ff8600d3f2a6183c89419c25; ?>
-<?php unset($__componentOriginalb1f8fa33ff8600d3f2a6183c89419c25); ?>
-<?php endif; ?>
+            <div class="story-image gs-fade">
+                <img 
+                    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop" 
+                    alt="Team collaborating on a project"
+                    width="800" height="600" loading="lazy"
+                >
             </div>
         </div>
     </div>
 </section>
 
-<!-- Stats Section -->
-<section class="stats-section">
-    <div class="container">
-        <div class="stats-grid">
-            <?php if (isset($component)) { $__componentOriginalc4716895b4357b7da8e3127f30c1f760 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc4716895b4357b7da8e3127f30c1f760 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-counter','data' => ['value' => '50000','suffix' => '+','label' => 'Blueprints Created','icon' => 'file-text']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('stat-counter'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['value' => '50000','suffix' => '+','label' => 'Blueprints Created','icon' => 'file-text']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $attributes = $__attributesOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $component = $__componentOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__componentOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-            <?php if (isset($component)) { $__componentOriginalc4716895b4357b7da8e3127f30c1f760 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc4716895b4357b7da8e3127f30c1f760 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-counter','data' => ['value' => '12000','suffix' => '+','label' => 'Active Users','icon' => 'users']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('stat-counter'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['value' => '12000','suffix' => '+','label' => 'Active Users','icon' => 'users']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $attributes = $__attributesOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $component = $__componentOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__componentOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-            <?php if (isset($component)) { $__componentOriginalc4716895b4357b7da8e3127f30c1f760 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc4716895b4357b7da8e3127f30c1f760 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-counter','data' => ['value' => '85','suffix' => '+','label' => 'Countries','icon' => 'globe']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('stat-counter'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['value' => '85','suffix' => '+','label' => 'Countries','icon' => 'globe']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $attributes = $__attributesOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $component = $__componentOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__componentOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-            <?php if (isset($component)) { $__componentOriginalc4716895b4357b7da8e3127f30c1f760 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalc4716895b4357b7da8e3127f30c1f760 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-counter','data' => ['value' => '99.9','suffix' => '%','label' => 'Uptime','icon' => 'shield-check']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('stat-counter'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['value' => '99.9','suffix' => '%','label' => 'Uptime','icon' => 'shield-check']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $attributes = $__attributesOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__attributesOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc4716895b4357b7da8e3127f30c1f760)): ?>
-<?php $component = $__componentOriginalc4716895b4357b7da8e3127f30c1f760; ?>
-<?php unset($__componentOriginalc4716895b4357b7da8e3127f30c1f760); ?>
-<?php endif; ?>
-        </div>
-    </div>
-</section>
-
-<!-- Values Section -->
+<!-- Values -->
 <section class="values-section">
     <div class="container">
-        <div class="values-section__header reveal">
-            <h2 class="values-section__title">Our values</h2>
+        <div class="values-section__header gs-fade">
+            <h2 class="values-section__title">What drives us</h2>
             <p class="values-section__subtitle">
-                The principles that guide everything we build.
+                The principles behind every feature and design decision.
             </p>
         </div>
 
-        <div class="values-grid stagger">
-            <div class="value-card glow-card reveal">
+        <div class="values-grid">
+            <div class="value-card glow-card gs-fade">
                 <div class="value-card__icon">
                     <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
                 <h3 class="value-card__title">Collaboration First</h3>
                 <p class="value-card__description">
-                    Great buildings are built by teams. We design every feature with collaboration at its core.
+                    Every feature is designed for teams. Real-time sync, shared workspaces, 
+                    and role-based access make teamwork seamless.
                 </p>
             </div>
 
-            <div class="value-card glow-card reveal">
+            <div class="value-card glow-card gs-fade">
+                <div class="value-card__icon">
+                    <i data-lucide="globe" class="w-6 h-6"></i>
+                </div>
+                <h3 class="value-card__title">Browser-Native</h3>
+                <p class="value-card__description">
+                    No downloads, no installations, no system requirements. 
+                    If you have a browser, you can design in 3D.
+                </p>
+            </div>
+
+            <div class="value-card glow-card gs-fade">
                 <div class="value-card__icon">
                     <i data-lucide="unlock" class="w-6 h-6"></i>
                 </div>
-                <h3 class="value-card__title">Accessibility</h3>
+                <h3 class="value-card__title">Accessible Design</h3>
                 <p class="value-card__description">
-                    Professional tools shouldn't require a professional budget. ConstructHub is free to start.
+                    Professional 3D design tools shouldn't require a professional budget. 
+                    SpatialSync is free to start.
                 </p>
             </div>
 
-            <div class="value-card glow-card reveal">
+            <div class="value-card glow-card gs-fade">
+                <div class="value-card__icon">
+                    <i data-lucide="shield" class="w-6 h-6"></i>
+                </div>
+                <h3 class="value-card__title">Secure by Default</h3>
+                <p class="value-card__description">
+                    Role-based permissions, authenticated sessions, and cloud-backed storage 
+                    keep your designs safe.
+                </p>
+            </div>
+
+            <div class="value-card glow-card gs-fade">
                 <div class="value-card__icon">
                     <i data-lucide="zap" class="w-6 h-6"></i>
                 </div>
                 <h3 class="value-card__title">Speed & Simplicity</h3>
                 <p class="value-card__description">
-                    No downloads, no installations. Open your browser and start designing in seconds.
+                    Create a build and start placing objects in seconds. 
+                    No onboarding wizards, no complexity walls.
                 </p>
             </div>
 
-            <div class="value-card glow-card reveal">
+            <div class="value-card glow-card gs-fade">
                 <div class="value-card__icon">
-                    <i data-lucide="shield" class="w-6 h-6"></i>
+                    <i data-lucide="building-2" class="w-6 h-6"></i>
                 </div>
-                <h3 class="value-card__title">Security & Privacy</h3>
+                <h3 class="value-card__title">Enterprise-Ready</h3>
                 <p class="value-card__description">
-                    Your blueprints are your intellectual property. We use enterprise-grade encryption.
-                </p>
-            </div>
-
-            <div class="value-card glow-card reveal">
-                <div class="value-card__icon">
-                    <i data-lucide="heart" class="w-6 h-6"></i>
-                </div>
-                <h3 class="value-card__title">User-Centric</h3>
-                <p class="value-card__description">
-                    Every feature is designed with real architects and engineers in mind.
-                </p>
-            </div>
-
-            <div class="value-card glow-card reveal">
-                <div class="value-card__icon">
-                    <i data-lucide="refresh-cw" class="w-6 h-6"></i>
-                </div>
-                <h3 class="value-card__title">Continuous Innovation</h3>
-                <p class="value-card__description">
-                    We ship improvements weekly based on user feedback and industry needs.
+                    Engineered to scale with modern organizations. Featuring dedicated workspaces, 
+                    advanced role permissions, and rock-solid database reliability.
                 </p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Timeline Section -->
-<section class="timeline-section">
+<!-- Tech Stack -->
+<section class="tech-section">
     <div class="container">
-        <div class="timeline-section__header reveal">
-            <h2 class="timeline-section__title">Our journey</h2>
-            <p class="timeline-section__subtitle">
-                From a simple idea to a platform used by thousands of architects worldwide.
+        <div class="tech-section__header gs-fade">
+            <h2 class="tech-section__title">Built with modern technology</h2>
+            <p class="tech-section__subtitle">
+                Industry-grade tools powering every part of the platform.
             </p>
         </div>
 
-        <div class="timeline-wrapper">
-            <?php if (isset($component)) { $__componentOriginal93f2afea2d7941ca7799292711b7f46f = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal93f2afea2d7941ca7799292711b7f46f = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.timeline','data' => ['items' => [
-                ['year' => '2022', 'title' => 'The Idea', 'description' => 'Two architects frustrated with expensive CAD software decide to build something better.', 'icon' => 'lightbulb'],
-                ['year' => '2023', 'title' => 'First Launch', 'description' => 'ConstructHub beta launches with 500 early adopters testing the platform.', 'icon' => 'rocket'],
-                ['year' => '2023', 'title' => 'Real-Time Collaboration', 'description' => 'We introduce real-time collaboration, allowing teams to design together.', 'icon' => 'users'],
-                ['year' => '2024', 'title' => '10K Users', 'description' => 'ConstructHub reaches 10,000 active users across 50 countries.', 'icon' => 'trending-up'],
-                ['year' => '2025', 'title' => 'Enterprise Launch', 'description' => 'We launch ConstructHub Enterprise for large architecture firms.', 'icon' => 'building'],
-                ['year' => '2026', 'title' => 'The Future', 'description' => 'AI-assisted design, 3D visualization, and much more on the horizon.', 'icon' => 'sparkles'],
-            ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('timeline'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['items' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
-                ['year' => '2022', 'title' => 'The Idea', 'description' => 'Two architects frustrated with expensive CAD software decide to build something better.', 'icon' => 'lightbulb'],
-                ['year' => '2023', 'title' => 'First Launch', 'description' => 'ConstructHub beta launches with 500 early adopters testing the platform.', 'icon' => 'rocket'],
-                ['year' => '2023', 'title' => 'Real-Time Collaboration', 'description' => 'We introduce real-time collaboration, allowing teams to design together.', 'icon' => 'users'],
-                ['year' => '2024', 'title' => '10K Users', 'description' => 'ConstructHub reaches 10,000 active users across 50 countries.', 'icon' => 'trending-up'],
-                ['year' => '2025', 'title' => 'Enterprise Launch', 'description' => 'We launch ConstructHub Enterprise for large architecture firms.', 'icon' => 'building'],
-                ['year' => '2026', 'title' => 'The Future', 'description' => 'AI-assisted design, 3D visualization, and much more on the horizon.', 'icon' => 'sparkles'],
-            ])]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal93f2afea2d7941ca7799292711b7f46f)): ?>
-<?php $attributes = $__attributesOriginal93f2afea2d7941ca7799292711b7f46f; ?>
-<?php unset($__attributesOriginal93f2afea2d7941ca7799292711b7f46f); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal93f2afea2d7941ca7799292711b7f46f)): ?>
-<?php $component = $__componentOriginal93f2afea2d7941ca7799292711b7f46f; ?>
-<?php unset($__componentOriginal93f2afea2d7941ca7799292711b7f46f); ?>
-<?php endif; ?>
+        <div class="tech-grid">
+            <div class="tech-item gs-fade">
+                <div class="tech-item__icon">
+                    <i data-lucide="code-2" class="w-6 h-6"></i>
+                </div>
+                <span class="tech-item__name">Laravel</span>
+            </div>
+            <div class="tech-item gs-fade">
+                <div class="tech-item__icon">
+                    <i data-lucide="box" class="w-6 h-6"></i>
+                </div>
+                <span class="tech-item__name">Three.js</span>
+            </div>
+            <div class="tech-item gs-fade">
+                <div class="tech-item__icon">
+                    <i data-lucide="database" class="w-6 h-6"></i>
+                </div>
+                <span class="tech-item__name">Supabase</span>
+            </div>
+            <div class="tech-item gs-fade">
+                <div class="tech-item__icon">
+                    <i data-lucide="radio" class="w-6 h-6"></i>
+                </div>
+                <span class="tech-item__name">Real-Time Sync</span>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- Team Section -->
-<section class="team-section">
-    <div class="container">
-        <div class="team-section__header reveal">
-            <h2 class="team-section__title">Meet the team</h2>
-            <p class="team-section__subtitle">
-                A diverse group of architects, engineers, and designers building the future of design.
-            </p>
-        </div>
-
-        <div class="team-grid stagger">
-            <?php if (isset($component)) { $__componentOriginal54b6124e00220a1153219ccd145cee24 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal54b6124e00220a1153219ccd145cee24 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.team-member','data' => ['name' => 'Alex Chen','role' => 'Co-Founder & CEO','image' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=280&h=280&fit=crop','bio' => 'Former architect at Foster + Partners. 15 years of experience in sustainable design.','linkedin' => 'https://linkedin.com','twitter' => 'https://twitter.com']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('team-member'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['name' => 'Alex Chen','role' => 'Co-Founder & CEO','image' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=280&h=280&fit=crop','bio' => 'Former architect at Foster + Partners. 15 years of experience in sustainable design.','linkedin' => 'https://linkedin.com','twitter' => 'https://twitter.com']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $attributes = $__attributesOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__attributesOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $component = $__componentOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__componentOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-            <?php if (isset($component)) { $__componentOriginal54b6124e00220a1153219ccd145cee24 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal54b6124e00220a1153219ccd145cee24 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.team-member','data' => ['name' => 'Sarah Mitchell','role' => 'Co-Founder & CTO','image' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=280&h=280&fit=crop','bio' => 'Ex-Google engineer. Passionate about building tools that empower creators.','linkedin' => 'https://linkedin.com']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('team-member'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['name' => 'Sarah Mitchell','role' => 'Co-Founder & CTO','image' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=280&h=280&fit=crop','bio' => 'Ex-Google engineer. Passionate about building tools that empower creators.','linkedin' => 'https://linkedin.com']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $attributes = $__attributesOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__attributesOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $component = $__componentOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__componentOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-            <?php if (isset($component)) { $__componentOriginal54b6124e00220a1153219ccd145cee24 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal54b6124e00220a1153219ccd145cee24 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.team-member','data' => ['name' => 'James Wilson','role' => 'Head of Design','image' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=280&h=280&fit=crop','bio' => 'Award-winning UX designer. Previously led design at Figma.','linkedin' => 'https://linkedin.com','twitter' => 'https://twitter.com']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('team-member'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['name' => 'James Wilson','role' => 'Head of Design','image' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=280&h=280&fit=crop','bio' => 'Award-winning UX designer. Previously led design at Figma.','linkedin' => 'https://linkedin.com','twitter' => 'https://twitter.com']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $attributes = $__attributesOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__attributesOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $component = $__componentOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__componentOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-            <?php if (isset($component)) { $__componentOriginal54b6124e00220a1153219ccd145cee24 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal54b6124e00220a1153219ccd145cee24 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.team-member','data' => ['name' => 'Maria Garcia','role' => 'Head of Product','image' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=280&h=280&fit=crop','bio' => '10+ years in product management. Former PM at Autodesk.','linkedin' => 'https://linkedin.com']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('team-member'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['name' => 'Maria Garcia','role' => 'Head of Product','image' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=280&h=280&fit=crop','bio' => '10+ years in product management. Former PM at Autodesk.','linkedin' => 'https://linkedin.com']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $attributes = $__attributesOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__attributesOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal54b6124e00220a1153219ccd145cee24)): ?>
-<?php $component = $__componentOriginal54b6124e00220a1153219ccd145cee24; ?>
-<?php unset($__componentOriginal54b6124e00220a1153219ccd145cee24); ?>
-<?php endif; ?>
-        </div>
-    </div>
-</section>
-
-<!-- CTA Section -->
+<!-- CTA -->
 <section class="about-cta">
     <div class="container">
-        <div class="reveal">
-            <h2 class="about-cta__title">Join our growing community</h2>
+        <div class="gs-fade">
+            <h2 class="about-cta__title">Try SpatialSync today</h2>
             <p class="about-cta__subtitle">
-                Start designing blueprints with thousands of architects and engineers worldwide.
+                Experience collaborative 3D building design — free, browser-based, and instant.
             </p>
-            <a href="<?php echo e(route('register')); ?>" class="btn btn--primary btn--xl btn-glow">
+            <a href="<?php echo e(route('register')); ?>" class="btn btn--xl">
                 Get started for free
                 <i data-lucide="arrow-right" class="w-5 h-5"></i>
             </a>
@@ -705,5 +535,38 @@
     </div>
 </section>
 <?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+        gsap.registerPlugin(ScrollTrigger);
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        // Animate hero immediately without ScrollTrigger
+        gsap.from('.hero-fade', {
+            opacity: 0, y: 40, duration: 0.8, ease: 'power3.out', delay: 0.1
+        });
+
+        gsap.utils.toArray('.gs-fade').forEach(el => {
+            gsap.to(el, {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: el,
+                    start: 'top 88%',
+                    toggleActions: 'play none none none'
+                }
+            });
+        });
+    }
+});
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\flow\resources\views/about.blade.php ENDPATH**/ ?>

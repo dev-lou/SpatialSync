@@ -7,7 +7,7 @@
     <div class="flex--between mb-8">
         <div>
             <h1 class="text-2xl font-bold text-primary">Admin Dashboard</h1>
-            <p class="text-secondary">Manage your ConstructHub platform</p>
+            <p class="text-secondary">Manage your SpatialSync platform</p>
         </div>
         <a href="{{ route('home') }}" class="btn btn--ghost">
             <i data-lucide="external-link" class="w-4 h-4"></i>

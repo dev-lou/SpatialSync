@@ -186,7 +186,7 @@
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="builds-page" x-data="{ search: '', filter: 'all' }">
+<div class="builds-page" x-data="buildsIndexApp()">
     <div class="container">
         <!-- Header -->
         <div class="builds-header reveal">
@@ -195,10 +195,10 @@
                 <p class="builds-header__subtitle"><?php echo e($builds->count()); ?> active project<?php echo e($builds->count() !== 1 ? 's' : ''); ?> (Personal & Shared)</p>
             </div>
             <div class="builds-header__actions">
-                <a href="<?php echo e(route('builds.create')); ?>" class="btn btn--primary btn-glow">
+                <button type="button" @click="openModal()" class="btn btn--primary btn-glow">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     New Build
-                </a>
+                </button>
             </div>
         </div>
 
@@ -216,10 +216,18 @@
             </button>
         </div>
 
-        <!-- Builds Grid -->
-        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($builds->count() > 0): ?>
-            <div class="builds-grid stagger">
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $builds; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php
+            $personalBuilds = $builds->filter(fn($b) => $b->user_role === 'owner');
+            $sharedWithMe = $builds->filter(fn($b) => $b->user_role !== 'owner');
+        ?>
+
+        <!-- Personal Builds Grid -->
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($personalBuilds->count() > 0): ?>
+            <div class="mb-4 mt-8">
+                <h2 class="text-lg font-semibold text-primary">Personal Builds</h2>
+            </div>
+            <div class="builds-grid stagger mb-12">
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $personalBuilds; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div x-show="
                         (search === '' || '<?php echo e(strtolower($build->name)); ?>'.includes(search.toLowerCase())) &&
                         (filter === 'all' || filter === 'recent')
@@ -248,22 +256,80 @@
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
         <?php else: ?>
-            <div class="builds-empty reveal">
+            <div class="builds-empty reveal mb-12">
                 <div class="builds-empty__icon">
                     <i data-lucide="folder-plus" class="w-8 h-8"></i>
                 </div>
-                <h3 class="builds-empty__title">No builds yet</h3>
+                <h3 class="builds-empty__title">No personal builds yet</h3>
                 <p class="builds-empty__description">
                     Create your first build to start designing houses, buildings, and architectural designs.
                 </p>
-                <a href="<?php echo e(route('builds.create')); ?>" class="btn btn--primary btn--lg btn-glow">
+                <button type="button" @click="openModal()" class="btn btn--primary btn--lg btn-glow">
                     <i data-lucide="plus" class="w-5 h-5"></i>
                     Create your first build
-                </a>
+                </button>
+            </div>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
+        <!-- Shared With Me Grid -->
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($sharedWithMe->count() > 0): ?>
+            <div class="mb-4 mt-8">
+                <h2 class="text-lg font-semibold text-primary">Shared With Me</h2>
+            </div>
+            <div class="builds-grid stagger mb-12">
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $sharedWithMe; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div x-show="
+                        (search === '' || '<?php echo e(strtolower($build->name)); ?>'.includes(search.toLowerCase())) &&
+                        (filter === 'all' || filter === 'recent')
+                    " x-transition>
+                        <?php if (isset($component)) { $__componentOriginal5fe4e89c5acea8188e4277fe0590d825 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5fe4e89c5acea8188e4277fe0590d825 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.blueprint-card','data' => ['blueprint' => $build,'class' => 'glow-card reveal']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('blueprint-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['blueprint' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($build),'class' => 'glow-card reveal']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5fe4e89c5acea8188e4277fe0590d825)): ?>
+<?php $attributes = $__attributesOriginal5fe4e89c5acea8188e4277fe0590d825; ?>
+<?php unset($__attributesOriginal5fe4e89c5acea8188e4277fe0590d825); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5fe4e89c5acea8188e4277fe0590d825)): ?>
+<?php $component = $__componentOriginal5fe4e89c5acea8188e4277fe0590d825; ?>
+<?php unset($__componentOriginal5fe4e89c5acea8188e4277fe0590d825); ?>
+<?php endif; ?>
+                    </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </div>
+
+    <?php echo $__env->make('builds.partials.create-modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 </div>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+function buildsIndexApp() {
+    return {
+        search: '',
+        filter: 'all',
+        ...createBuildModalApp()
+    }
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const app = document.querySelector('[x-data="buildsIndexApp()"]');
+        if (app && app.__x && app.__x.$data.showModal) {
+            app.__x.$data.closeModal();
+        }
+    }
+});
+</script>
+<?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\flow\resources\views/builds/index.blade.php ENDPATH**/ ?>

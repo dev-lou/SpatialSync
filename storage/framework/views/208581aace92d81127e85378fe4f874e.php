@@ -69,7 +69,7 @@
 
 @media (min-width: 768px) {
     .kpi-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
     }
 }
 
@@ -613,42 +613,41 @@
 
             <div class="kpi-card glow-card reveal">
                 <div class="kpi-card__header">
-                    <div class="kpi-card__icon">
-                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    <div class="kpi-card__icon" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                    </div>
+                    <div class="kpi-card__trend trend--up">
+                        <span>1.2GB</span>
                     </div>
                 </div>
-                <div class="kpi-card__value"><?php echo e($builds->where('updated_at', '>=', now()->subDays(7))->count()); ?></div>
-                <div class="kpi-card__label">Active This Week</div>
+                <div class="kpi-card__value">42%</div>
+                <div class="kpi-card__label">Storage Used</div>
+            </div>
+
+            <div class="kpi-card glow-card reveal">
+                <div class="kpi-card__header">
+                    <div class="kpi-card__icon" style="background: <?php echo e(($auth_user->plan ?? 'free') === 'pro' ? 'rgba(59, 130, 246, 0.1)' : 
+                        (($auth_user->plan ?? 'free') === 'enterprise' ? 'rgba(147, 51, 234, 0.1)' : 'var(--bg-tertiary)')); ?>; color: <?php echo e(($auth_user->plan ?? 'free') === 'pro' ? 'var(--accent)' : 
+                        (($auth_user->plan ?? 'free') === 'enterprise' ? '#9333EA' : 'var(--text-tertiary)')); ?>;">
+                        <i data-lucide="award" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="kpi-card__value" style="font-size: var(--text-xl); text-transform: uppercase; letter-spacing: 0.05em; color: <?php echo e(($auth_user->plan ?? 'free') === 'pro' ? 'var(--accent)' : 
+                    (($auth_user->plan ?? 'free') === 'enterprise' ? '#9333EA' : 'var(--text-primary)')); ?>;">
+                    <?php echo e($auth_user->plan ?? 'Free'); ?>
+
+                </div>
+                <div class="kpi-card__label">
+                    <a href="<?php echo e(route('pricing')); ?>" style="color: var(--accent); text-decoration: none; font-weight: 600;">Manage Plan</a>
+                </div>
             </div>
         </div>
 
-        <!-- Quick Actions (Removed New Build - it's now a FAB) -->
-        <div class="quick-actions stagger">
-            <a href="<?php echo e(route('builds.index')); ?>" class="quick-action glow-card reveal">
-                <div class="quick-action__icon">
-                    <i data-lucide="folder" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">All Builds</span>
-            </a>
-            <a href="<?php echo e(route('builds.index')); ?>?filter=shared" class="quick-action glow-card reveal">
-                <div class="quick-action__icon">
-                    <i data-lucide="users" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">Shared With Me</span>
-            </a>
-            <button type="button" class="quick-action glow-card reveal" @click="openModal()">
-                <div class="quick-action__icon">
-                    <i data-lucide="plus" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">New Build</span>
-            </button>
-        </div>
-
-        <!-- Builds Section -->
+        <!-- Builds Section: Recent Builds (Own) -->
         <div class="dashboard-header">
             <div>
                 <h2 class="dashboard-header__title">Recent Builds</h2>
-                <p class="dashboard-header__subtitle">Your most recently updated projects</p>
+                <p class="dashboard-header__subtitle">Your most recently updated personal projects</p>
             </div>
             <div class="dashboard-header__actions">
                 <button type="button" class="btn btn--primary btn--sm btn-glow" @click="openModal()">
@@ -663,8 +662,8 @@
         </div>
 
         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($builds->count() > 0): ?>
-            <div class="blueprints-grid stagger">
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $builds->take(6); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $builds->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <?php if (isset($component)) { $__componentOriginal5fe4e89c5acea8188e4277fe0590d825 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5fe4e89c5acea8188e4277fe0590d825 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.blueprint-card','data' => ['blueprint' => $build,'class' => 'glow-card reveal']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -687,21 +686,12 @@
 <?php endif; ?>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
-
-            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($builds->count() > 6): ?>
-                <div class="text-center mt-8">
-                    <a href="<?php echo e(route('builds.index')); ?>" class="btn btn--secondary">
-                        View all <?php echo e($builds->count()); ?> builds
-                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </a>
-                </div>
-            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
         <?php else: ?>
-            <div class="dashboard-empty reveal">
+            <div class="dashboard-empty reveal" style="margin-bottom: var(--space-12);">
                 <div class="dashboard-empty__icon">
                     <i data-lucide="folder-plus" class="w-8 h-8"></i>
                 </div>
-                <h3 class="dashboard-empty__title">No builds yet</h3>
+                <h3 class="dashboard-empty__title">No personal builds yet</h3>
                 <p class="dashboard-empty__description">
                     Create your first build to start designing houses, buildings, and architectural designs.
                 </p>
@@ -712,25 +702,74 @@
             </div>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-        <!-- Recent Activity (if user has builds) -->
-        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($builds->count() > 0): ?>
+        <!-- Builds Section: Shared With Me -->
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($sharedBuilds) && $sharedBuilds->count() > 0): ?>
+            <div class="dashboard-header reveal">
+                <div>
+                    <h2 class="dashboard-header__title">Shared With Me</h2>
+                    <p class="dashboard-header__subtitle">Projects you have been invited to collaborate on</p>
+                </div>
+                <div class="dashboard-header__actions">
+                    <a href="<?php echo e(route('builds.index')); ?>?filter=shared" class="btn btn--secondary btn--sm">
+                        View All
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $sharedBuilds->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php if (isset($component)) { $__componentOriginal5fe4e89c5acea8188e4277fe0590d825 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5fe4e89c5acea8188e4277fe0590d825 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.blueprint-card','data' => ['blueprint' => $build,'class' => 'glow-card reveal']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('blueprint-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['blueprint' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($build),'class' => 'glow-card reveal']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5fe4e89c5acea8188e4277fe0590d825)): ?>
+<?php $attributes = $__attributesOriginal5fe4e89c5acea8188e4277fe0590d825; ?>
+<?php unset($__attributesOriginal5fe4e89c5acea8188e4277fe0590d825); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5fe4e89c5acea8188e4277fe0590d825)): ?>
+<?php $component = $__componentOriginal5fe4e89c5acea8188e4277fe0590d825; ?>
+<?php unset($__componentOriginal5fe4e89c5acea8188e4277fe0590d825); ?>
+<?php endif; ?>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </div>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
+
+        <?php
+            $allActivity = $builds->concat($sharedBuilds ?? collect())->sortByDesc('updated_at')->take(5);
+        ?>
+
+        <!-- Recent Activity -->
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($allActivity->count() > 0): ?>
             <div class="activity-section reveal">
                 <div class="dashboard-header">
                     <div>
                         <h2 class="dashboard-header__title">Recent Activity</h2>
-                        <p class="dashboard-header__subtitle">Latest updates across your projects</p>
+                        <p class="dashboard-header__subtitle">Latest updates across your personal and shared projects</p>
                     </div>
                 </div>
 
                 <div class="activity-list">
-                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $builds->sortByDesc('updated_at')->take(5); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $allActivity; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $build): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <a href="<?php echo e(route('builds.show', $build->id)); ?>" class="activity-item">
                             <div class="activity-item__icon">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </div>
                             <div class="activity-item__content">
                                 <div class="activity-item__text">
-                                    You edited <strong><?php echo e($build->name); ?></strong>
+                                    <strong><?php echo e($build->name); ?></strong> was updated 
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($build->user_role) && $build->user_role !== 'owner'): ?>
+                                        <span class="text-xs text-tertiary">(Shared)</span>
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
                                 <div class="activity-item__time">
                                     <?php echo e($build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'recently'); ?>

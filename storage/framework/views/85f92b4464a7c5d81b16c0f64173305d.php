@@ -2,9 +2,9 @@
     <div class="container navbar__inner">
         <a href="<?php echo e(route('home')); ?>" class="navbar__brand">
             <span class="navbar__logo">
-                <i data-lucide="layout" class="w-5 h-5"></i>
+                <i data-lucide="box" class="w-5 h-5"></i>
             </span>
-            ConstructHub
+            SpatialSync
         </a>
 
         <div class="navbar__nav">
@@ -30,6 +30,15 @@
                         Dashboard
                     </a>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                
+                <?php
+                    $plan = $auth_user->plan ?? 'free';
+                ?>
+                <div class="navbar__plan-badge navbar__plan-badge--<?php echo e($plan); ?>">
+                    <?php echo e(strtoupper($plan)); ?>
+
+                </div>
+                
                 <?php if (isset($component)) { $__componentOriginalcedb185ae97611e17ef6f86a5f08cf12 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalcedb185ae97611e17ef6f86a5f08cf12 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.profile-dropdown','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>

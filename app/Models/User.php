@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'current_team_id',
         'is_admin',
+        'plan',
     ];
 
     protected $hidden = [
@@ -85,6 +86,7 @@ class User extends Authenticatable
                 'email' => $user->email,
                 'password' => $user->password,
                 'is_admin' => $user->is_admin ?? false,
+                'plan' => $user->plan ?? 'free',
             ]);
 
             if ($supabaseUser && isset($supabaseUser['id'])) {

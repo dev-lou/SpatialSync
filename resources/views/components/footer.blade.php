@@ -4,12 +4,12 @@
             <div class="footer__brand">
                 <a href="{{ route('home') }}" class="footer__logo">
                     <span class="navbar__logo">
-                        <i data-lucide="layout" class="w-5 h-5"></i>
+                        <i data-lucide="box" class="w-5 h-5"></i>
                     </span>
-                    ConstructHub
+                    SpatialSync
                 </a>
                 <p class="footer__tagline">
-                    Build houses and buildings together. Real-time 3D construction for everyone.
+                    Real-time collaborative 3D building design for teams. Design, iterate, and ship — together.
                 </p>
             </div>
 
@@ -43,18 +43,18 @@
 
         <div class="footer__bottom">
             <p class="footer__copyright">
-                &copy; {{ date('Y') }} ConstructHub. All rights reserved.
+                &copy; {{ date('Y') }} SpatialSync. All rights reserved.
             </p>
-            <div class="footer__legal">
-                <a href="#" class="footer__legal-link">Privacy</a>
-                <a href="#" class="footer__legal-link">Terms</a>
-                <a href="#" class="footer__legal-link">Cookies</a>
-            </div>
             <!-- Back to Top -->
             <a href="#" class="btn btn--ghost btn--sm" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" aria-label="Back to top">
                 <i data-lucide="arrow-up" class="w-4 h-4"></i>
                 <span class="sr-only">Back to top</span>
             </a>
         </div>
+    </div>
+
+    <!-- Antigravity / Premium Mega Text -->
+    <div class="footer__giant-text" aria-hidden="true">
+        SpatialSync
     </div>
 </footer>
