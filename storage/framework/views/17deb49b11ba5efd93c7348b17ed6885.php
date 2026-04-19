@@ -5,20 +5,30 @@
     <!-- Top Bar -->
     <header class="editor-topbar">
         <div class="editor-topbar__left">
+            <!-- Explicit Back Button -->
+            <a href="<?php echo e(route('builds.index')); ?>" class="btn btn--ghost btn--sm" style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none;" title="Back to Builds">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                <span style="font-size: 13px; font-weight: 600;">Back</span>
+            </a>
+            <div class="editor-topbar__divider"></div>
+            
             <button class="btn btn--ghost btn--sm" @click="sidebarOpen = !sidebarOpen" title="Toggle Sidebar">
                 <i data-lucide="menu" class="w-5 h-5"></i>
             </button>
             <div class="editor-topbar__divider"></div>
-            <a href="<?php echo e(route('dashboard')); ?>" class="editor-topbar__logo">
-                <i data-lucide="box" class="w-5 h-5"></i>
-            </a>
-            <div class="editor-topbar__divider"></div>
+            
             <span class="editor-topbar__title"><?php echo e($build->name); ?></span>
             
             <!-- Real-time Connection Indicator -->
             <div class="rt-indicator" :title="'Connection: ' + rtStatus + (isReconnecting ? ' (Reconnecting...)' : '')">
                 <div class="rt-indicator__dot" :class="rtStatus" :class="{ 'reconnecting': isReconnecting }"></div>
                 <span class="rt-indicator__label" x-text="isReconnecting ? 'Reconnecting...' : (rtStatus === 'connected' ? 'Live' : (rtStatus === 'connecting' ? 'Syncing...' : 'Offline'))"></span>
+            </div>
+
+            <!-- View Only Badge for Viewers -->
+            <div class="view-only-badge" x-show="userRole === 'viewer'" title="You have view-only access">
+                <i data-lucide="eye" class="w-3 h-3"></i>
+                <span>View Only</span>
             </div>
 
             <button class="btn btn--ghost btn--sm" @click="confirmReload()" title="Refresh Editor">
@@ -29,17 +39,28 @@
         <div class="editor-topbar__center">
             <!-- Floor Selector -->
             <div class="floor-selector">
-                <template x-for="floor in floors" :key="floor">
-                    <button class="floor-btn"
-                            :class="{ active: currentFloor === floor }"
-                            @click="setFloor(floor)"
-                            x-text="floor">
-                    </button>
-                </template>
+                <button class="floor-btn floor-btn--arrow" 
+                        @click="goUpFloor()" 
+                        :disabled="currentFloor >= floors.length"
+                        title="Go Up Floor">
+                    <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                </button>
+                
+                <div class="floor-display" x-text="'Floor ' + currentFloor"></div>
+                
+                <button class="floor-btn floor-btn--arrow" 
+                        @click="goDownFloor()" 
+                        :disabled="currentFloor <= 1"
+                        title="Go Down Floor">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+                
+                <div class="floor-divider"></div>
+                
                 <button class="floor-btn floor-btn--add" 
                         @click="addFloor()" 
                         x-show="floors.length < 10"
-                        title="Add Floor">
+                        title="Add New Floor">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -66,6 +87,42 @@
                 <i data-lucide="redo-2" class="w-4 h-4"></i>
             </button>
             <div class="editor-topbar__divider"></div>
+            
+            <!-- Export Dropdown -->
+            <div class="export-dropdown" @click.away="exportDropdownOpen = false">
+                <button class="btn btn--ghost btn--sm" @click="exportDropdownOpen = !exportDropdownOpen" :class="{ 'active': exportDropdownOpen }" title="Export Build">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Export</span>
+                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" :class="{ 'rotate-180': exportDropdownOpen }"></i>
+                </button>
+                
+                <div class="dropdown-menu dropdown-menu--right" 
+                     x-show="exportDropdownOpen" 
+                     x-cloak 
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95">
+                    <div class="dropdown-header">Export Build</div>
+                    <button class="dropdown-item" @click="saveBuild(); setTimeout(() => { if(typeof editor !== 'undefined') editor.exportPNG(); exportDropdownOpen = false; }, 100)">
+                        <div class="dropdown-item__icon"><i data-lucide="image"></i></div>
+                        <div class="dropdown-item__content">
+                            <div class="dropdown-item__title">Export as PNG</div>
+                            <div class="dropdown-item__desc">High-quality 3D capture</div>
+                        </div>
+                    </button>
+                    <a href="<?php echo e(route('builds.export', ['build' => $build->id, 'format' => 'json'])); ?>" class="dropdown-item" @click="exportDropdownOpen = false">
+                        <div class="dropdown-item__icon"><i data-lucide="file-json"></i></div>
+                        <div class="dropdown-item__content">
+                            <div class="dropdown-item__title">Export as JSON</div>
+                            <div class="dropdown-item__desc">Full geometry data backup</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
             <button class="btn btn--secondary btn--sm" @click="saveBuild()">
                 <i data-lucide="save" class="w-4 h-4"></i>
                 Save
@@ -89,12 +146,18 @@
             <div class="sidebar__tab" :class="{ active: sidebarTab === 'chat' }" @click="sidebarTab = 'chat'">
                 Chat
             </div>
+            <div class="sidebar__tab" :class="{ active: sidebarTab === 'issues' }" @click="sidebarTab = 'issues'">
+                Issues
+                <span class="tab-badge" x-show="issues.filter(i => i.status === 'open' || i.status === 'in_progress').length > 0" 
+                      x-text="issues.filter(i => i.status === 'open' || i.status === 'in_progress').length"></span>
+            </div>
         </div>
 
         <div class="sidebar__content">
             <!-- Collaboration Tab -->
             <div x-show="sidebarTab === 'collab'">
-                <div class="sidebar-section">
+                <!-- Invite Members - Admin/Editor Only -->
+                <div class="sidebar-section" x-show="userRole !== 'viewer'">
                     <div class="sidebar-section__title">
                         <i data-lucide="user-plus"></i> Invite Members
                     </div>
@@ -118,7 +181,8 @@
                     </div>
                 </div>
 
-                <div class="sidebar-section">
+                <!-- Share Link - Admin/Editor Only -->
+                <div class="sidebar-section" x-show="userRole !== 'viewer'">
                     <div class="sidebar-section__title">
                         <i data-lucide="share-2"></i> Share Link
                     </div>
@@ -127,6 +191,19 @@
                         <button class="btn btn--secondary btn--sm" @click="getShareUrl()">
                             <i data-lucide="copy" class="w-4 h-4"></i>
                         </button>
+                    </div>
+                </div>
+
+                <!-- View Only Message for Viewers -->
+                <div class="sidebar-section" x-show="!userPermissions.can_manage_members && userRole === 'viewer'">
+                    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="flex items-center gap-2 text-yellow-700 mb-2">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span class="font-semibold text-sm">View Only Access</span>
+                        </div>
+                        <p class="text-xs text-yellow-600">
+                            You can view this build and participate in chat, but cannot edit or invite members. Contact the owner for edit access.
+                        </p>
                     </div>
                 </div>
 
@@ -145,7 +222,8 @@
                                     </div>
                                 </div>
                                 
-                                <div class="flex items-center gap-1.5" x-show="userRole === 'owner' && String(member.id) !== '<?php echo e($auth_user_id); ?>'">
+                                <!-- Role Management Buttons - Admin Only -->
+                                <div class="flex items-center gap-1.5" x-show="userPermissions.can_manage_members && String(member.id) !== '<?php echo e($auth_user_id); ?>'">
                                     <!-- Toggle Role Button (Camouflaged) -->
                                     <button @click="toggleRole(member)" 
                                             class="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-200 border-none outline-none group/role hover:bg-accent/10 text-accent"
@@ -186,28 +264,20 @@
                 
                 <!-- Offline Notice -->
                 <div x-show="rtStatus !== 'connected' && rtStatus !== 'connecting'" 
-                     class="mx-4 mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
-                    <div class="flex items-start gap-2">
-                        <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
-                        <div>
-                            <p class="font-medium">Realtime offline</p>
-                            <p class="text-yellow-600">Messages will save but live sync requires Supabase Realtime.</p>
-                            <p class="text-[10px] mt-1 text-yellow-500">
-                                Check console (F12) for diagnostics. Common fix: Database → Replication → Toggle Realtime OFF/ON
-                            </p>
-                        </div>
-                    </div>
+                     class="chat-offline-notice">
+                    <i data-lucide="wifi-off"></i>
+                    <span>Working offline - messages will save locally</span>
                 </div>
                 
                 <div class="chat-messages" id="chat-messages">
                     <!-- Empty State -->
-                    <div x-show="chatMessages.length === 0" class="flex flex-col items-center justify-center h-full text-center p-6">
-                        <div class="w-16 h-16 mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                            <i data-lucide="message-circle" class="w-8 h-8 text-slate-400"></i>
+                    <div x-show="chatMessages.length === 0" class="chat-empty-state">
+                        <div class="chat-empty-state__icon">
+                            <i data-lucide="message-circle"></i>
                         </div>
-                        <p class="text-sm font-medium text-slate-600 mb-1">No messages yet</p>
-                        <p class="text-xs text-slate-400" x-show="rtStatus === 'connected'">Be the first to start the conversation!</p>
-                        <p class="text-xs text-slate-400" x-show="rtStatus !== 'connected'">Messages will appear here when you send them.</p>
+                        <p class="chat-empty-state__title">No messages yet</p>
+                        <p class="chat-empty-state__subtitle" x-show="rtStatus === 'connected'">Be the first to start the conversation!</p>
+                        <p class="chat-empty-state__subtitle" x-show="rtStatus !== 'connected'">Messages will appear here when you send them.</p>
                     </div>
                     
                     <template x-for="msg in chatMessages" :key="msg.id || msg.temp_id">
@@ -224,22 +294,87 @@
                     </template>
                 </div>
             </div>
+
+            <!-- Issues Tab -->
+            <div x-show="sidebarTab === 'issues'" class="h-full flex flex-col">
+                <div class="sidebar-section__title mb-2">
+                    <i data-lucide="alert-circle"></i> Build Issues
+                    <span class="text-xs text-slate-400 ml-2" x-text="issues.length + ' total'"></span>
+                </div>
+
+                <!-- Filter Buttons -->
+                <div class="flex gap-2 mb-3">
+                    <button class="filter-btn text-xs" :class="{ active: issueFilter === 'all' }" @click="issueFilter = 'all'">
+                        All
+                    </button>
+                    <button class="filter-btn text-xs" :class="{ active: issueFilter === 'open' }" @click="issueFilter = 'open'">
+                        Open
+                    </button>
+                    <button class="filter-btn text-xs" :class="{ active: issueFilter === 'resolved' }" @click="issueFilter = 'resolved'">
+                        Resolved
+                    </button>
+                </div>
+
+                <!-- Issues List -->
+                <div class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <template x-for="issue in filteredIssues" :key="issue.id">
+                        <div class="issue-card" :class="{ 'issue-card--selected': selectedIssue?.id === issue.id }" @click="selectIssue(issue)">
+                            <div class="issue-card-header">
+                                <div class="issue-status-dot" :style="{ background: issue.status_color }"></div>
+                                <div class="issue-title" x-text="issue.title"></div>
+                            </div>
+                            <div class="issue-card-body">
+                                <div class="issue-meta">
+                                    <span class="issue-priority-badge" :style="{ background: issue.priority_color + '15', color: issue.priority_color, borderColor: issue.priority_color + '40' }">
+                                        <span x-text="issue.priority_label"></span>
+                                    </span>
+                                    <span class="issue-creator" x-text="issue.creator_name"></span>
+                                </div>
+                                <div x-show="issue.part_id" class="issue-attachment">
+                                    <i data-lucide="box"></i> Attached to part
+                                </div>
+                            </div>
+                            <div class="issue-card-actions" x-show="selectedIssue?.id === issue.id">
+                                <button class="btn btn--secondary btn--xs" @click.stop="updateIssueStatus(issue.id, 'in_progress')" x-show="issue.status === 'open'">
+                                    Start
+                                </button>
+                                <button class="btn btn--success btn--xs" @click.stop="updateIssueStatus(issue.id, 'resolved')" x-show="issue.status !== 'resolved' && issue.status !== 'closed'">
+                                    Resolve
+                                </button>
+                                <button class="btn btn--ghost btn--xs text-red-500" @click.stop="deleteIssue(issue.id)">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Empty State -->
+                    <div x-show="filteredIssues.length === 0" class="empty-state">
+                        <i data-lucide="check-circle" class="w-12 h-12 text-slate-400 mb-2"></i>
+                        <p class="text-sm text-slate-400">No issues found</p>
+                        <p class="text-xs text-slate-500">Right-click any part to create an issue</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="sidebar__footer" x-show="sidebarTab === 'chat'">
-            <div class="flex flex-col w-full gap-1">
-                <div class="flex gap-2">
-                    <input type="text" class="chat-input" 
-                           :placeholder="rtStatus === 'connected' ? 'Type a message...' : 'Type a message (offline mode)...'" 
-                           x-model="newMessage" @keyup.enter="sendMessage()">
-                    <button class="btn btn--primary" @click="sendMessage()" :disabled="!newMessage.trim()">
-                        <i data-lucide="send" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                <div x-show="rtStatus !== 'connected'" class="text-[10px] text-slate-400 text-center">
-                    Working offline - messages save on send
-                </div>
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" 
+                       placeholder="Type a message..." 
+                       x-model="newMessage" @keyup.enter="sendMessage()">
+                <button class="chat-send-btn" @click="sendMessage()" :disabled="!newMessage.trim()">
+                    <i data-lucide="send"></i>
+                </button>
             </div>
+        </div>
+
+        <!-- Issues Footer -->
+        <div class="sidebar__footer" x-show="sidebarTab === 'issues'">
+            <button class="btn btn--primary w-full" @click="openIssueModal()" :disabled="!selectedPartId">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span x-text="selectedPartId ? 'Create Issue for Selected Part' : 'Select a Part First'"></span>
+            </button>
         </div>
     </aside>
 
@@ -255,35 +390,45 @@
                     <i data-lucide="mouse-pointer" class="w-5 h-5"></i>
                     <span class="tooltip">Select</span>
                 </button>
-                <button class="floating-tool-btn" :class="{ active: currentTool === 'move' }" 
-                        @click="setTool('move')" title="Move Tool (T)">
+                <button class="floating-tool-btn" :class="{ active: currentTool === 'move', 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && setTool('move')" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Move Tool (T)">
                     <i data-lucide="move" class="w-5 h-5"></i>
-                    <span class="tooltip">Move</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Move' : 'Move (No Permission)'"></span>
                 </button>
-                <button class="floating-tool-btn" :class="{ active: currentTool === 'clone' }" 
-                        @click="setTool('clone')" title="Clone Tool (C)">
+                <button class="floating-tool-btn" :class="{ active: currentTool === 'clone', 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && setTool('clone')" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Clone Tool (C)">
                     <i data-lucide="copy" class="w-5 h-5"></i>
-                    <span class="tooltip">Clone</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Clone' : 'Clone (No Permission)'"></span>
                 </button>
-                <button class="floating-tool-btn" :class="{ active: currentTool === 'delete' }" 
-                        @click="setTool('delete')" title="Delete Tool (G)">
+                <button class="floating-tool-btn" :class="{ active: currentTool === 'delete', 'opacity-50 cursor-not-allowed': !userPermissions.can_delete_parts }" 
+                        @click="userPermissions.can_delete_parts && setTool('delete')" 
+                        :disabled="!userPermissions.can_delete_parts"
+                        title="Delete Tool (G)">
                     <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    <span class="tooltip">Delete</span>
+                    <span class="tooltip" x-text="userPermissions.can_delete_parts ? 'Delete' : 'Delete (No Permission)'"></span>
                 </button>
             </div>
 
             <div class="floating-toolbar__divider"></div>
 
             <div class="floating-toolbar__group">
-                <button class="floating-tool-btn" :class="{ 'btn--primary': paintModeActive }" 
-                        @click="togglePaintMode()" title="Paint Mode">
+                <button class="floating-tool-btn" :class="{ 'btn--primary': paintModeActive, 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && togglePaintMode()" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Paint Mode">
                     <i data-lucide="paintbrush" class="w-5 h-5"></i>
-                    <span class="tooltip">Paint</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Paint' : 'Paint (No Permission)'"></span>
                 </button>
-                <button class="floating-tool-btn" :class="{ 'btn--primary': materialModeActive }" 
-                        @click="toggleMaterialMode()" title="Material Mode">
+                <button class="floating-tool-btn" :class="{ 'btn--primary': materialModeActive, 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }" 
+                        @click="userPermissions.can_edit_geometry && toggleMaterialMode()" 
+                        :disabled="!userPermissions.can_edit_geometry"
+                        title="Material Mode">
                     <i data-lucide="layers" class="w-5 h-5"></i>
-                    <span class="tooltip">Material</span>
+                    <span class="tooltip" x-text="userPermissions.can_edit_geometry ? 'Material' : 'Material (No Permission)'"></span>
                 </button>
                 <button class="floating-tool-btn" :class="{ 'btn--primary': !roofVisible }" 
                         @click="toggleRoof()" title="Toggle Roof">
@@ -447,8 +592,8 @@
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $preset): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <button class="part-card"
                             x-show="activeTab === '<?php echo e($type); ?>'"
-                            :class="{ active: selectedPresetId === '<?php echo e($preset['id'] ?? 0); ?>' }"
-                            @click="selectPreset(<?php echo e(json_encode([
+                            :class="{ active: selectedPresetId === '<?php echo e($preset['id'] ?? 0); ?>', 'opacity-50 cursor-not-allowed': !userPermissions.can_edit_geometry }"
+                            @click="userPermissions.can_edit_geometry && selectPreset(<?php echo e(json_encode([
                                 'id' => isset($preset['id']) ? $preset['id'] : '',
                                 'name' => isset($preset['name']) ? $preset['name'] : '',
                                 'type' => isset($preset['type']) ? $preset['type'] : '',
@@ -458,7 +603,8 @@
                                 'default_depth' => isset($preset['default_depth']) ? $preset['default_depth'] : 0.2,
                                 'default_color' => isset($preset['default_color']) ? $preset['default_color'] : '',
                                 'icon' => isset($preset['icon']) ? $preset['icon'] : '',
-                            ])); ?>)">
+                            ])); ?>)"
+                            :disabled="!userPermissions.can_edit_geometry">
                         <div class="part-card__icon">
                             <i data-lucide="<?php echo e($preset['icon'] ?? 'box'); ?>"></i>
                         </div>
@@ -472,7 +618,7 @@
     <!-- Debug Bar -->
     <div class="debug-bar">
         <span>
-            <strong>ConstructHub</strong>
+            <strong>SpatialSync</strong>
             <span class="status-ok" id="debug-three">Three.js: OK</span>
         </span>
         <span id="debug-info">Loading...</span>
@@ -485,6 +631,66 @@
 
     <!-- Toast Container -->
     <!-- Modern Toasts handled by SweetAlert2 in layout -->
+
+    <!-- Issue Creation Modal -->
+    <div class="modal-overlay" x-show="showIssueModal" x-transition @click.self="showIssueModal = false">
+        <div class="modal-content issue-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    Create New Issue
+                </h3>
+                <button class="btn btn--ghost btn--sm" @click="showIssueModal = false">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Title <span class="text-red-500">*</span></label>
+                    <input type="text" class="form-input" x-model="newIssue.title" placeholder="e.g., Wall needs to be moved 2ft left">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-textarea" x-model="newIssue.description" rows="3" placeholder="Describe the issue in detail..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <div class="priority-selector">
+                        <button class="priority-btn" :class="{ active: newIssue.priority === 'low' }" @click="newIssue.priority = 'low'" style="--color: #22c55e;">
+                            <span class="priority-dot" style="background: #22c55e;"></span>
+                            Low
+                        </button>
+                        <button class="priority-btn" :class="{ active: newIssue.priority === 'medium' }" @click="newIssue.priority = 'medium'" style="--color: #eab308;">
+                            <span class="priority-dot" style="background: #eab308;"></span>
+                            Medium
+                        </button>
+                        <button class="priority-btn" :class="{ active: newIssue.priority === 'high' }" @click="newIssue.priority = 'high'" style="--color: #f97316;">
+                            <span class="priority-dot" style="background: #f97316;"></span>
+                            High
+                        </button>
+                        <button class="priority-btn" :class="{ active: newIssue.priority === 'critical' }" @click="newIssue.priority = 'critical'" style="--color: #dc2626;">
+                            <span class="priority-dot" style="background: #dc2626;"></span>
+                            Critical
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group" x-show="selectedPartId">
+                    <label>Attached to Part</label>
+                    <div class="selected-part-info">
+                        <i data-lucide="box" class="w-4 h-4"></i>
+                        <span x-text="selectedPartId ? 'Part ID: ' + selectedPartId.substring(0, 8) + '...' : 'No part selected'"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary" @click="showIssueModal = false">Cancel</button>
+                <button class="btn btn--primary" @click="createIssue()" :disabled="!newIssue.title.trim()">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Create Issue
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 <?php $__env->stopSection(); ?>
 
@@ -527,8 +733,19 @@ document.addEventListener('alpine:init', () => {
         searchResults: [],
         members: <?php echo json_encode($membersData, 15, 512) ?>,
         userRole: '<?php echo e($userRole); ?>',
+        userPermissions: <?php echo json_encode($userPermissions, 15, 512) ?>,
         shareUrl: '',
         chatMessages: <?php echo json_encode($messages, 15, 512) ?>,
+        issues: <?php echo json_encode($issues, 15, 512) ?>,
+        selectedIssue: null,
+        issueFilter: 'all', // all, open, resolved
+        showIssueModal: false,
+        newIssue: {
+            title: '',
+            description: '',
+            priority: 'medium',
+            part_id: null
+        },
         initialMessagesCount: <?php echo e(count($messages)); ?>,
         newMessage: '',
         supabase: null,
@@ -547,8 +764,13 @@ document.addEventListener('alpine:init', () => {
         
         toolIcons: { select: 'mouse-pointer', delete: 'trash-2', move: 'move', clone: 'copy' },
         toolLabels: { select: 'Select Tool', delete: 'Delete Tool — Click to remove', move: 'Move Tool — Click to pick up', clone: 'Clone Tool — Click to duplicate' },
+        exportDropdownOpen: false,
 
         async init() {
+            // Debug: Log issues data
+            console.log('[Issues] Loaded from server:', this.issues.length, 'issues');
+            console.log('[Issues] Data:', JSON.parse(JSON.stringify(this.issues)));
+            
             // Initialize Supabase for Realtime
             this.supabase = supabase.createClient(
                 '<?php echo e(config('supabase.url')); ?>',
@@ -737,6 +959,12 @@ document.addEventListener('alpine:init', () => {
                         window.editor.myPresenceKey = '<?php echo e($auth_user_id); ?>' + '_' + self.tabId;
                         clearInterval(checkEditor);
                         
+                        // Initialize issue pins
+                        if (self.issues && self.issues.length > 0) {
+                            console.log('[Editor] Loading', self.issues.length, 'issue pins');
+                            window.editor.loadIssuePins(self.issues);
+                        }
+                        
                         // Process any queued sync events
                         const queueLength = self.pendingSyncEvents.length;
                         if (queueLength > 0) {
@@ -841,6 +1069,16 @@ document.addEventListener('alpine:init', () => {
             
             window.addEventListener('toast', (e) => {
                 this.showToast(e.detail.message, e.detail.type);
+            });
+
+            // Right-click on part to create issue
+            window.addEventListener('open-issue-modal', (e) => {
+                if (e.detail && e.detail.partId) {
+                    this.newIssue.part_id = e.detail.partId;
+                    this.sidebarOpen = true;
+                    this.sidebarTab = 'issues';
+                    this.showIssueModal = true;
+                }
             });
             
             window.addEventListener('preset-deselected', () => {
@@ -997,7 +1235,7 @@ document.addEventListener('alpine:init', () => {
 
         async fetchMessages() {
             try {
-                const res = await fetch(`/api/builds/<?php echo e($build->id); ?>/messages`);
+                const res = await fetch(`/editor/builds/<?php echo e($build->id); ?>/messages`);
                 if (!res.ok) {
                     console.error('Failed to fetch messages, status:', res.status);
                     return;
@@ -1034,7 +1272,7 @@ document.addEventListener('alpine:init', () => {
             this.newMessage = '';
 
             try {
-                const res = await fetch(`/api/builds/<?php echo e($build->id); ?>/messages`, {
+                const res = await fetch(`/editor/builds/<?php echo e($build->id); ?>/messages`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1139,7 +1377,7 @@ document.addEventListener('alpine:init', () => {
             console.log('RT Syncing missed parts from database...');
             
             try {
-                const response = await fetch(`/api/builds/<?php echo e($build->id); ?>/parts`, {
+                const response = await fetch(`/editor/builds/<?php echo e($build->id); ?>/parts`, {
                     credentials: 'same-origin',
                     headers: {
                         'Accept': 'application/json',
@@ -1354,6 +1592,18 @@ document.addEventListener('alpine:init', () => {
             if (typeof editor !== 'undefined') editor.setFloor(floor);
         },
         
+        goUpFloor() {
+            if (this.currentFloor < this.floors.length) {
+                this.setFloor(this.currentFloor + 1);
+            }
+        },
+        
+        goDownFloor() {
+            if (this.currentFloor > 1) {
+                this.setFloor(this.currentFloor - 1);
+            }
+        },
+        
         addFloor() {
             if (typeof editor !== 'undefined') editor.addFloor();
         },
@@ -1432,6 +1682,185 @@ document.addEventListener('alpine:init', () => {
         
         showToast(message, type = 'success') {
             showSweetToast(message, type);
+        },
+
+        // ============ ISSUE METHODS ============
+        
+        get filteredIssues() {
+            if (this.issueFilter === 'all') return this.issues;
+            if (this.issueFilter === 'open') return this.issues.filter(i => i.status === 'open' || i.status === 'in_progress');
+            if (this.issueFilter === 'resolved') return this.issues.filter(i => i.status === 'resolved' || i.status === 'closed');
+            return this.issues;
+        },
+
+        get selectedPartId() {
+            if (typeof editor !== 'undefined' && editor.selectedPart) {
+                return editor.selectedPart;
+            }
+            return null;
+        },
+
+        selectIssue(issue) {
+            this.selectedIssue = issue;
+            // If issue has 3D position, focus camera on it
+            if (issue.position_x !== null && typeof editor !== 'undefined') {
+                editor.focusOnPosition(issue.position_x, issue.position_y, issue.position_z);
+            }
+            // If issue is attached to a part, select that part
+            if (issue.part_id && typeof editor !== 'undefined') {
+                editor.selectPart(issue.part_id);
+            }
+        },
+
+        openIssueModal() {
+            if (!this.selectedPartId) {
+                this.showToast('Please select a part first', 'warning');
+                return;
+            }
+            this.newIssue.part_id = this.selectedPartId;
+            this.showIssueModal = true;
+        },
+
+        async createIssue() {
+            if (!this.newIssue.title.trim()) {
+                this.showToast('Title is required', 'error');
+                return;
+            }
+
+            try {
+                const buildId = '<?php echo e($build->id); ?>';
+                
+                // Get part position if attached to part
+                let positionData = {};
+                if (this.newIssue.part_id && typeof editor !== 'undefined') {
+                    const partData = editor.parts.get(this.newIssue.part_id);
+                    if (partData) {
+                        positionData = {
+                            position_x: partData.mesh.position.x,
+                            position_y: partData.mesh.position.y,
+                            position_z: partData.mesh.position.z,
+                        };
+                    }
+                }
+
+                const res = await fetch(`/editor/builds/${buildId}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        ...this.newIssue,
+                        ...positionData,
+                    }),
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to create issue');
+                }
+
+                const issue = await res.json();
+                this.issues.push(issue);
+                
+                // Add 3D pin to editor
+                if (typeof editor !== 'undefined') {
+                    editor.addIssuePin(issue);
+                }
+
+                this.showIssueModal = false;
+                this.newIssue = { title: '', description: '', priority: 'medium', part_id: null };
+                this.showToast('Issue created successfully!', 'success');
+            } catch (err) {
+                console.error('Error creating issue:', err);
+                this.showToast('Failed to create issue', 'error');
+            }
+        },
+
+        async updateIssueStatus(issueId, status) {
+            try {
+                const buildId = '<?php echo e($build->id); ?>';
+                const res = await fetch(`/editor/builds/${buildId}/issues/${issueId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ status }),
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to update issue status');
+                }
+
+                const data = await res.json();
+                const issue = this.issues.find(i => i.id === issueId);
+                if (issue) {
+                    issue.status = data.status;
+                    issue.status_color = this.getStatusColor(data.status);
+                }
+
+                // Update 3D pin color
+                if (typeof editor !== 'undefined') {
+                    editor.updateIssuePin(issueId, data.status);
+                }
+
+                this.showToast(`Issue marked as ${this.getStatusLabel(data.status)}`, 'success');
+            } catch (err) {
+                console.error('Error updating issue:', err);
+                this.showToast('Failed to update issue status', 'error');
+            }
+        },
+
+        async deleteIssue(issueId) {
+            if (!confirm('Are you sure you want to delete this issue?')) {
+                return;
+            }
+
+            try {
+                const buildId = '<?php echo e($build->id); ?>';
+                const res = await fetch(`/editor/builds/${buildId}/issues/${issueId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to delete issue');
+                }
+
+                this.issues = this.issues.filter(i => i.id !== issueId);
+                
+                // Remove 3D pin
+                if (typeof editor !== 'undefined') {
+                    editor.removeIssuePin(issueId);
+                }
+
+                this.showToast('Issue deleted', 'success');
+            } catch (err) {
+                console.error('Error deleting issue:', err);
+                this.showToast('Failed to delete issue', 'error');
+            }
+        },
+
+        getStatusColor(status) {
+            const colors = {
+                open: '#ef4444',
+                in_progress: '#eab308',
+                resolved: '#22c55e',
+                closed: '#6b7280',
+            };
+            return colors[status] || '#6b7280';
+        },
+
+        getStatusLabel(status) {
+            const labels = {
+                open: 'Open',
+                in_progress: 'In Progress',
+                resolved: 'Resolved',
+                closed: 'Closed',
+            };
+            return labels[status] || status;
         },
     }));
 });
@@ -1616,7 +2045,302 @@ document.addEventListener('alpine:init', () => {
         100% { opacity: 1; transform: scale(1); }
     }
 
+    /* View Only Badge */
+    .view-only-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        background: rgba(234, 179, 8, 0.1);
+        border: 1px solid rgba(234, 179, 8, 0.3);
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #eab308;
+        margin-left: 8px;
+    }
+
+    .view-only-badge i {
+        stroke: #eab308;
+    }
+
     /* Collaboration Sidebar */
+
+    /* Chat Tab Styles */
+    .chat-messages {
+        display: flex;
+        flex-direction: column-reverse;
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        scroll-behavior: smooth;
+        min-height: 0;
+    }
+    
+    /* Message Styles */
+    .message-row {
+        display: flex;
+        margin-bottom: 12px;
+        width: 100%;
+    }
+    
+    .message {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    
+    .message--mine {
+        margin-left: auto;
+        background: var(--accent);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .message--other {
+        margin-right: auto;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border-bottom-left-radius: 4px;
+    }
+    
+    .message__header {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+    }
+    
+    .message__content {
+        word-break: break-word;
+    }
+    
+    .message__time {
+        font-size: 11px;
+        opacity: 0.7;
+        margin-top: 4px;
+        text-align: right;
+    }
+
+    /* Empty State - Centered */
+    .chat-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        padding: 32px 16px;
+        gap: 12px;
+    }
+
+    .chat-empty-state__icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4px;
+    }
+
+    .chat-empty-state__icon i {
+        width: 28px;
+        height: 28px;
+        color: var(--text-muted);
+    }
+
+    .chat-empty-state__title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .chat-empty-state__subtitle {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    /* Chat Input Area */
+    .sidebar__footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-card);
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .chat-input {
+        flex: 1;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 14px;
+        line-height: 1.4;
+        min-height: 40px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .chat-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .chat-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .chat-send-btn {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .chat-send-btn:hover:not(:disabled) {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+    }
+
+    .chat-send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .chat-send-btn i {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Sidebar Footer */
+    .sidebar__footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-card);
+        flex-shrink: 0;
+    }
+
+    /* Offline Notice */
+    .chat-offline-notice {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px;
+        margin: 0 16px 12px;
+        background: rgba(234, 179, 8, 0.1);
+        border: 1px solid rgba(234, 179, 8, 0.3);
+        border-radius: 8px;
+        font-size: 12px;
+        color: #eab308;
+        text-align: center;
+    }
+
+    .chat-offline-notice i {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+
+    .chat-offline-text {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-align: center;
+        margin-bottom: 8px;
+        display: block;
+        width: 100%;
+    }
+
+    /* ============ FLOOR SELECTOR ============ */
+    .floor-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
+    .floor-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .floor-btn:hover:not(:disabled) {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .floor-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .floor-btn--arrow {
+        background: var(--bg-secondary);
+    }
+
+    .floor-btn--arrow:hover:not(:disabled) {
+        background: var(--accent);
+        color: white;
+    }
+
+    .floor-btn--add {
+        background: var(--accent);
+        color: white;
+    }
+
+    .floor-btn--add:hover {
+        background: var(--accent-hover);
+    }
+
+    .floor-display {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .floor-divider {
+        width: 1px;
+        height: 20px;
+        background: var(--border);
+    }
 
     .editor-topbar__center {
         flex: 1;
@@ -2055,6 +2779,408 @@ document.addEventListener('alpine:init', () => {
         flex-direction: column !important;
         gap: 2px !important;
     }
+
+    /* ============ EXPORT DROPDOWN ============ */
+    .export-dropdown {
+        position: relative;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        padding: 8px;
+        z-index: 1001;
+        transform-origin: top left;
+    }
+
+    .dropdown-menu--right {
+        right: 0;
+        transform-origin: top right;
+    }
+
+    .dropdown-header {
+        padding: 8px 12px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-secondary);
+        opacity: 0.5;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+        width: 100%;
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.5);
+        transform: translateX(4px);
+    }
+
+    .dropdown-item__icon {
+        width: 32px;
+        height: 32px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .dropdown-item__icon svg { width: 16px; height: 16px; }
+
+    .dropdown-item__title {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .dropdown-item__desc {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    [data-theme="dark"] .dropdown-menu {
+        background: rgba(30, 41, 59, 0.8);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    [data-theme="dark"] .dropdown-item__icon {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* ============ ISSUE SYSTEM STYLES ============ */
+    
+    /* Tab Badge */
+    .tab-badge {
+        background: #ef4444;
+        color: white;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 4px;
+        min-width: 16px;
+        text-align: center;
+    }
+
+    /* Filter Buttons */
+    .filter-btn {
+        padding: 4px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    
+    .filter-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    .filter-btn.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    /* Issue Cards */
+    .issue-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    
+    .issue-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    }
+    
+    .issue-card--selected {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.03);
+        box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .issue-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .issue-status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .issue-title {
+        font-weight: 600;
+        font-size: 14.5px;
+        color: var(--text-primary);
+        line-height: 1.3;
+        margin: 0;
+    }
+
+    .issue-card-body {
+        padding-left: 20px; /* Aligns with the title, skipping the 10px dot + 10px gap */
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .issue-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .issue-priority-badge {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid;
+    }
+
+    .issue-creator {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .issue-attachment {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-tertiary);
+        margin-top: 2px;
+    }
+
+    .issue-attachment i {
+        width: 14px;
+        height: 14px;
+    }
+
+    .issue-card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        padding-left: 20px;
+        width: 100%;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 32px 16px;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        width: 100%;
+        max-width: 480px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 20px 24px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-secondary);
+        border-radius: 0 0 16px 16px;
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+    }
+
+    .form-input,
+    .form-textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+        color: var(--text-tertiary);
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: var(--surface);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    /* Priority Selector */
+    .priority-selector {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .priority-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .priority-btn:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .priority-btn.active {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border-color: var(--color);
+        box-shadow: 0 0 0 1px var(--color);
+    }
+
+    .priority-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    /* Selected Part Info */
+    .selected-part-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: rgba(59, 130, 246, 0.05);
+        border: 1px dashed rgba(59, 130, 246, 0.3);
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--accent);
+    }
+
+    /* Button Sizes */
+    .btn--xs {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .btn--success {
+        background: #22c55e;
+        color: white;
+    }
+
+    .btn--success:hover {
+        background: #16a34a;
+    }
+
+    /* ============ END ISSUE SYSTEM STYLES ============ */
 </style>
 <?php $__env->stopPush(); ?>
 

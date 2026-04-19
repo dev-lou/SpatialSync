@@ -40,6 +40,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->put('supabase_user_id', $supabaseUser['id']);
         $request->session()->put('supabase_user_email', $supabaseUser['email']);
         $request->session()->put('supabase_user_name', $supabaseUser['name']);
+        $request->session()->put('supabase_user_plan', $supabaseUser['plan'] ?? 'free');
         $request->session()->put('supabase_user_admin', $supabaseUser['is_admin'] ?? false);
         $request->session()->regenerate();
 

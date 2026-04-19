@@ -88,6 +88,42 @@
                 <i data-lucide="redo-2" class="w-4 h-4"></i>
             </button>
             <div class="editor-topbar__divider"></div>
+            
+            <!-- Export Dropdown -->
+            <div class="export-dropdown" @click.away="exportDropdownOpen = false">
+                <button class="btn btn--ghost btn--sm" @click="exportDropdownOpen = !exportDropdownOpen" :class="{ 'active': exportDropdownOpen }" title="Export Build">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Export</span>
+                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" :class="{ 'rotate-180': exportDropdownOpen }"></i>
+                </button>
+                
+                <div class="dropdown-menu dropdown-menu--right" 
+                     x-show="exportDropdownOpen" 
+                     x-cloak 
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95">
+                    <div class="dropdown-header">Export Build</div>
+                    <button class="dropdown-item" @click="saveBuild(); setTimeout(() => { if(typeof editor !== 'undefined') editor.exportPNG(); exportDropdownOpen = false; }, 100)">
+                        <div class="dropdown-item__icon"><i data-lucide="image"></i></div>
+                        <div class="dropdown-item__content">
+                            <div class="dropdown-item__title">Export as PNG</div>
+                            <div class="dropdown-item__desc">High-quality 3D capture</div>
+                        </div>
+                    </button>
+                    <a href="{{ route('builds.export', ['build' => $build->id, 'format' => 'json']) }}" class="dropdown-item" @click="exportDropdownOpen = false">
+                        <div class="dropdown-item__icon"><i data-lucide="file-json"></i></div>
+                        <div class="dropdown-item__content">
+                            <div class="dropdown-item__title">Export as JSON</div>
+                            <div class="dropdown-item__desc">Full geometry data backup</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
             <button class="btn btn--secondary btn--sm" @click="saveBuild()">
                 <i data-lucide="save" class="w-4 h-4"></i>
                 Save
@@ -582,7 +618,7 @@
     <!-- Debug Bar -->
     <div class="debug-bar">
         <span>
-            <strong>ConstructHub</strong>
+            <strong>SpatialSync</strong>
             <span class="status-ok" id="debug-three">Three.js: OK</span>
         </span>
         <span id="debug-info">Loading...</span>
@@ -728,6 +764,7 @@ document.addEventListener('alpine:init', () => {
         
         toolIcons: { select: 'mouse-pointer', delete: 'trash-2', move: 'move', clone: 'copy' },
         toolLabels: { select: 'Select Tool', delete: 'Delete Tool — Click to remove', move: 'Move Tool — Click to pick up', clone: 'Clone Tool — Click to duplicate' },
+        exportDropdownOpen: false,
 
         async init() {
             // Debug: Log issues data
@@ -2741,6 +2778,98 @@ document.addEventListener('alpine:init', () => {
         display: flex !important;
         flex-direction: column !important;
         gap: 2px !important;
+    }
+
+    /* ============ EXPORT DROPDOWN ============ */
+    .export-dropdown {
+        position: relative;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        padding: 8px;
+        z-index: 1001;
+        transform-origin: top left;
+    }
+
+    .dropdown-menu--right {
+        right: 0;
+        transform-origin: top right;
+    }
+
+    .dropdown-header {
+        padding: 8px 12px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-secondary);
+        opacity: 0.5;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+        width: 100%;
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.5);
+        transform: translateX(4px);
+    }
+
+    .dropdown-item__icon {
+        width: 32px;
+        height: 32px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .dropdown-item__icon svg { width: 16px; height: 16px; }
+
+    .dropdown-item__title {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .dropdown-item__desc {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    [data-theme="dark"] .dropdown-menu {
+        background: rgba(30, 41, 59, 0.8);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    [data-theme="dark"] .dropdown-item__icon {
+        background: rgba(255, 255, 255, 0.05);
     }
 
     /* ============ ISSUE SYSTEM STYLES ============ */

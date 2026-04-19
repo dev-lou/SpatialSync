@@ -19,6 +19,8 @@ Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/features', [PageController::class, 'features'])->name('features');
 Route::get('/pricing', [PageController::class, 'pricing'])->name('pricing');
 Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/contact-sales', [\App\Http\Controllers\ContactController::class, 'sales'])->name('contact.sales');
+Route::post('/contact-sales', [\App\Http\Controllers\ContactController::class, 'submit']);
 
 // Guest routes (auth)
 Route::middleware('guest')->group(function () {
@@ -35,6 +37,11 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name
 Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Checkout Simulation
+    Route::get('/checkout/{plan}', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout/process', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
+    Route::get('/checkout/success', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
 
     // Build routes
     Route::get('/builds', [BuildController::class, 'index'])->name('builds.index');

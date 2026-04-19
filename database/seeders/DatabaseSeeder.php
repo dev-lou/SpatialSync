@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
 
         // Create a default team
         $team = Team::create([
-            'name' => 'ConstructHub Team',
+            'name' => 'SpatialSync Team',
             'owner_id' => $admin->id,
         ]);
 

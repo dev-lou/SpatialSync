@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-    <title><?php echo $__env->yieldContent('title', 'ConstructHub'); ?> — 3D House Builder</title>
-    <meta name="description" content="<?php echo $__env->yieldContent('description', 'Build houses and buildings together with real-time collaboration. Perfect for anyone who wants to create their dream home.'); ?>">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230066FF'/><path d='M25 70 L50 30 L75 70 Z' fill='white'/></svg>">
+    <title><?php echo $__env->yieldContent('title', 'SpatialSync'); ?> — Collaborative 3D Building Design</title>
+    <meta name="description" content="<?php echo $__env->yieldContent('description', 'Design buildings in 3D with your team in real-time. Place walls, doors, roofs and more — collaborate live from any browser.'); ?>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230066FF'/><path d='M50 20 L80 38 L80 62 L50 80 L20 62 L20 38 Z' fill='none' stroke='white' stroke-width='5'/><path d='M50 20 L50 80 M20 38 L80 62 M80 38 L20 62' stroke='white' stroke-width='3' opacity='0.5'/></svg>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -20,6 +20,10 @@
 
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- GSAP + ScrollTrigger -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

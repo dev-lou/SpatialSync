@@ -1,4 +1,4 @@
-// ConstructHub - Three.js Build Editor
+// SpatialSync - Three.js Build Editor
 // Bloxburg 2026 Build Mode — Full Feature Set
 // UPDATED: 2026-04-09
 

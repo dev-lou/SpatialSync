@@ -70,7 +70,7 @@
 
 @media (min-width: 768px) {
     .kpi-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
     }
 }
 
@@ -133,6 +133,87 @@
 .kpi-card__label {
     font-size: var(--text-sm);
     color: var(--text-secondary);
+}
+
+/* ── RECENT ACTIVITY ─────────────────────────── */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-10);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: var(--surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.activity-item:hover {
+    border-color: var(--accent);
+    background: var(--bg-secondary);
+    transform: translateX(8px);
+    box-shadow: var(--shadow-md);
+}
+
+.activity-item__icon {
+    width: 44px;
+    height: 44px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    border: 1px solid var(--border-default);
+    flex-shrink: 0;
+}
+
+.activity-item__content {
+    flex-grow: 1;
+}
+
+.activity-item__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.activity-item__meta {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.activity-item__badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.activity-item__action {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.2s ease;
+    color: var(--accent);
+}
+
+.activity-item:hover .activity-item__action {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 /* ── SECTION HEADER ──────────────────────────── */
@@ -614,12 +695,38 @@
 
             <div class="kpi-card glow-card reveal">
                 <div class="kpi-card__header">
-                    <div class="kpi-card__icon">
-                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    <div class="kpi-card__icon" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                    </div>
+                    <div class="kpi-card__trend trend--up">
+                        <span>1.2GB</span>
                     </div>
                 </div>
-                <div class="kpi-card__value">{{ $builds->where('updated_at', '>=', now()->subDays(7))->count() }}</div>
-                <div class="kpi-card__label">Active This Week</div>
+                <div class="kpi-card__value">42%</div>
+                <div class="kpi-card__label">Storage Used</div>
+            </div>
+
+            <div class="kpi-card glow-card reveal">
+                <div class="kpi-card__header">
+                    <div class="kpi-card__icon" style="background: {{ 
+                        ($auth_user->plan ?? 'free') === 'pro' ? 'rgba(59, 130, 246, 0.1)' : 
+                        (($auth_user->plan ?? 'free') === 'enterprise' ? 'rgba(147, 51, 234, 0.1)' : 'var(--bg-tertiary)') 
+                    }}; color: {{ 
+                        ($auth_user->plan ?? 'free') === 'pro' ? 'var(--accent)' : 
+                        (($auth_user->plan ?? 'free') === 'enterprise' ? '#9333EA' : 'var(--text-tertiary)') 
+                    }};">
+                        <i data-lucide="award" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="kpi-card__value" style="font-size: var(--text-xl); text-transform: uppercase; letter-spacing: 0.05em; color: {{ 
+                    ($auth_user->plan ?? 'free') === 'pro' ? 'var(--accent)' : 
+                    (($auth_user->plan ?? 'free') === 'enterprise' ? '#9333EA' : 'var(--text-primary)') 
+                }};">
+                    {{ $auth_user->plan ?? 'Free' }}
+                </div>
+                <div class="kpi-card__label">
+                    <a href="{{ route('pricing') }}" style="color: var(--accent); text-decoration: none; font-weight: 600;">Manage Plan</a>
+                </div>
             </div>
         </div>
 
@@ -702,20 +809,25 @@
 
                 <div class="activity-list">
                     @foreach($allActivity as $build)
-                        <a href="{{ route('builds.show', $build->id) }}" class="activity-item">
+                        <a href="{{ route('builds.show', $build->id) }}" class="activity-item reveal">
                             <div class="activity-item__icon">
-                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                <i data-lucide="edit-3"></i>
                             </div>
                             <div class="activity-item__content">
-                                <div class="activity-item__text">
-                                    <strong>{{ $build->name }}</strong> was updated 
+                                <div class="activity-item__title">
+                                    {{ $build->name }}
+                                </div>
+                                <div class="activity-item__meta">
+                                    <span>Updated {{ $build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'recently' }}</span>
                                     @if(isset($build->user_role) && $build->user_role !== 'owner')
-                                        <span class="text-xs text-tertiary">(Shared)</span>
+                                        <span class="activity-item__badge">Shared with you</span>
+                                    @else
+                                        <span class="activity-item__badge" style="background: var(--bg-tertiary); color: var(--text-tertiary);">Personal Build</span>
                                     @endif
                                 </div>
-                                <div class="activity-item__time">
-                                    {{ $build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'recently' }}
-                                </div>
+                            </div>
+                            <div class="activity-item__action">
+                                <i data-lucide="arrow-right" class="w-5 h-5"></i>
                             </div>
                         </a>
                     @endforeach
