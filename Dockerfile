@@ -31,8 +31,10 @@ COPY . .
 # Copy Frontend assets from Stage 2 (AFTER app code to ensure they're not overwritten)
 COPY --from=frontend /app/public/build ./public/build
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Set permissions - ensure all files are readable
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public \
+    && chmod -R 755 /var/www/html/public \
+    && chmod -R 644 /var/www/html/public/*
 
 # Custom Nginx Config
 COPY <<EOF /etc/nginx/http.d/default.conf
