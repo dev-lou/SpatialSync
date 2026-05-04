@@ -16,6 +16,7 @@ use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -25,6 +26,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 class Kernel extends HttpKernel
 {
     protected $middleware = [
+        TrustProxies::class,
         HandleCors::class,
         ValidatePostSize::class,
         ConvertEmptyStringsToNull::class,

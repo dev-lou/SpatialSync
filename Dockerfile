@@ -62,6 +62,10 @@ server {
     location ~ \.php$ {
         fastcgi_pass 127.0.0.1:9000;
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        fastcgi_param HTTPS \$https;
+        fastcgi_param HTTP_X_FORWARDED_FOR \$proxy_add_x_forwarded_for;
+        fastcgi_param HTTP_X_FORWARDED_PROTO \$scheme;
+        fastcgi_param HTTP_X_FORWARDED_HOST \$server_name;
         include fastcgi_params;
     }
 
