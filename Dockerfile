@@ -25,11 +25,11 @@ RUN apk add --no-cache nginx supervisor libpng-dev libzip-dev \
 # Copy PHP dependencies from Stage 1
 COPY --from=vendor /app/vendor ./vendor
 
-# Copy Frontend assets from Stage 2
-COPY --from=frontend /app/public/build ./public/build
-
 # Copy Application code
 COPY . .
+
+# Copy Frontend assets from Stage 2 (AFTER app code to ensure they're not overwritten)
+COPY --from=frontend /app/public/build ./public/build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
