@@ -5,7 +5,7 @@ COPY composer.json composer.lock ./
 RUN apk add --no-cache git unzip libxml2-dev libpng-dev libzip-dev \
     && docker-php-ext-install bcmath gd zip \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-    && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+    && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # --- Stage 2: Frontend Assets ---
 FROM node:20-alpine as frontend
