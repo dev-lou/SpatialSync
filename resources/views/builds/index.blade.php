@@ -233,7 +233,7 @@
                         (search === '' || '{{ strtolower($build->name) }}'.includes(search.toLowerCase())) &&
                         (filter === 'all' || filter === 'recent')
                     " x-transition>
-                        <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
+                        <x-build-card :build="$build" class="glow-card reveal" />
                     </div>
                 @endforeach
             </div>
@@ -264,7 +264,7 @@
                         (search === '' || '{{ strtolower($build->name) }}'.includes(search.toLowerCase())) &&
                         (filter === 'all' || filter === 'recent')
                     " x-transition>
-                        <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
+                        <x-build-card :build="$build" class="glow-card reveal" />
                     </div>
                 @endforeach
             </div>

@@ -276,10 +276,10 @@
                     
                     <!-- Build Name -->
                     <div class="form-group">
-                        <label for="blueprint-name" class="form-label">Build name</label>
+                        <label for="build-name" class="form-label">Build name</label>
                         <input 
                             type="text" 
-                            id="blueprint-name" 
+                            id="build-name" 
                             name="name" 
                             class="form-input" 
                             placeholder="e.g., Modern Office Layout"
@@ -292,11 +292,11 @@
                     
                     <!-- Description (optional) -->
                     <div class="form-group">
-                        <label for="blueprint-description" class="form-label">
+                        <label for="build-description" class="form-label">
                             Description <span class="text-tertiary">(optional)</span>
                         </label>
                         <textarea 
-                            id="blueprint-description" 
+                            id="build-description" 
                             name="description" 
                             class="form-textarea" 
                             rows="2"

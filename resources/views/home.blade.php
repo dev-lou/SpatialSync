@@ -90,7 +90,7 @@
     }
     .story-dot {
         width: 5px; height: 5px; background: rgba(0,0,0,0.12);
-        border-radius: 50%; transition: all 0.4s ease;
+        border-radius: 50%; transition: background-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
     }
     .story-dot.active {
         background: var(--accent); transform: scale(1.8);

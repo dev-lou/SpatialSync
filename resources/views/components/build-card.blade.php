@@ -1,5 +1,9 @@
+@props(['build'])
+@php
+    $build = is_array($build) ? (object) $build : $build;
+@endphp
 <style>
-    .blueprint-card {
+    .build-card {
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -13,33 +17,34 @@
         z-index: 1;
     }
 
-    .blueprint-card:hover {
+    .build-card:hover {
         transform: translateY(-8px);
         box-shadow: var(--shadow-xl);
     }
 
-    .blueprint-card__thumb {
+    .build-card__thumb {
         position: relative;
         width: 100%;
         aspect-ratio: 16 / 10;
         background-color: var(--bg-secondary);
         overflow: hidden;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     }
 
-    .blueprint-card__grid {
+    .build-card__grid {
         position: absolute;
         inset: 0;
         opacity: 0.15;
         color: var(--accent);
     }
 
-    .blueprint-card__overlay {
+    .build-card__overlay {
         position: absolute;
         inset: 0;
         background: linear-gradient(to top right, rgba(0, 102, 255, 0.05), transparent);
     }
 
-    .blueprint-card__icon-wrap {
+    .build-card__icon-wrap {
         position: absolute;
         inset: 0;
         display: flex;
@@ -47,7 +52,7 @@
         justify-content: center;
     }
 
-    .blueprint-card__icon {
+    .build-card__icon {
         width: 4rem;
         height: 4rem;
         border-radius: var(--radius-md);
@@ -60,18 +65,18 @@
         transition: transform var(--dur-base) var(--ease-spring);
     }
 
-    .blueprint-card:hover .blueprint-card__icon {
+    .build-card:hover .build-card__icon {
         transform: scale(1.1);
     }
 
-    .blueprint-card__body {
+    .build-card__body {
         flex: 1;
         padding: var(--space-6);
         display: flex;
         flex-direction: column;
     }
 
-    .blueprint-card__header {
+    .build-card__header {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
@@ -79,7 +84,7 @@
         margin-bottom: var(--space-2);
     }
 
-    .blueprint-card__title {
+    .build-card__title {
         font-size: var(--text-lg);
         font-weight: 700;
         color: var(--text-primary);
@@ -87,17 +92,17 @@
         line-height: 1.3;
     }
 
-    .blueprint-card:hover .blueprint-card__title {
+    .build-card:hover .build-card__title {
         color: var(--accent);
     }
 
-    .blueprint-card__avatar-stack {
+    .build-card__avatar-stack {
         display: flex;
         align-items: center;
         flex-direction: row-reverse;
     }
 
-    .blueprint-card__avatar-item {
+    .build-card__avatar-item {
         margin-left: -8px;
         border: 2px solid var(--surface);
         box-shadow: var(--shadow-xs);
@@ -105,7 +110,7 @@
         overflow: hidden;
     }
 
-    .blueprint-card__desc {
+    .build-card__desc {
         font-size: var(--text-sm);
         color: var(--text-secondary);
         opacity: 0.8;
@@ -118,7 +123,7 @@
         overflow: hidden;
     }
 
-    .blueprint-card__footer {
+    .build-card__footer {
         padding-top: var(--space-4);
         border-top: 1px solid var(--border-default);
         display: flex;
@@ -126,7 +131,7 @@
         justify-content: space-between;
     }
 
-    .blueprint-card__meta-item {
+    .build-card__meta-item {
         display: flex;
         align-items: center;
         gap: var(--space-2);
@@ -135,18 +140,18 @@
         font-weight: 500;
     }
 
-    .blueprint-card__meta-item i {
+    .build-card__meta-item i {
         width: 14px;
         height: 14px;
     }
 
-    .blueprint-card__meta-group {
+    .build-card__meta-group {
         display: flex;
         align-items: center;
         gap: var(--space-4);
     }
 
-    .blueprint-card__role-badge {
+    .build-card__role-badge {
         position: absolute;
         top: var(--space-4);
         left: var(--space-4);
@@ -165,12 +170,12 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-    .blueprint-card__role-badge i {
+    .build-card__role-badge i {
         width: 12px;
         height: 12px;
     }
 
-    /* 3-dot dropdown styles */
+    /* Options dropdown */
     .build-options {
         position: absolute;
         top: var(--space-4);
@@ -189,7 +194,7 @@
         align-items: center;
         justify-content: center;
         color: var(--text-secondary);
-        transition: all var(--dur-micro);
+        transition: background-color var(--dur-micro), color var(--dur-micro), box-shadow var(--dur-micro);
         backdrop-filter: blur(8px);
         box-shadow: var(--shadow-sm);
     }
@@ -212,7 +217,7 @@
         opacity: 0;
         visibility: hidden;
         transform: translateY(-8px);
-        transition: all var(--dur-base);
+        transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), visibility var(--dur-base);
         z-index: 50;
     }
 
@@ -233,7 +238,7 @@
         color: var(--text-secondary);
         font-size: var(--text-sm);
         cursor: pointer;
-        transition: all var(--dur-micro);
+        transition: background-color var(--dur-micro), color var(--dur-micro);
         text-align: left;
     }
 
@@ -251,94 +256,94 @@
         color: var(--error);
     }
 
-    .build-options__item i {
-        width: 16px;
-        height: 16px;
+    .swal-premium-popup {
+        border-radius: var(--radius-2xl) !important;
+        border: 1px solid var(--border-default) !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
     }
 </style>
 
-<div class="blueprint-card" style="position: relative;">
-    <!-- Identity Badge (Owner/Collaborator) -->
-    @if(isset($blueprint->user_role) && $blueprint->user_role !== 'owner')
-        <div class="blueprint-card__role-badge">
+<div class="build-card">
+    @if(isset($build->user_role) && $build->user_role !== 'owner')
+        <div class="build-card__role-badge">
             <i data-lucide="users"></i>
-            {{ ucfirst($blueprint->user_role) }}
+            {{ ucfirst($build->user_role) }}
         </div>
     @endif
 
-    <!-- 3-dot Options Button (Hide if not owner) -->
-    @if(!isset($blueprint->user_role) || $blueprint->user_role === 'owner')
+    @if(!isset($build->user_role) || $build->user_role === 'owner')
     <div class="build-options">
         <button class="build-options__btn" onclick="toggleBuildOptions(this, event)">
             <i data-lucide="more-horizontal" class="w-4 h-4"></i>
         </button>
         <div class="build-options__dropdown">
-            <button class="build-options__item build-options__item--danger" onclick="deleteBuild('{{ $blueprint->id }}', '{{ addslashes($blueprint->name) }}')">
-                <i data-lucide="trash-2"></i>
+            <button class="build-options__item" onclick="editBuild('{{ $build->id }}', '{{ addslashes($build->name) }}', '{{ addslashes($build->description ?? '') }}')">
+                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                Edit Details
+            </button>
+            <button class="build-options__item build-options__item--danger" onclick="deleteBuild('{{ $build->id }}', '{{ addslashes($build->name) }}')">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
                 Delete Build
             </button>
         </div>
     </div>
     @endif
 
-    <a href="{{ route('builds.show', $blueprint->id) }}" class="blueprint-card__thumb" style="display: block;">
-        <div class="blueprint-card__grid">
+    <a href="{{ route('builds.show', $build->id) }}" class="build-card__thumb">
+        <div class="build-card__grid">
             <svg width="100%" height="100%">
                 <defs>
-                    <pattern id="grid-{{ $blueprint->id }}" width="24" height="24" patternUnits="userSpaceOnUse">
+                    <pattern id="grid-{{ $build->id }}" width="24" height="24" patternUnits="userSpaceOnUse">
                         <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" stroke-width="0.5"/>
                     </pattern>
                 </defs>
-                <rect width="100%" height="100%" fill="url(#grid-{{ $blueprint->id }})"/>
+                <rect width="100%" height="100%" fill="url(#grid-{{ $build->id }})"/>
             </svg>
         </div>
-        <div class="blueprint-card__overlay"></div>
-        <div class="blueprint-card__icon-wrap">
-            <div class="blueprint-card__icon">
-                <i data-lucide="layout" class="text-accent"></i>
+        <div class="build-card__overlay"></div>
+        <div class="build-card__icon-wrap">
+            <div class="build-card__icon">
+                <i data-lucide="layout" class="text-accent w-8 h-8"></i>
             </div>
         </div>
     </a>
 
-    <div class="blueprint-card__body">
-        <div class="blueprint-card__header">
-            <a href="{{ route('builds.show', $blueprint->id) }}" class="blueprint-card__title">{{ $blueprint->name }}</a>
+    <div class="build-card__body">
+        <div class="build-card__header">
+            <a href="{{ route('builds.show', $build->id) }}" class="build-card__title">{{ $build->name }}</a>
             
-            <div class="blueprint-card__avatar-stack">
+            <div class="build-card__avatar-stack">
                 @php 
-                    $members = isset($blueprint->members) ? ($blueprint->members->take(3) ?? collect([])) : collect([]);
-                    $totalMembers = isset($blueprint->members) ? ($blueprint->members->count() ?? 0) : 0;
+                    $members = isset($build->members) ? ($build->members->take(3) ?? collect([])) : collect([]);
+                    $totalMembers = isset($build->members) ? ($build->members->count() ?? 0) : 0;
                 @endphp
                 
                 @if($totalMembers > 3)
-                    <div class="blueprint-card__avatar-item" style="background: var(--bg-tertiary); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--text-secondary);">
+                    <div class="build-card__avatar-item" style="background: var(--bg-tertiary); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--text-secondary);">
                         +{{ $totalMembers - 3 }}
                     </div>
                 @endif
 
                 @foreach($members as $member)
-                    <div class="blueprint-card__avatar-item">
+                    <div class="build-card__avatar-item">
                         <x-avatar :name="$member->name" size="sm" style="width: 24px; height: 24px;" />
                     </div>
                 @endforeach
             </div>
         </div>
 
-        <p class="blueprint-card__desc">{{ $blueprint->description ?? 'No description provided for this design project.' }}</p>
+        <p class="build-card__desc">{{ $build->description ?? 'No description provided for this design project.' }}</p>
         
-        <div class="blueprint-card__footer">
-            <div class="blueprint-card__meta-item">
+        <div class="build-card__footer">
+            <div class="build-card__meta-item">
                 <i data-lucide="clock"></i>
-                <span>{{ $blueprint->updated_at ? \Carbon\Carbon::parse($blueprint->updated_at)->diffForHumans() : 'Recently' }}</span>
+                <span>{{ $build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'Recently' }}</span>
             </div>
-            <div class="blueprint-card__meta-group">
-                <div class="blueprint-card__meta-item">
+            <div class="build-card__meta-group">
+                <div class="build-card__meta-item">
                     <i data-lucide="users"></i>
                     <span style="font-weight: 700; color: var(--text-secondary);">{{ $totalMembers }}</span>
                 </div>
-                @if(isset($blueprint->is_public) && $blueprint->is_public)
-                    <span class="blueprint-card__status">Public</span>
-                @endif
             </div>
         </div>
     </div>
@@ -348,79 +353,87 @@
 function toggleBuildOptions(btn, event) {
     event.stopPropagation();
     event.preventDefault();
-    
     const dropdown = btn.nextElementSibling;
     const isShowing = dropdown.classList.contains('show');
-    
-    // Close all other dropdowns first
     document.querySelectorAll('.build-options__dropdown.show').forEach(d => d.classList.remove('show'));
-    
-    // Toggle this one
-    if (!isShowing) {
-        dropdown.classList.add('show');
-    }
+    if (!isShowing) dropdown.classList.add('show');
 }
 
-function deleteBuild(buildId, buildName) {
-    // Close dropdown first
+function editBuild(buildId, currentName, currentDesc) {
     document.querySelectorAll('.build-options__dropdown.show').forEach(d => d.classList.remove('show'));
-    
     Swal.fire({
-        title: 'Delete Build?',
-        text: `Are you sure you want to delete "${buildName}"? This action cannot be undone.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel',
+        title: 'Edit Build Details',
+        html: `
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 8px;">Build Name</label>
+                <input id="swal-input1" class="swal2-input" value="${currentName}" style="margin: 0; width: 100%;">
+            </div>
+            <div style="text-align: left;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 8px;">Description</label>
+                <textarea id="swal-input2" class="swal2-textarea" style="margin: 0; width: 100%; min-height: 100px;">${currentDesc}</textarea>
+            </div>
+        `,
         customClass: {
-            confirmButton: 'btn btn--danger',
-            cancelButton: 'btn btn--secondary'
+            popup: 'swal-premium-popup',
+            confirmButton: 'btn btn--primary px-8',
+            cancelButton: 'btn btn--secondary px-8'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Save Changes',
+        preConfirm: () => {
+            const name = document.getElementById('swal-input1').value.trim();
+            const desc = document.getElementById('swal-input2').value.trim();
+            if (!name) {
+                Swal.showValidationMessage('Name is required');
+                return false;
+            }
+            return { name, description: desc };
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            // Send DELETE request
             fetch(`/builds/${buildId}`, {
-                method: 'DELETE',
+                method: 'PUT',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(result.value)
             })
-            .then(response => {
-                if (response.ok) {
-                    Swal.fire({
-                        title: 'Deleted!',
-                        text: 'Build has been deleted.',
-                        icon: 'success',
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        // Reload the page to reflect changes
-                        window.location.reload();
-                    });
-                } else {
-                    return response.json();
-                }
-            })
+            .then(res => res.json())
             .then(data => {
-                if (data && data.error) {
-                    Swal.fire('Error', data.error, 'error');
+                if (data.success) {
+                    Swal.fire('Saved!', '', 'success').then(() => window.location.reload());
                 }
-            })
-            .catch(error => {
-                Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
-                console.error('Delete error:', error);
             });
         }
     });
 }
 
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(e) {
+function deleteBuild(buildId, buildName) {
+    document.querySelectorAll('.build-options__dropdown.show').forEach(d => d.classList.remove('show'));
+    Swal.fire({
+        title: 'Delete Build?',
+        text: `Are you sure you want to delete "${buildName}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        customClass: {
+            confirmButton: 'btn btn--error px-8',
+            cancelButton: 'btn btn--secondary px-8'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/builds/${buildId}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            }).then(() => window.location.reload());
+        }
+    });
+}
+
+document.addEventListener('click', e => {
     if (!e.target.closest('.build-options')) {
         document.querySelectorAll('.build-options__dropdown.show').forEach(d => d.classList.remove('show'));
     }
 });
 </script>
-

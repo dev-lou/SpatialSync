@@ -152,7 +152,7 @@
     border: 1px solid var(--border-default);
     border-radius: var(--radius-xl);
     text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
 }
@@ -207,7 +207,7 @@
 .activity-item__action {
     opacity: 0;
     transform: translateX(10px);
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
     color: var(--accent);
 }
 
@@ -751,7 +751,7 @@
         @if($builds->count() > 0)
             <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
                 @foreach($builds->take(3) as $build)
-                    <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
+                    <x-build-card :build="$build" class="glow-card reveal" />
                 @endforeach
             </div>
         @else
@@ -787,7 +787,7 @@
 
             <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
                 @foreach($sharedBuilds->take(3) as $build)
-                    <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
+                    <x-build-card :build="$build" class="glow-card reveal" />
                 @endforeach
             </div>
         @endif

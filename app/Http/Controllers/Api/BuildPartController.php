@@ -123,7 +123,8 @@ class BuildPartController extends Controller
         }
 
         $validated = $request->validate([
-            'type' => 'required|string|in:wall,floor,roof,door,window,stairs',
+            'type' => 'required|string|in:wall,floor,roof,door,window,stairs,furniture,structural,fixture,landscape',
+
             'variant' => 'required|string',
             'position_x' => 'required|numeric',
             'position_y' => 'required|numeric',

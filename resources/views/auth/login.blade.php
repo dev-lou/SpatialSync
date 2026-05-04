@@ -39,15 +39,30 @@
             Sign in
         </button>
 
-        <div style="margin-top: var(--space-6); text-align: center; position: relative;">
+        <div style="margin-top: var(--space-10); margin-bottom: var(--space-6); text-align: center; position: relative;">
             <div style="position: absolute; inset: 0; display: flex; align-items: center;">
-                <div style="width: 100%; border-top: 1px solid var(--border-default);"></div>
+                <div style="width: 100%; border-top: 1px solid var(--border-default); opacity: 0.5;"></div>
             </div>
-            <div style="position: relative; display: inline-block; padding: 0 var(--space-4); background: var(--bg); color: var(--text-tertiary); font-size: var(--text-sm);">Or continue with</div>
+            <div style="position: relative; display: inline-block; padding: 0 var(--space-6); background: var(--bg); color: var(--text-tertiary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Or experience the future</div>
         </div>
 
-        <button type="button" class="btn btn--outline btn--lg w-full" style="justify-content: center; margin-top: var(--space-4); background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-default);">
-            <i data-lucide="github" style="width: 18px; height: 18px; margin-right: 8px;"></i> GitHub
+        <!-- Biometric Login Button -->
+        <button type="button" 
+                class="btn btn--outline btn--lg w-full btn-neural-glow" 
+                @click="openScanner()"
+                :disabled="isLoadingModels"
+                style="justify-content: center; margin-top: var(--space-4); background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-default); position: relative; overflow: hidden;">
+            <template x-if="!isLoadingModels">
+                <span class="flex items-center justify-center">
+                    <i data-lucide="scan-face" style="width: 18px; height: 18px; margin-right: 8px;"></i> Login with Face ID
+                </span>
+            </template>
+            <template x-if="isLoadingModels">
+                <span class="flex items-center justify-center">
+                    <i data-lucide="loader-2" class="w-5 h-5 animate-spin mr-2"></i> Initializing Neural Engine...
+                </span>
+            </template>
+            <div class="neural-pulse"></div>
         </button>
     </form>
 
@@ -60,6 +75,19 @@
 <style>
 .field__input:focus { border-color: var(--accent) !important; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
 .pw-toggle:hover svg { color: var(--text-primary) !important; }
+
+.btn-neural-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    transform: translateX(-100%);
+    animation: slide 3s infinite;
+}
+
+@keyframes slide {
+    100% { transform: translateX(100%); }
+}
 </style>
 
 <script>
@@ -70,13 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleBtn?.addEventListener('click', function() {
         const isText = pwInput.type === 'text';
         pwInput.type = isText ? 'password' : 'text';
-        
-        // Re-inject the <i> tag with the new icon name
         const iconName = isText ? 'eye' : 'eye-off';
         this.innerHTML = `<i data-lucide="${iconName}" id="pw-icon" style="width: 16px; height: 16px;"></i>`;
-        
         lucide.createIcons();
-        this.setAttribute('aria-label', isText ? 'Show password' : 'Hide password');
     });
 });
 </script>

@@ -121,7 +121,14 @@
                             <div class="dropdown-item__desc">Full geometry data backup</div>
                         </div>
                     </a>
-                </div>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" @click="blueprintModalOpen = true; exportDropdownOpen = false">
+                        <div class="dropdown-item__icon" style="color: #3B82F6;"><i data-lucide="file-text"></i></div>
+                        <div class="dropdown-item__content">
+                            <div class="dropdown-item__title" style="color: var(--text-primary);">Export Blueprint PDF</div>
+                            <div class="dropdown-item__desc">Professional floor plan drawing</div>
+                        </div>
+                    </button>
             </div>
 
             <button class="btn btn--secondary btn--sm" @click="saveBuild()">
@@ -440,6 +447,7 @@
 
             <div class="floating-toolbar__divider"></div>
 
+            <!-- Grid Controls -->
             <div class="floating-toolbar__group">
                 <button class="floating-tool-btn" @click="toggleGrid()" title="Toggle Grid (H)">
                     <i data-lucide="grid-3x3" class="w-5 h-5"></i>
@@ -448,6 +456,73 @@
                 <button class="floating-tool-btn" @click="cycleGridSize()" title="Grid Size (J)">
                     <i data-lucide="maximize-2" class="w-5 h-5"></i>
                     <span class="tooltip" x-text="'Snap ' + gridSize + 'X'">Snap 1X</span>
+                </button>
+            </div>
+
+            <div class="floating-toolbar__divider"></div>
+
+            <!-- Night Mode & Scenery -->
+            <div class="floating-toolbar__group">
+                <button class="floating-tool-btn" 
+                        :class="{ 'night-active': isNightMode }"
+                        @click="toggleDayNight()" 
+                        :title="isNightMode ? 'Switch to Day (B)' : 'Switch to Night (B)'">
+                    <!-- Sun icon (day) -->
+                    <svg x-show="!isNightMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"/>
+                        <line x1="12" y1="2" x2="12" y2="6"/>
+                        <line x1="12" y1="18" x2="12" y2="22"/>
+                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                        <line x1="2" y1="12" x2="6" y2="12"/>
+                        <line x1="18" y1="12" x2="22" y2="12"/>
+                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+                    </svg>
+                    <!-- Moon icon (night) -->
+                    <svg x-show="isNightMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <span class="tooltip" x-text="isNightMode ? 'Day Mode' : 'Night Mode'"></span>
+                </button>
+                <button class="floating-tool-btn scenery-trigger"
+                        @click="sceneryPanelOpen = !sceneryPanelOpen"
+                        title="Change Scenery">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                    <span class="tooltip">Scenery</span>
+                </button>
+            </div>
+
+            <!-- Scenery Pop-out Panel -->
+            <div class="scenery-panel" x-show="sceneryPanelOpen" x-transition @click.outside="sceneryPanelOpen = false">
+                <div class="scenery-panel__title">🌍 Choose Scenery</div>
+                <button class="scenery-option" :class="{active: currentScenery === 'neighborhood'}" @click="setScenery('neighborhood')">
+                    <span class="scenery-icon">🏘️</span>
+                    <div>
+                        <div class="scenery-name">Modern Neighborhood</div>
+                        <div class="scenery-desc">Sidewalks, roads &amp; city trees</div>
+                    </div>
+                </button>
+                <button class="scenery-option" :class="{active: currentScenery === 'nature'}" @click="setScenery('nature')">
+                    <span class="scenery-icon">🌿</span>
+                    <div>
+                        <div class="scenery-name">Nature &amp; Mountains</div>
+                        <div class="scenery-desc">Forest backdrop, rolling hills</div>
+                    </div>
+                </button>
+                <button class="scenery-option" :class="{active: currentScenery === 'urban'}" @click="setScenery('urban')">
+                    <span class="scenery-icon">🏙️</span>
+                    <div>
+                        <div class="scenery-name">Urban City</div>
+                        <div class="scenery-desc">Dense blocks &amp; city grid</div>
+                    </div>
+                </button>
+                <button class="scenery-option" :class="{active: currentScenery === 'desert'}" @click="setScenery('desert')">
+                    <span class="scenery-icon">🏜️</span>
+                    <div>
+                        <div class="scenery-name">Desert Oasis</div>
+                        <div class="scenery-desc">Sand dunes &amp; dry landscape</div>
+                    </div>
                 </button>
             </div>
         </aside>
@@ -483,10 +558,10 @@
         </div>
         <div class="edit-mode-content">
             <!-- Active Selection Display -->
-            <div style="margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-default);">
                 <span style="font-size: 13px; opacity: 0.8; font-weight: 500;">Currently Selected</span>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <div :style="`width: 24px; height: 24px; border-radius: 6px; background: ${currentPaintColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.8);`"></div>
+                    <div :style="`width: 24px; height: 24px; border-radius: 6px; background: ${currentPaintColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid var(--border-default);`"></div>
                     <span x-text="currentPaintColor" style="font-family: monospace; font-size: 13px; font-weight: 700; color: var(--accent);"></span>
                 </div>
             </div>
@@ -527,7 +602,7 @@
         </div>
         <div class="edit-mode-content">
             <!-- Active Selection Display -->
-            <div style="margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-default);">
                 <span style="font-size: 13px; opacity: 0.8; font-weight: 500;">Currently Selected</span>
                 <span x-text="currentMaterial" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px; font-weight: 700; color: var(--accent); background: rgba(var(--accent-rgb), 0.1); padding: 4px 10px; border-radius: 6px;"></span>
             </div>
@@ -561,6 +636,10 @@
                     'door' => ['icon' => 'door-open', 'label' => 'Doors'],
                     'window' => ['icon' => 'app-window', 'label' => 'Windows'],
                     'stairs' => ['icon' => 'trending-up', 'label' => 'Stairs'],
+                    'structural' => ['icon' => 'pillar', 'label' => 'Structure'],
+                    'furniture' => ['icon' => 'armchair', 'label' => 'Furniture'],
+                    'fixture' => ['icon' => 'bath', 'label' => 'Fixtures'],
+                    'landscape' => ['icon' => 'tree-pine', 'label' => 'Landscape'],
                 ];
             @endphp
 
@@ -580,7 +659,7 @@
             <button class="part-card"
                     x-show="activeTab === 'floor' || activeTab === 'roof'"
                     :class="{ active: isDrawingPoly }"
-                    style="border-color: var(--accent); background: rgba(var(--accent-rgb), 0.05);"
+                    style="border-color: var(--accent); background: var(--accent-light);"
                     @click="toggleDrawMode(activeTab)">
                 <div class="part-icon" style="color: var(--accent);">
                     <i data-lucide="pen-tool"></i>
@@ -631,6 +710,83 @@
 
     <!-- Toast Container -->
     <!-- Modern Toasts handled by SweetAlert2 in layout -->
+
+    <!-- ============ BLUEPRINT EXPORT MODAL ============ -->
+    <div class="modal-overlay" x-show="blueprintModalOpen" x-transition @click.self="blueprintModalOpen = false">
+        <div class="modal-content" style="width: 480px; max-width: 95vw;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display:flex;align-items:center;gap:8px;">
+                    <i data-lucide="file-text" style="width:20px;height:20px;color:#3B82F6;"></i>
+                    Export Blueprint PDF
+                </h3>
+                <button class="btn btn--ghost btn--sm" @click="blueprintModalOpen = false">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:20px;">
+
+                <!-- Paper Size + Scale -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:6px;display:block;">Paper Size</label>
+                        <div style="display:flex;gap:8px;">
+                            <button class="blueprint-opt-btn" :class="{active: bpPaper==='a4'}" @click="bpPaper='a4'">A4</button>
+                            <button class="blueprint-opt-btn" :class="{active: bpPaper==='a3'}" @click="bpPaper='a3'">A3</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:6px;display:block;">Scale</label>
+                        <div style="display:flex;gap:8px;">
+                            <button class="blueprint-opt-btn" :class="{active: bpScale===50}"  @click="bpScale=50">1:50</button>
+                            <button class="blueprint-opt-btn" :class="{active: bpScale===100}" @click="bpScale=100">1:100</button>
+                            <button class="blueprint-opt-btn" :class="{active: bpScale===200}" @click="bpScale=200">1:200</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floors -->
+                <div class="form-group" style="margin:0;">
+                    <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:6px;display:block;">Floors to Export</label>
+                    <div style="display:flex;gap:8px;">
+                        <button class="blueprint-opt-btn" :class="{active: bpFloors==='all'}"     @click="bpFloors='all'">All Floors</button>
+                        <button class="blueprint-opt-btn" :class="{active: bpFloors==='current'}" @click="bpFloors='current'">Current Floor Only</button>
+                    </div>
+                </div>
+
+                <!-- Toggles -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <label class="blueprint-toggle">
+                        <span>Include Furniture</span>
+                        <div class="toggle-track" :class="{active: bpFurniture}" @click="bpFurniture=!bpFurniture">
+                            <div class="toggle-thumb"></div>
+                        </div>
+                    </label>
+                    <label class="blueprint-toggle">
+                        <span>Dimension Lines</span>
+                        <div class="toggle-track" :class="{active: bpDimensions}" @click="bpDimensions=!bpDimensions">
+                            <div class="toggle-thumb"></div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Preview hint -->
+                <div style="padding:12px;background:var(--bg-secondary);border-radius:12px;border:1px solid var(--border-default);display:flex;gap:10px;align-items:flex-start;">
+                    <i data-lucide="info" style="width:16px;height:16px;color:#3B82F6;flex-shrink:0;margin-top:1px;"></i>
+                    <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;">
+                        Each floor will be exported as a separate page with walls, doors, windows, and architectural notation. Dimensions are in <strong>metres</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--border-default);">
+                <button class="btn btn--secondary" @click="blueprintModalOpen = false">Cancel</button>
+                <button class="btn btn--primary" @click="generateBlueprint()" :disabled="bpExporting">
+                    <i data-lucide="file-down" class="w-4 h-4"></i>
+                    <span x-text="bpExporting ? 'Generating...' : 'Generate PDF'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Issue Creation Modal -->
     <div class="modal-overlay" x-show="showIssueModal" x-transition @click.self="showIssueModal = false">
@@ -725,6 +881,17 @@ document.addEventListener('alpine:init', () => {
         currentTool: 'select',
         gridSize: 1,
         isNightMode: false,
+        sceneryPanelOpen: false,
+        currentScenery: 'neighborhood',
+
+        // Blueprint Export State
+        blueprintModalOpen: false,
+        bpPaper:      'a4',
+        bpScale:      100,
+        bpFloors:     'all',
+        bpFurniture:  true,
+        bpDimensions: true,
+        bpExporting:  false,
 
         // Sidebar State
         sidebarOpen: false,
@@ -1619,9 +1786,17 @@ document.addEventListener('alpine:init', () => {
         cycleGridSize() {
             if (typeof editor !== 'undefined') editor.cycleGridSize();
         },
-        
 
-        
+        toggleDayNight() {
+            if (typeof editor !== 'undefined') editor.toggleDayNight();
+        },
+
+        setScenery(theme) {
+            this.currentScenery = theme;
+            this.sceneryPanelOpen = false;
+            if (typeof editor !== 'undefined') editor.setScenery(theme);
+        },
+
         setTool(tool) {
             this.currentTool = tool;
             if (typeof editor !== 'undefined') editor.setTool(tool);
@@ -1682,6 +1857,35 @@ document.addEventListener('alpine:init', () => {
         
         showToast(message, type = 'success') {
             showSweetToast(message, type);
+        },
+
+        // ============ BLUEPRINT EXPORT ============
+        async generateBlueprint() {
+            if (typeof editor === 'undefined' || !window.BlueprintExporter) {
+                this.showToast('Blueprint exporter not loaded', 'error');
+                return;
+            }
+            this.bpExporting = true;
+            this.blueprintModalOpen = false;
+            this.showToast('Generating blueprint...', 'info');
+
+            try {
+                const exporter = new BlueprintExporter(editor);
+                await exporter.export({
+                    paperSize:  this.bpPaper,
+                    scale:      this.bpScale,
+                    floors:     this.bpFloors === 'current' ? this.currentFloor : 'all',
+                    furniture:  this.bpFurniture,
+                    dimensions: this.bpDimensions,
+                    buildName:  '{{ $build->name }}'
+                });
+                this.showToast('Blueprint downloaded!', 'success');
+            } catch (e) {
+                console.error('Blueprint export error:', e);
+                this.showToast('Export failed — check console', 'error');
+            } finally {
+                this.bpExporting = false;
+            }
         },
 
         // ============ ISSUE METHODS ============
@@ -2528,19 +2732,19 @@ document.addEventListener('alpine:init', () => {
         flex-direction: column;
         gap: 12px;
         padding: 12px;
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px) saturate(180%);
-        -webkit-backdrop-filter: blur(12px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        background: color-mix(in srgb, var(--surface) 85%, transparent);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--border-default);
         border-radius: 20px;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        box-shadow: var(--shadow-lg);
         z-index: 1000;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .floating-toolbar:hover {
-        background: rgba(255, 255, 255, 0.9);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+        background: var(--surface);
+        box-shadow: var(--shadow-xl);
     }
     
     .floating-toolbar__group {
@@ -2616,12 +2820,67 @@ document.addEventListener('alpine:init', () => {
     /* Hide the old keyboard hint styles from layout if they conflict */
     .keyboard-hint { display: none !important; }
 
+    /* Night mode active state on button */
+    .floating-tool-btn.night-active {
+        background: var(--accent-muted);
+        color: var(--accent-active);
+        box-shadow: var(--shadow-sm);
+    }
+    .floating-tool-btn.night-active:hover {
+        background: var(--accent-light);
+    }
+
+    /* Scenery pop-out panel — light mode */
+    .scenery-panel {
+        position: absolute;
+        right: calc(100% + 12px);
+        bottom: 0;
+        width: 230px;
+        background: var(--surface);
+        border: 1px solid var(--border-default);
+        border-radius: 16px;
+        padding: 10px;
+        box-shadow: var(--shadow-lg);
+        z-index: 200;
+    }
+    .scenery-panel__title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        padding: 4px 8px 8px;
+    }
+    .scenery-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 10px;
+        border-radius: 10px;
+        border: 1.5px solid transparent;
+        background: transparent;
+        color: var(--text-primary);
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.15s, border-color 0.15s;
+        margin-bottom: 3px;
+    }
+    .scenery-option:hover { background: var(--bg-secondary); }
+    .scenery-option.active {
+        background: var(--accent-light);
+        border-color: var(--accent);
+    }
+    .scenery-icon { font-size: 20px; line-height: 1; flex-shrink: 0; }
+    .scenery-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+    .scenery-desc { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+
     /* ============ MODERN SWEETALERT2 PREMIUM THEME ============ */
     .swal-premium .swal2-popup {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        background: color-mix(in srgb, var(--surface) 85%, transparent);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--border-default);
         border-radius: 24px;
         font-family: 'Plus Jakarta Sans', sans-serif;
         padding: 2.5rem;
@@ -2632,13 +2891,13 @@ document.addEventListener('alpine:init', () => {
         font-size: 1.6rem;
         font-weight: 800;
         letter-spacing: -0.03em;
-        color: #1a1a1a;
+        color: var(--text-primary);
         margin-bottom: 0.5rem;
     }
     
     .swal-premium .swal2-html-container {
         font-size: 1.05rem;
-        color: #4b5563;
+        color: var(--text-secondary);
         line-height: 1.6;
         font-weight: 500;
     }
@@ -2789,9 +3048,9 @@ document.addEventListener('alpine:init', () => {
         position: absolute;
         top: calc(100% + 8px);
         background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--border-default);
         border-radius: 16px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
         padding: 8px;

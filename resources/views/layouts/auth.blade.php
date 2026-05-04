@@ -16,6 +16,12 @@
 
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         body {
@@ -220,9 +226,10 @@
         .auth-footer a:hover {
             text-decoration: underline;
         }
-    </style>
+    <!-- Alpine x-cloak style -->
+    <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body>
+<body x-data="authPortal">
     <div class="auth-layout">
         <!-- Left: Form -->
         <main class="auth-pane-form">
@@ -281,8 +288,378 @@
         </aside>
     </div>
 
+    <!-- Global Biometric Identity Scanner -->
+    <template x-teleport="body">
+        <div x-show="scannerOpen" 
+             style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: rgba(255, 255, 255, 0.75) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important;"
+             x-transition:enter="transition ease-out duration-400"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-cloak>
+            
+            <div class="card" 
+                 style="position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; width: 95% !important; max-width: 960px !important; background: #fff !important; padding: 0 !important; overflow: hidden !important; border-radius: 40px !important; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1) !important; border: 1px solid rgba(0, 0, 0, 0.05) !important;">
+                
+                <div style="padding: 2.5rem 3.5rem; border-bottom: 2px solid rgba(0, 0, 0, 0.03); display: flex; justify-content: space-between; align-items: center; background: #fff;">
+                    <div style="display: flex; align-items: center; gap: 24px;">
+                        <div style="width: 56px; height: 56px; background: var(--accent); border-radius: 16px; display: grid; place-items: center; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);">
+                            <i data-lucide="scan-eye" style="width: 32px; height: 32px; color: #fff;"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.85rem; font-weight: 950; color: #0f172a; letter-spacing: -0.04em;">Identity Intelligence Scan</h3>
+                            <p style="margin: 0; font-size: 0.875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700;">Neural Engine v4.0</p>
+                        </div>
+                    </div>
+                    <button @click="closeScanner()" style="background: #f1f5f9; border: none; cursor: pointer; color: #64748b; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                        <i data-lucide="x" style="width: 28px; height: 28px;"></i>
+                    </button>
+                </div>
+
+                <div style="position: relative; aspect-ratio: 16/10; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <video id="auth-video" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); filter: brightness(1.15) contrast(1.1) saturate(1.1);"></video>
+                    <canvas id="auth-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 15; pointer-events: none; transform: scaleX(-1);"></canvas>
+                    
+                    <!-- Neural Targeting HUD -->
+                    <div style="position: absolute; inset: 60px; border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 40px; pointer-events: none;">
+                        <div style="position: absolute; top: 0; left: 0; width: 80px; height: 80px; border-top: 5px solid var(--accent); border-left: 5px solid var(--accent); border-radius: 30px 0 0 0; box-shadow: -10px -10px 25px rgba(59, 130, 246, 0.1);"></div>
+                        <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-top: 5px solid var(--accent); border-right: 5px solid var(--accent); border-radius: 0 30px 0 0; box-shadow: 10px -10px 25px rgba(59, 130, 246, 0.1);"></div>
+                        <div style="position: absolute; bottom: 0; left: 0; width: 80px; height: 80px; border-bottom: 5px solid var(--accent); border-left: 5px solid var(--accent); border-radius: 0 0 0 30px; box-shadow: -10px 10px 25px rgba(59, 130, 246, 0.1);"></div>
+                        <div style="position: absolute; bottom: 0; right: 0; width: 80px; height: 80px; border-bottom: 5px solid var(--accent); border-right: 5px solid var(--accent); border-radius: 0 0 30px 0; box-shadow: 10px 10px 25px rgba(59, 130, 246, 0.1);"></div>
+                    </div>
+
+                    <div style="position: absolute; inset: 0; border: 10px solid transparent; transition: border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none;"
+                         :style="faceDetected ? 'border-color: #22c55e; background: rgba(34, 197, 94, 0.05);' : 'border-color: rgba(59, 130, 246, 0.2);'">
+                        
+                        <!-- Neural Laser Sweep -->
+                        <div class="scanning-laser" x-show="!isAuthenticating"></div>
+                        
+                        <div style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #fff; backdrop-filter: blur(25px); padding: 1rem 2rem; border-radius: 20px; color: #0f172a; font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 1rem; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 15px 35px rgba(0,0,0,0.1); z-index: 20;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%;" :style="faceDetected ? 'background: #22c55e; box-shadow: 0 0 20px #22c55e;' : 'background: #ef4444;'"></div>
+                            <span x-text="faceDetected ? 'Signature Match Confirmed' : 'Seeking Biometric Data...'"></span>
+                        </div>
+                    </div>
+
+                    <!-- Authorization Flow Overlay -->
+                    <div x-show="isAuthenticating" 
+                         style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(25px); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #1e293b; z-index: 200;"
+                         x-transition:enter="transition ease-in-out duration-500"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100">
+                        
+                        <template x-if="!authSuccess">
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4rem; padding-top: 4rem;">
+                                <div class="neural-spinner"></div>
+                                <div style="text-align: center;">
+                                    <h4 style="font-weight: 950; font-size: 3rem; margin: 0; letter-spacing: 0.2em; color: var(--accent); text-shadow: 0 10px 30px rgba(59, 130, 246, 0.15);">ACCESS GRANTED</h4>
+                                    <p style="font-size: 1.25rem; color: #64748b; margin-top: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em;">Establishing Secure Bridge...</p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="authSuccess">
+                            <div style="text-align: center; animation: zoom-in-up 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); padding-top: 4rem;">
+                                <div style="width: 160px; height: 160px; background: #22c55e; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 3rem; box-shadow: 0 20px 60px rgba(34, 197, 94, 0.3); border: 6px solid #fff;">
+                                    <i data-lucide="shield-check" style="width: 80px; height: 80px; color: #fff;"></i>
+                                </div>
+                                <h4 style="font-weight: 950; font-size: 4.5rem; margin: 0; letter-spacing: -0.04em; color: #0f172a; line-height: 1;">WELCOME</h4>
+                                <p style="font-size: 2.5rem; font-weight: 400; color: #16a34a; margin-top: 1rem; font-family: 'Instrument Serif', serif; letter-spacing: 0.02em;" x-text="userName"></p>
+                                
+                                <div style="margin-top: 3.5rem; width: 300px; height: 6px; background: #f1f5f9; border-radius: 3px; margin-left: auto; margin-right: auto; overflow: hidden; position: relative;">
+                                    <div class="success-progress-bar"></div>
+                                </div>
+                                <p style="margin-top: 1.25rem; font-size: 0.875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.3em; font-weight: 800; animation: pulse 1s infinite;">Synchronizing Workspace...</p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <style>
+                        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                        @keyframes zoom-in-up {
+                            0% { opacity: 0; transform: scale(0.5) translateY(40px); }
+                            100% { opacity: 1; transform: scale(1) translateY(0); }
+                        }
+                        @keyframes scan-sweep {
+                            0%, 100% { top: 0%; opacity: 0; }
+                            5%, 95% { opacity: 1; }
+                            50% { top: 100%; }
+                        }
+                        .neural-spinner {
+                            width: 12rem; height: 12rem; border: 10px solid #f1f5f9; border-top-color: var(--accent); border-radius: 50%; 
+                            animation: spin 0.8s linear infinite; box-shadow: 0 0 80px rgba(59, 130, 246, 0.1);
+                        }
+                        .scanning-laser {
+                            position: absolute; left: 0; right: 0; height: 4px; z-index: 10;
+                            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+                            box-shadow: 0 0 40px var(--accent);
+                            animation: scan-sweep 3s ease-in-out infinite;
+                            pointer-events: none;
+                        }
+                        .success-progress-bar {
+                            position: absolute; left: 0; top: 0; height: 100%; background: #22c55e; width: 0%;
+                            animation: progress-load 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                        }
+                        @keyframes progress-load { 0% { width: 0%; } 100% { width: 100%; } }
+                        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+                    </style>
+                </div>
+            </div>
+        </div>
+    </template>
+
     @stack('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('authPortal', () => ({
+                scannerOpen: false,
+                faceDetected: false,
+                isScanningFace: false,
+                isAuthenticating: false,
+                isLoadingModels: false,
+                authSuccess: false,
+                userName: '',
+                video: null,
+                modelsLoaded: false,
+
+                async openScanner() {
+                    if (this.isLoadingModels) return;
+                    
+                    this.isLoadingModels = true;
+                    try {
+                        await this.loadModels();
+                        this.scannerOpen = true;
+                        this.isLoadingModels = false;
+                        this.startCamera();
+                    } catch (err) {
+                        console.error("Face API Initialization Error:", err);
+                        Swal.fire('Neural Engine Error', 'Failed to load face recognition models.', 'error');
+                        this.isLoadingModels = false;
+                    }
+                },
+
+                async loadModels() {
+                    if (this.modelsLoaded) return;
+                    const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+                    await Promise.all([
+                        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                    ]);
+                    this.modelsLoaded = true;
+                },
+
+                async startCamera() {
+                    this.$nextTick(async () => {
+                        this.video = document.getElementById('auth-video');
+                        if (!this.video) {
+                            setTimeout(() => {
+                                this.video = document.getElementById('auth-video');
+                                this.initStream();
+                            }, 100);
+                            return;
+                        }
+                        this.initStream();
+                    });
+                },
+
+                async initStream() {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        if (this.video) {
+                            this.video.srcObject = stream;
+                            this.startDetection();
+                        }
+                    } catch (err) {
+                        Swal.fire('Camera Error', 'Face recognition requires camera access.', 'error');
+                        this.closeScanner();
+                    }
+                },
+
+                startDetection() {
+                    const canvas = document.getElementById('auth-canvas');
+                    
+                    // --- Stability Config ---
+                    let missCount    = 0;          // consecutive missed frames
+                    const MISS_GRACE = 12;          // frames before clearing canvas (≈1.8s at 150ms)
+                    let lastDescriptor = null;      // reuse last known descriptor for auth trigger
+
+                    const detectorOptions = new faceapi.TinyFaceDetectorOptions({
+                        inputSize: 320,            // Lower inputSize = much higher FPS = no motion blur
+                        scoreThreshold: 0.05       // Ultra-lenient to catch dark/distant faces
+                    });
+
+                    // Use a recursive async loop instead of setInterval to prevent frame queueing/lag
+                    const detectFrame = async () => {
+                        if (!this.scannerOpen || this.isAuthenticating) {
+                            if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                            return;
+                        }
+                        
+                        if (!this.modelsLoaded || !this.video || this.video.readyState < 2) {
+                            setTimeout(detectFrame, 100);
+                            return;
+                        }
+
+                        const displaySize = { width: this.video.clientWidth, height: this.video.clientHeight };
+                        if (displaySize.width === 0) {
+                            setTimeout(detectFrame, 100);
+                            return;
+                        }
+                        
+                        faceapi.matchDimensions(canvas, displaySize);
+
+                        try {
+                            const detection = await faceapi.detectSingleFace(this.video, detectorOptions)
+                                                           .withFaceLandmarks()
+                                                           .withFaceDescriptor();
+
+                            if (detection) {
+                                missCount = 0;
+                                this.faceDetected = true;
+                                lastDescriptor = detection.descriptor;
+
+                                const resized = faceapi.resizeResults(detection, displaySize);
+                                const ctx = canvas.getContext('2d');
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                                const landmarks = resized.landmarks;
+                                const parts = [
+                                    { pts: landmarks.getJawOutline(),   close: false, color: 'rgba(59,130,246,0.7)' },
+                                    { pts: landmarks.getNose(),         close: false, color: 'rgba(59,130,246,0.7)' },
+                                    { pts: landmarks.getMouth(),        close: true,  color: 'rgba(99,102,241,0.8)' },
+                                    { pts: landmarks.getLeftEye(),      close: true,  color: 'rgba(59,130,246,0.9)' },
+                                    { pts: landmarks.getRightEye(),     close: true,  color: 'rgba(59,130,246,0.9)' },
+                                    { pts: landmarks.getLeftEyeBrow(),  close: false, color: 'rgba(99,102,241,0.7)' },
+                                    { pts: landmarks.getRightEyeBrow(), close: false, color: 'rgba(99,102,241,0.7)' },
+                                ];
+
+                                // ── Draw glowing contour lines ───────────────────
+                                parts.forEach(({ pts, close, color }) => {
+                                    if (!pts || pts.length < 2) return;
+                                    ctx.save();
+                                    ctx.shadowColor = '#3B82F6';
+                                    ctx.shadowBlur = 8;
+                                    ctx.strokeStyle = color;
+                                    ctx.lineWidth = 2.5;
+                                    ctx.beginPath();
+                                    ctx.moveTo(pts[0].x, pts[0].y);
+                                    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                                    if (close) ctx.closePath();
+                                    ctx.stroke();
+                                    ctx.restore();
+                                });
+
+                                // ── Draw landmark nodes ──────────────────────────
+                                landmarks.positions.forEach(pt => {
+                                    ctx.save();
+                                    ctx.shadowColor = '#60A5FA';
+                                    ctx.shadowBlur = 6;
+                                    ctx.strokeStyle = 'rgba(147,197,253,0.9)';
+                                    ctx.lineWidth = 1;
+                                    ctx.beginPath();
+                                    ctx.arc(pt.x, pt.y, 4, 0, 2 * Math.PI);
+                                    ctx.stroke();
+                                    ctx.fillStyle = '#3B82F6';
+                                    ctx.beginPath();
+                                    ctx.arc(pt.x, pt.y, 2.5, 0, 2 * Math.PI);
+                                    ctx.fill();
+                                    ctx.restore();
+                                });
+
+                                // ── Draw bounding bracket corners ────────────────
+                                const box = resized.detection.box;
+                                const cSize = 20;
+                                ctx.save();
+                                ctx.shadowColor = '#22C55E';
+                                ctx.shadowBlur = 12;
+                                ctx.strokeStyle = '#22C55E';
+                                ctx.lineWidth = 3;
+                                ctx.beginPath(); ctx.moveTo(box.x, box.y + cSize); ctx.lineTo(box.x, box.y); ctx.lineTo(box.x + cSize, box.y); ctx.stroke();
+                                ctx.beginPath(); ctx.moveTo(box.x + box.width - cSize, box.y); ctx.lineTo(box.x + box.width, box.y); ctx.lineTo(box.x + box.width, box.y + cSize); ctx.stroke();
+                                ctx.beginPath(); ctx.moveTo(box.x, box.y + box.height - cSize); ctx.lineTo(box.x, box.y + box.height); ctx.lineTo(box.x + cSize, box.y + box.height); ctx.stroke();
+                                ctx.beginPath(); ctx.moveTo(box.x + box.width - cSize, box.y + box.height); ctx.lineTo(box.x + box.width, box.y + box.height); ctx.lineTo(box.x + box.width, box.y + box.height - cSize); ctx.stroke();
+                                ctx.restore();
+
+                            } else {
+                                missCount++;
+                                if (missCount >= MISS_GRACE) {
+                                    this.faceDetected = false;
+                                    lastDescriptor = null;
+                                    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                                }
+                            }
+
+                            if (this.faceDetected && !this.isAuthenticating && !this.isScanningFace && lastDescriptor) {
+                                this.isScanningFace = true;
+                                const frozenDescriptor = lastDescriptor;
+                                setTimeout(() => {
+                                    if (this.scannerOpen && lastDescriptor) {
+                                        this.verifyIdentity(frozenDescriptor);
+                                    } else {
+                                        this.isScanningFace = false;
+                                    }
+                                }, 3000); 
+                            }
+                        } catch (e) {
+                            console.error("Detection frame error:", e);
+                        }
+
+                        // Recursively call next frame with a small delay
+                        setTimeout(detectFrame, 100);
+                    };
+
+                    // Start loop
+                    detectFrame();
+                },
+
+                async verifyIdentity(descriptor) {
+                    this.isAuthenticating = true;
+                    
+                    try {
+                        const response = await fetch("{{ route('login.biometrics') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ descriptor: Array.from(descriptor) })
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.success) {
+                            this.userName = result.name;
+                            this.authSuccess = true;
+                            
+                            // Animated success greeting delay
+                            setTimeout(() => {
+                                window.location.href = result.redirect;
+                            }, 2500);
+                        } else {
+                            this.isAuthenticating = false;
+                            this.faceDetected = false;
+                            this.isScanningFace = false;
+                            setTimeout(() => this.startDetection(), 2000);
+                        }
+                    } catch (err) {
+                        this.isAuthenticating = false;
+                        this.isScanningFace = false;
+                        console.error(err);
+                    }
+                },
+
+                closeScanner() {
+                    if (this.video?.srcObject) {
+                        this.video.srcObject.getTracks().forEach(track => track.stop());
+                    }
+                    this.scannerOpen = false;
+                    this.isAuthenticating = false;
+                    this.isScanningFace = false;
+                    this.authSuccess = false;
+                }
+            }));
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
         });

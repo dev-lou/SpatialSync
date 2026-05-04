@@ -28,6 +28,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store']);
+    
+    // Neural Face Login
+    Route::post('/login/biometrics', [\App\Http\Controllers\Auth\BiometricAuthController::class, 'login'])->name('login.biometrics');
 });
 
 // Logout
@@ -87,8 +90,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
-        Route::get('/builds', [AdminController::class, 'builds'])->name('admin.builds');
+        Route::get('/presets', [AdminController::class, 'presets'])->name('admin.presets');
+        Route::get('/blueprints', [AdminController::class, 'builds'])->name('admin.builds');
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
         Route::delete('/builds/{build}', [AdminController::class, 'deleteBuild'])->name('admin.builds.delete');
+        
+        // Biometrics & Security (Admin Personal)
+        Route::get('/security', [AdminController::class, 'security'])->name('admin.security');
+        Route::post('/biometrics/save', [AdminController::class, 'saveBiometrics'])->name('admin.biometrics.save');
     });
 });

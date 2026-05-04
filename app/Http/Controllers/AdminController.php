@@ -23,18 +23,28 @@ class AdminController extends Controller
         $users = $this->userService->all();
         $builds = $this->supabase->select('builds', ['*'], []);
         $messages = $this->supabase->select('build_messages', ['*'], []);
+        $presets = $this->supabase->select('part_presets', ['*'], []);
+
+        // Simulated Telemetry (2026 SaaS Style)
+        $telemetry = [
+            'cpu_usage' => rand(12, 45).'%',
+            'ram_usage' => rand(2, 5).'GB / 16GB',
+            'ws_connections' => rand(15, 120),
+            'storage_used' => (count($builds) * 0.5).'MB',
+            'uptime' => '99.98%',
+        ];
 
         $stats = [
             'users' => count($users),
             'builds' => count($builds),
-            'activeToday' => count(array_filter($users, fn ($u) => isset($u['updated_at']) && date('Y-m-d', strtotime($u['updated_at'])) === date('Y-m-d'))),
+            'presets' => count($presets),
             'messages' => count($messages),
         ];
 
-        $recentMessages = array_slice(array_reverse($messages), 0, 10);
+        $recentMessages = array_slice(array_reverse($messages), 0, 8);
         $recentActivity = collect($recentMessages)->map(fn ($m) => (object) $m);
 
-        return view('admin.dashboard', compact('stats', 'recentActivity'));
+        return view('admin.dashboard', compact('stats', 'recentActivity', 'telemetry'));
     }
 
     public function users(Request $request)
@@ -45,12 +55,20 @@ class AdminController extends Controller
         return view('admin.users', compact('users'));
     }
 
+    public function presets()
+    {
+        $presetsData = $this->supabase->select('part_presets', ['*'], []);
+        $presets = collect($presetsData)->map(fn ($p) => (object) $p);
+
+        return view('admin.presets', compact('presets'));
+    }
+
     public function builds()
     {
         $buildsData = $this->supabase->select('builds', ['*'], []);
         $builds = collect($buildsData)->map(fn ($b) => (object) $b);
 
-        return view('admin.blueprints', compact('builds'));
+        return view('admin.builds', compact('builds'));
     }
 
     public function deleteUser(Request $request, $userId)
@@ -74,5 +92,32 @@ class AdminController extends Controller
         }
 
         return back()->with('error', 'Failed to delete build.');
+    }
+
+    public function security()
+    {
+        $userId = session('supabase_user_id');
+        $userData = $this->userService->findById($userId);
+        $user = (object) $userData;
+
+        return view('admin.security', compact('user'));
+    }
+
+    public function saveBiometrics(Request $request)
+    {
+        $request->validate([
+            'descriptor' => 'required|array',
+        ]);
+
+        $userId = session('supabase_user_id');
+        
+        // Save to Supabase using biometric_data column
+        $success = $this->supabase->update('users', ['biometric_data' => $request->descriptor], ['id' => $userId]);
+
+        if ($success) {
+            return response()->json(['message' => 'Face fingerprint saved successfully.']);
+        }
+
+        return response()->json(['message' => 'Failed to save biometric data.'], 500);
     }
 }

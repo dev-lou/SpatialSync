@@ -26,6 +26,12 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- jsPDF for Blueprint Export -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+    <!-- Blueprint Exporter -->
+    <script src="{{ asset('js/blueprint-exporter.js') }}"></script>
+
     <!-- Editor Styles -->
     <style>
         *, *::before, *::after {
@@ -38,7 +44,7 @@
             height: 100%;
             overflow: hidden;
             font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            background: var(--bg-primary);
+            background: var(--bg);
         }
 
         .editor-layout {
@@ -54,10 +60,15 @@
             align-items: center;
             justify-content: space-between;
             padding: 8px 16px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            height: 48px;
+            background: color-mix(in srgb, var(--surface) 85%, transparent);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border-default);
+            height: 56px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1010;
+            overflow: visible;
         }
 
         .editor-topbar__left {
@@ -84,7 +95,7 @@
         .editor-topbar__divider {
             width: 1px;
             height: 24px;
-            background: var(--border);
+            background: var(--border-default);
         }
 
         .editor-topbar__title {
@@ -110,7 +121,7 @@
             flex: 1;
             position: relative;
             overflow: hidden;
-            background: #e2e8f0;
+            background: transparent;
         }
 
         #editor-canvas {
@@ -134,7 +145,7 @@
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-md);
             pointer-events: none;
             z-index: 10;
         }
@@ -153,7 +164,7 @@
             display: flex;
             flex-direction: column;
             background: var(--surface);
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--border-default);
             flex-shrink: 0;
         }
 
@@ -163,7 +174,7 @@
             align-items: center;
             gap: 4px;
             padding: 8px 16px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-default);
             overflow-x: auto;
         }
 
@@ -223,7 +234,7 @@
 
         .part-card:hover {
             background: var(--bg-tertiary);
-            border-color: var(--border);
+            border-color: var(--border-default);
             transform: translateY(-2px);
         }
 
@@ -267,18 +278,21 @@
         /* Properties Panel - Floating */
         .properties-panel {
             position: fixed;
-            top: 60px;
-            right: 16px;
-            width: 280px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-            padding: 16px;
+            top: 70px;
+            right: 24px;
+            width: 300px;
+            background: color-mix(in srgb, var(--surface) 95%, transparent);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            padding: 24px;
             display: none;
             z-index: 100;
             max-height: calc(100vh - 200px);
             overflow-y: auto;
+            transition: var(--transition-spring);
         }
 
         .properties-panel.visible {
@@ -330,7 +344,7 @@
         .property-row input[type="number"] {
             flex: 1;
             padding: 6px 10px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-default);
             border-radius: 6px;
             font-size: 13px;
             background: var(--bg-secondary);
@@ -371,13 +385,13 @@
         }
 
         .btn--primary:hover {
-            background: var(--accent-dark);
+            background: var(--accent-hover);
         }
 
         .btn--secondary {
             background: var(--bg-secondary);
             color: var(--text-primary);
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-default);
         }
 
         .btn--secondary:hover {
@@ -459,7 +473,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 6px 16px;
-            background: #1e293b;
+            background: var(--bg-secondary);
             color: #94a3b8;
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
@@ -493,9 +507,9 @@
         .toast {
             padding: 12px 16px;
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-default);
             border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
             font-size: 13px;
             animation: slideIn 0.3s ease;
         }
@@ -528,7 +542,7 @@
             position: fixed;
             bottom: 300px;
             right: 16px;
-            background: rgba(30, 41, 59, 0.9);
+            background: var(--surface);
             color: #e2e8f0;
             padding: 12px 16px;
             border-radius: 8px;
@@ -541,7 +555,7 @@
         .keyboard-hint kbd {
             display: inline-block;
             padding: 2px 6px;
-            background: #334155;
+            background: var(--border-strong);
             border-radius: 4px;
             font-size: 10px;
             margin-right: 4px;
@@ -611,7 +625,7 @@
             display: flex;
             gap: 4px;
             margin-bottom: 16px;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 2px solid var(--border-default);
         }
 
         .property-tab {
@@ -649,7 +663,7 @@
         .material-btn {
             padding: 12px;
             background: var(--bg-secondary);
-            border: 2px solid var(--border);
+            border: 2px solid var(--border-default);
             border-radius: var(--radius-md);
             color: var(--text-primary);
             font-size: 13px;
@@ -676,15 +690,14 @@
             width: 350px;
             height: calc(100vh - 48px);
             background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(25px) saturate(200%);
-            -webkit-backdrop-filter: blur(25px) saturate(200%);
-            border-right: 1px solid var(--border);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid var(--border-default);
             z-index: 1000;
             transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
-            box-shadow: 20px 0 50px rgba(0, 0, 0, 0.08), 
-                        1px 0 0 rgba(255, 255, 255, 0.2) inset;
+            box-shadow: var(--shadow-2xl);
         }
 
         .sidebar--open {
@@ -693,7 +706,7 @@
 
         .sidebar__header {
             padding: 16px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-default);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -756,7 +769,7 @@
             width: 100%;
             padding: 10px 12px 10px 36px;
             background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-default);
             border-radius: 10px;
             font-size: 13px;
             transition: all 0.2s;
@@ -784,7 +797,7 @@
         .search-results {
             margin-top: 8px;
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-default);
             border-radius: 10px;
             overflow: hidden;
             box-shadow: var(--shadow-lg);
@@ -800,7 +813,7 @@
         }
 
         .search-result:not(:last-child) {
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-default);
         }
 
         .search-result:hover {
@@ -844,11 +857,11 @@
             padding: 4px 10px !important;
             margin: 0 !important;
             border-radius: 99px !important;
-            background: rgba(30, 41, 59, 0.95) !important;
+            background: color-mix(in srgb, var(--surface) 95%, transparent) !important;
             backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
-            color: #ffffff !important;
+            border: 1px solid var(--border-default) !important;
+            box-shadow: var(--shadow-md) !important;
+            color: var(--text-primary) !important;
             flex-direction: row !important;
             align-items: center !important;
             gap: 6px !important;
@@ -857,7 +870,7 @@
         .compact-toast.swal2-popup .swal2-title {
             font-size: 11px !important;
             font-weight: 500 !important;
-            color: #ffffff !important;
+            color: var(--text-primary) !important;
             margin: 0 !important;
             display: flex !important;
             align-items: center !important;
@@ -915,7 +928,7 @@
 
         .sidebar__footer {
             padding: 16px;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--border-default);
             display: flex;
             gap: 8px;
         }
@@ -924,7 +937,7 @@
             flex: 1;
             padding: 10px 12px;
             background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-default);
             border-radius: 10px;
             font-size: 13px;
         }
@@ -946,6 +959,148 @@
                 width: 100%;
                 left: -100%;
             }
+        }
+
+        /* ── Dropdown Divider ── */
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-default);
+            margin: 4px 8px;
+        }
+
+        /* ── Blueprint Modal UI ── */
+        .blueprint-opt-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border-default);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .blueprint-opt-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .blueprint-opt-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .blueprint-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            padding: 10px 14px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border-default);
+            user-select: none;
+            transition: background 0.15s;
+        }
+        .blueprint-toggle:hover { background: var(--bg-tertiary); }
+        .toggle-track {
+            width: 40px; height: 22px;
+            background: var(--border-default);
+            border-radius: 99px;
+            position: relative;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .toggle-track.active { background: var(--accent); }
+        .toggle-thumb {
+            position: absolute;
+            top: 3px; left: 3px;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle-track.active .toggle-thumb { transform: translateX(18px); }
+
+        /* ── Export Dropdown ── */
+        .export-dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 220px;
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 14px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08);
+            padding: 6px;
+            z-index: 9999;
+            overflow: visible;
+        }
+
+        .dropdown-header {
+            padding: 6px 10px 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: left;
+            transition: background 0.12s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-item__icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-secondary);
+        }
+
+        .dropdown-item__icon svg { width: 16px; height: 16px; }
+
+        .dropdown-item__content { flex: 1; min-width: 0; }
+
+        .dropdown-item__title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        .dropdown-item__desc {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            margin-top: 1px;
         }
     </style>
 

@@ -286,6 +286,8 @@ class BuildController extends Controller
         $validated = $request->validate([
             'current_floor' => 'integer|min:1|max:10',
             'roof_visible' => 'boolean',
+            'name' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
         ]);
 
         $updateData = [];
@@ -294,6 +296,12 @@ class BuildController extends Controller
         }
         if (isset($validated['roof_visible'])) {
             $updateData['roof_visible'] = $validated['roof_visible'];
+        }
+        if (isset($validated['name'])) {
+            $updateData['name'] = $validated['name'];
+        }
+        if (array_key_exists('description', $validated)) {
+            $updateData['description'] = $validated['description'];
         }
 
         $this->supabase->update('builds', $updateData, ['id' => $buildId]);
