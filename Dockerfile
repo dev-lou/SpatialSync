@@ -33,8 +33,8 @@ COPY --from=frontend /app/public/build ./public/build
 
 # Set permissions - ensure all files are readable
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public \
-    && chmod -R 755 /var/www/html/public \
-    && chmod -R 644 /var/www/html/public/*
+    && find /var/www/html/public -type d -exec chmod 755 {} \; \
+    && find /var/www/html/public -type f -exec chmod 644 {} \;
 
 # Custom Nginx Config
 COPY <<EOF /etc/nginx/http.d/default.conf
@@ -81,22 +81,57 @@ COPY <<EOF /etc/supervisor/conf.d/supervisord.conf
 [supervisord]
 nodaemon=true
 user=root
-logfile=/var/log/supervisord.log
+logfile=/dev/null
+logfile_maxbytes=0
 pidfile=/run/supervisord.pid
 
 [program:php-fpm]
-command=php-fpm
+command=php-fpm -F
+autostart=true
+autorestart=true
+priority=10
 stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
 
 [program:nginx]
 command=nginx -g "daemon off;"
+autostart=true
+autorestart=true
+priority=20
 stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
 EOF
+
+# Startup script to prepare writable runtime paths on mounted volumes
+COPY <<EOF /usr/local/bin/start-container
+#!/bin/sh
+set -e
+
+mkdir -p /var/www/html/storage/framework/cache \
+         /var/www/html/storage/framework/sessions \
+         /var/www/html/storage/framework/views \
+         /var/www/html/storage/logs \
+         /var/www/html/bootstrap/cache
+
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache
+
+if [ -z "\${APP_KEY:-}" ]; then
+    echo "ERROR: APP_KEY is not set. Configure APP_KEY in Render environment variables."
+    exit 1
+fi
+
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+EOF
+
+RUN chmod +x /usr/local/bin/start-container
 
 # Expose port 80
 EXPOSE 80
 
-# Start Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Start container entrypoint
+CMD ["/usr/local/bin/start-container"]

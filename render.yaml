@@ -12,16 +12,18 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
+      - key: LOG_CHANNEL
+        value: stderr
       - key: APP_URL
         sync: false
     
     # Health check
-    healthCheckPath: /
+    healthCheckPath: /up
     healthCheckInterval: 300
     
     # Build settings
     buildCommand: npm install && npm run build
-    startCommand: /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+    startCommand: /usr/local/bin/start-container
     
     # Disk space (if needed for logs/storage)
     disk:
