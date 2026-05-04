@@ -20,6 +20,7 @@ WORKDIR /var/www/html
 # Install system dependencies & Nginx
 RUN apk add --no-cache nginx supervisor libpng-dev libzip-dev libpq-dev \
     && docker-php-ext-install gd zip pdo pdo_pgsql pgsql bcmath \
+    && sed -i 's/^user\s\+nginx;/user www-data;/' /etc/nginx/nginx.conf \
     && mkdir -p /run/nginx
 
 # Copy PHP dependencies from Stage 1
@@ -33,8 +34,7 @@ COPY --from=frontend /app/public/build ./public/build
 
 # Set permissions - ensure all files are readable
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public \
-    && find /var/www/html/public -type d -exec chmod 755 {} \; \
-    && find /var/www/html/public -type f -exec chmod 644 {} \;
+    && chmod -R a+rX /var/www/html/public
 
 # Custom Nginx Config
 COPY <<EOF /etc/nginx/http.d/default.conf
@@ -54,6 +54,13 @@ server {
         try_files \$uri \$uri/ /index.php?\$query_string;
     }
 
+    location ~* \.(?:css|js|mjs|map|jpg|jpeg|gif|png|svg|webp|ico|ttf|woff|woff2)$ {
+        access_log off;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000, immutable";
+        try_files \$uri =404;
+    }
+
     location = /favicon.ico { access_log off; log_not_found off; }
     location = /robots.txt  { access_log off; log_not_found off; }
 
@@ -62,10 +69,11 @@ server {
     location ~ \.php$ {
         fastcgi_pass 127.0.0.1:9000;
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
-        fastcgi_param HTTPS \$https;
+        fastcgi_param HTTPS on;
         fastcgi_param HTTP_X_FORWARDED_FOR \$proxy_add_x_forwarded_for;
-        fastcgi_param HTTP_X_FORWARDED_PROTO \$scheme;
-        fastcgi_param HTTP_X_FORWARDED_HOST \$server_name;
+        fastcgi_param HTTP_X_FORWARDED_PROTO \$http_x_forwarded_proto;
+        fastcgi_param HTTP_X_FORWARDED_HOST \$http_host;
+        fastcgi_param HTTP_X_FORWARDED_PORT \$http_x_forwarded_port;
         fastcgi_param PHP_VALUE "display_errors=1";
         include fastcgi_params;
     }
