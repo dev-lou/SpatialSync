@@ -37,7 +37,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
     && chmod -R a+rX /var/www/html/public
 
 # Custom Nginx Config
-COPY <<EOF /etc/nginx/http.d/default.conf
+COPY <<'EOF' /etc/nginx/http.d/default.conf
 server {
     listen 80;
     server_name _;
@@ -51,14 +51,14 @@ server {
     charset utf-8;
 
     location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
+        try_files $uri $uri/ /index.php?$query_string;
     }
 
     location ~* \.(?:css|js|mjs|map|jpg|jpeg|gif|png|svg|webp|ico|ttf|woff|woff2)$ {
         access_log off;
         expires 30d;
         add_header Cache-Control "public, max-age=2592000, immutable";
-        try_files \$uri =404;
+        try_files $uri =404;
     }
 
     location = /favicon.ico { access_log off; log_not_found off; }
@@ -68,12 +68,12 @@ server {
 
     location ~ \.php$ {
         fastcgi_pass 127.0.0.1:9000;
-        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         fastcgi_param HTTPS on;
-        fastcgi_param HTTP_X_FORWARDED_FOR \$proxy_add_x_forwarded_for;
-        fastcgi_param HTTP_X_FORWARDED_PROTO \$http_x_forwarded_proto;
-        fastcgi_param HTTP_X_FORWARDED_HOST \$http_host;
-        fastcgi_param HTTP_X_FORWARDED_PORT \$http_x_forwarded_port;
+        fastcgi_param HTTP_X_FORWARDED_FOR $proxy_add_x_forwarded_for;
+        fastcgi_param HTTP_X_FORWARDED_PROTO $http_x_forwarded_proto;
+        fastcgi_param HTTP_X_FORWARDED_HOST $http_host;
+        fastcgi_param HTTP_X_FORWARDED_PORT $http_x_forwarded_port;
         fastcgi_param PHP_VALUE "display_errors=1";
         include fastcgi_params;
     }
@@ -85,7 +85,7 @@ server {
 EOF
 
 # Custom Supervisor Config to run both Nginx and PHP-FPM
-COPY <<EOF /etc/supervisor/conf.d/supervisord.conf
+COPY <<'EOF' /etc/supervisor/conf.d/supervisord.conf
 [supervisord]
 nodaemon=true
 user=root
@@ -115,7 +115,7 @@ stderr_logfile_maxbytes=0
 EOF
 
 # Startup script to prepare writable runtime paths on mounted volumes
-COPY <<EOF /usr/local/bin/start-container
+COPY <<'EOF' /usr/local/bin/start-container
 #!/bin/sh
 set -e
 
@@ -127,7 +127,7 @@ fi
 
 chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache
 
-if [ -z "\${APP_KEY:-}" ]; then
+if [ -z "${APP_KEY:-}" ]; then
     echo "ERROR: APP_KEY is not set. Configure APP_KEY in Render environment variables."
     exit 1
 fi
