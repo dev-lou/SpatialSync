@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SpatialSync')</title>
+    <meta name="description" content="Identity-Driven Architecture: Collaborate in real-time on premium 3D architectural blueprints.">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="SpatialSync — Identity-Driven Architecture">
+    <meta property="og:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
+    <meta property="og:image" content="{{ asset('images/og-image.png') }}">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="SpatialSync — Identity-Driven Architecture">
+    <meta property="twitter:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
+    <meta property="twitter:image" content="{{ asset('images/og-image.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
