@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +10,15 @@
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
+    <meta property="og:site_name" content="SpatialSync">
     <meta property="og:title" content="SpatialSync — Identity-Driven Architecture">
     <meta property="og:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
-    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-image.png">
-    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-image.png">
+    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-image.png?v=1.0.1">
+    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-image.png?v=1.0.1">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SpatialSync: Premium Identity-Driven Architectural Platform">
+    <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">

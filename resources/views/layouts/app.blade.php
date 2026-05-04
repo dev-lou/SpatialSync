@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,13 +10,16 @@
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
-    <meta property="og:title" content="@yield('title', 'SpatialSync') — Collaborative 3D Building Design">
-    <meta property="og:description" content="@yield('description', 'Design buildings in 3D with your team in real-time. Place walls, doors, roofs and more — collaborate live from any browser.')">
-    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-image.png">
-    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-image.png">
+    <meta property="og:site_name" content="SpatialSync">
+    <meta property="og:title" content="@yield('title', 'SpatialSync') — Collaborative 3D Architecture">
+    <meta property="og:description" content="Design, iterate, and collaborate on premium 3D blueprints in real-time. Built for the next generation of architects.">
+    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-image.png?v=1.0.1">
+    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-image.png?v=1.0.1">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SpatialSync: Real-time Collaborative 3D Architectural Blueprinting Platform">
+    <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
