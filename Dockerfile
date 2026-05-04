@@ -10,9 +10,7 @@ RUN apk add --no-cache git unzip libxml2-dev libpng-dev libzip-dev \
 # --- Stage 2: Frontend Assets ---
 FROM node:20-alpine as frontend
 WORKDIR /app
-COPY package.json package-lock.json vite.config.js tailwind.config.js postcss.config.js ./
-COPY resources ./resources
-COPY public ./public
+COPY . .
 RUN npm install && npm run build
 
 # --- Stage 3: Final Production Image ---
