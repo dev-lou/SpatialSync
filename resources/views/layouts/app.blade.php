@@ -27,6 +27,9 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=plus-jakarta-sans:300,400,500,600,700|instrument-serif:400|jetbrains-mono:400,500">
 
+    <!-- Vite Assets (CSS & JS) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <!-- Design Tokens -->
     <link rel="stylesheet" href="{{ asset('css/tokens.css') }}">
     <link rel="stylesheet" href="{{ asset('css/components.css') }}">
