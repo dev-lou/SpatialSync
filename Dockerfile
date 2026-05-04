@@ -2,8 +2,8 @@
 FROM php:8.3-fpm-alpine as vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN apk add --no-cache git unzip libxml2-dev libpng-dev libzip-dev \
-    && docker-php-ext-install bcmath gd zip \
+RUN apk add --no-cache git unzip libxml2-dev libpng-dev libzip-dev libpq-dev \
+    && docker-php-ext-install bcmath gd zip pdo pdo_pgsql pgsql \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
@@ -18,8 +18,8 @@ FROM php:8.3-fpm-alpine
 WORKDIR /var/www/html
 
 # Install system dependencies & Nginx
-RUN apk add --no-cache nginx supervisor libpng-dev libzip-dev \
-    && docker-php-ext-install gd zip pdo_mysql bcmath \
+RUN apk add --no-cache nginx supervisor libpng-dev libzip-dev libpq-dev \
+    && docker-php-ext-install gd zip pdo pdo_pgsql pgsql bcmath \
     && mkdir -p /run/nginx
 
 # Copy PHP dependencies from Stage 1
