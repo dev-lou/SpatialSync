@@ -9,17 +9,20 @@
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
     <meta property="og:title" content="SpatialSync — Identity-Driven Architecture">
     <meta property="og:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
-    <meta property="og:image" content="{{ asset('images/og-image.png') }}">
+    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-image.png">
+    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
     <meta property="twitter:title" content="SpatialSync — Identity-Driven Architecture">
     <meta property="twitter:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
-    <meta property="twitter:image" content="{{ asset('images/og-image.png') }}">
+    <meta property="twitter:image" content="https://spatialsync.onrender.com/images/og-image.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

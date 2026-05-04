@@ -9,17 +9,21 @@
     
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
     <meta property="og:title" content="@yield('title', 'SpatialSync') — Collaborative 3D Building Design">
     <meta property="og:description" content="@yield('description', 'Design buildings in 3D with your team in real-time. Place walls, doors, roofs and more — collaborate live from any browser.')">
-    <meta property="og:image" content="{{ asset('images/og-image.png') }}">
+    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-image.png">
+    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
     <meta property="twitter:title" content="@yield('title', 'SpatialSync') — Collaborative 3D Building Design">
     <meta property="twitter:description" content="@yield('description', 'Design buildings in 3D with your team in real-time. Place walls, doors, roofs and more — collaborate live from any browser.')">
-    <meta property="twitter:image" content="{{ asset('images/og-image.png') }}">
+    <meta property="twitter:image" content="https://spatialsync.onrender.com/images/og-image.png">
 
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230066FF'/><path d='M50 20 L80 38 L80 62 L50 80 L20 62 L20 38 Z' fill='none' stroke='white' stroke-width='5'/><path d='M50 20 L50 80 M20 38 L80 62 M80 38 L20 62' stroke='white' stroke-width='3' opacity='0.5'/></svg>">
 
