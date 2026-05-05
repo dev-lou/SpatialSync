@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'SpatialSync')</title>
-    <meta name="description" content="Identity-Driven Architecture: Collaborate in real-time on premium 3D architectural blueprints.">
+    <!-- Primary Meta Tags -->
+    <title>@yield('title', 'SpatialSync') — Identity-Driven Architecture</title>
+    <meta name="title" content="SpatialSync — Identity-Driven Architecture">
+    <meta name="description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
+
+    <!-- Schema.org for Google+ / Apps -->
+    <meta itemprop="name" content="SpatialSync — Identity-Driven Architecture">
+    <meta itemprop="description" content="Collaborate in real-time on premium 3D architectural blueprints.">
+    <meta itemprop="image" content="https://spatialsync.onrender.com/images/og-meta.png">
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
@@ -17,7 +24,6 @@
     <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-meta.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="SpatialSync: Premium Identity-Driven Architectural Platform">
     <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
