@@ -278,6 +278,12 @@
     text-align: center;
 }
 
+.comparison-table td:not(:first-child) i,
+.comparison-table td:not(:first-child) svg {
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .comparison-table tbody tr:last-child td {
     border-bottom: none;
 }
