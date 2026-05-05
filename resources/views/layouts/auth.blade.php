@@ -13,8 +13,8 @@
     <meta property="og:site_name" content="SpatialSync">
     <meta property="og:title" content="SpatialSync — Identity-Driven Architecture">
     <meta property="og:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
-    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-image.png?v=1.0.1">
-    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-image.png?v=1.0.1">
+    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-meta.png">
+    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-meta.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="SpatialSync: Premium Identity-Driven Architectural Platform">
@@ -25,7 +25,7 @@
     <meta property="twitter:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
     <meta property="twitter:title" content="SpatialSync — Identity-Driven Architecture">
     <meta property="twitter:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
-    <meta property="twitter:image" content="https://spatialsync.onrender.com/images/og-image.png">
+    <meta property="twitter:image" content="https://spatialsync.onrender.com/images/og-meta.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
