@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ViewServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
+        // Intercept social media bots FIRST — before sessions, CSRF, or auth
+        $middleware->prepend(\App\Http\Middleware\BotSeoMiddleware::class);
+
         $middleware->trustProxies(at: '*');
 
         $middleware->api(prepend: [
