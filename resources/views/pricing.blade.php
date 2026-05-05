@@ -73,6 +73,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: visible !important;
 }
 
 .pricing-card:hover {
