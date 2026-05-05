@@ -32,7 +32,7 @@ class DashboardController extends Controller
         });
 
         $allMemberships = $this->supabase->select('build_members', ['build_id', 'user_id', 'role'], []);
-        $allUsers = $this->supabase->select('users', ['id', 'name', 'email', 'plan'], []);
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'email'], []); // Removed 'plan' to prevent crash if column missing
         $userMap = collect($allUsers)->keyBy('id');
 
         // Identify shared builds (user is in members, but not created_by)
@@ -97,9 +97,9 @@ class DashboardController extends Controller
             ->unique('user_id')
             ->count();
 
-        // Dynamic Storage Calculation
+        // Dynamic Storage Calculation (Safe Fallback)
         $currentUser = collect($allUsers)->firstWhere('id', $userId);
-        $plan = $currentUser['plan'] ?? 'free';
+        $plan = $currentUser['plan'] ?? 'free'; // Falls back to free if key or column missing
         
         // Define limits in GB
         $limits = [
