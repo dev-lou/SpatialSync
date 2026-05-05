@@ -51,10 +51,10 @@
                 <span class="sr-only">Back to top</span>
             </a>
         </div>
-    </div>
 
-    <!-- Antigravity / Premium Mega Text -->
-    <div class="footer__giant-text" aria-hidden="true">
-        SpatialSync
+        <!-- Antigravity / Premium Mega Text -->
+        <div class="footer__giant-text" aria-hidden="true">
+            SpatialSync
+        </div>
     </div>
 </footer>
