@@ -4,54 +4,56 @@
 
 @push('styles')
 <style>
-/* ── PRICING PAGE STYLES ─────────────────────── */
+/* ── PRICING HERO ────────────────────────────── */
 .pricing-hero {
     position: relative;
-    padding: calc(80px + var(--space-8)) 0 var(--space-20);
+    padding: calc(100px + var(--space-8)) 0 var(--space-20);
     text-align: center;
-    background: radial-gradient(circle at 50% -20%, var(--accent-muted) 0%, var(--bg) 60%);
+    background: radial-gradient(circle at 50% -20%, var(--accent-muted) 0%, var(--bg) 70%);
     overflow: hidden;
-    border-bottom: 1px solid var(--border-default);
 }
 
 .pricing-hero__title {
     font-family: var(--font-display);
-    font-size: clamp(3rem, 7vw, 5rem);
+    font-size: clamp(3.5rem, 8vw, 5.5rem);
     font-weight: 900;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.04em;
     color: var(--text-primary);
     margin-bottom: var(--space-6);
-    line-height: 1.05;
+    line-height: 1;
 }
 
 .pricing-hero__title span {
-    background: linear-gradient(to right, var(--accent), #9333EA, var(--accent));
+    display: block;
+    background: linear-gradient(135deg, var(--accent) 0%, #9333EA 50%, var(--accent) 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: text-shine 4s linear infinite;
+    animation: text-shine 5s linear infinite;
 }
 
 .pricing-hero__subtitle {
     font-size: var(--text-xl);
     color: var(--text-secondary);
-    max-width: 500px;
-    margin: 0 auto var(--space-8);
+    max-width: 600px;
+    margin: 0 auto var(--space-10);
+    line-height: 1.6;
 }
 
 /* ── PRICING CARDS ───────────────────────────── */
 .pricing-section {
-    padding: var(--space-8) 0 var(--space-20);
+    padding: var(--space-8) 0 var(--space-24);
     background: var(--bg);
 }
 
 .pricing-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-6);
-    max-width: 1100px;
+    gap: var(--space-8);
+    max-width: 1200px;
     margin: 0 auto;
+    align-items: center;
 }
 
 @media (min-width: 768px) {
@@ -62,63 +64,81 @@
 
 .pricing-card {
     position: relative;
-    padding: var(--space-8);
-    background: var(--surface);
+    padding: var(--space-10);
+    background: rgba(255, 255, 255, 0.01);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    transition: border-color var(--dur-base), box-shadow var(--dur-base), transform var(--dur-base);
-    overflow: visible !important;
+    border-radius: 40px;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     height: 100%;
 }
 
-.pricing-card.glow-card::before {
-    border-radius: var(--radius-xl);
-}
-
 .pricing-card:hover {
-    border-color: var(--border-strong);
-    transform: translateY(-4px);
+    border-color: rgba(0, 102, 255, 0.3);
+    transform: translateY(-8px);
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 123, 0.08);
 }
 
 .pricing-card--featured {
     border-color: var(--accent);
-    box-shadow: var(--shadow-accent), var(--shadow-lg);
-    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 20px 60px -15px rgba(0, 102, 255, 0.15);
+    transform: scale(1.05);
+    z-index: 2;
+}
+
+.pricing-card--featured::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 40px;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--accent), #9333EA, var(--accent));
+    -webkit-mask: 
+       linear-gradient(#fff 0 0) content-box, 
+       linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .pricing-card--featured:hover {
-    transform: scale(1.02) translateY(-4px);
+    transform: scale(1.05) translateY(-8px);
+    box-shadow: 0 40px 100px -20px rgba(0, 102, 255, 0.25);
 }
 
 .pricing-card__badge {
     position: absolute;
-    top: -12px;
+    top: -16px;
     left: 50%;
     transform: translateX(-50%);
-    padding: var(--space-1) var(--space-4);
-    background: var(--accent);
+    padding: var(--space-2) var(--space-6);
+    background: linear-gradient(135deg, var(--accent) 0%, #4338CA 100%);
     color: white;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: 700;
     border-radius: var(--radius-full);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    box-shadow: 0 10px 20px -5px rgba(0, 102, 255, 0.4);
 }
 
 .pricing-card__header {
     text-align: center;
-    margin-bottom: var(--space-6);
-    padding-bottom: var(--space-6);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-8);
     border-bottom: 1px solid var(--border-default);
 }
 
 .pricing-card__name {
     font-size: var(--text-xl);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
     margin-bottom: var(--space-4);
+    letter-spacing: -0.01em;
 }
 
 .pricing-card__price {
@@ -131,17 +151,20 @@
 
 .pricing-card__amount {
     font-size: var(--text-5xl);
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-primary);
+    letter-spacing: -0.04em;
 }
 
 .pricing-card__period {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
+    font-weight: 500;
     color: var(--text-tertiary);
 }
 
 .pricing-card__billing {
     font-size: var(--text-sm);
+    font-weight: 500;
     color: var(--text-tertiary);
 }
 
@@ -149,24 +172,30 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    margin-bottom: var(--space-8);
+    gap: var(--space-4);
+    margin-bottom: var(--space-10);
 }
+
 .pricing-card__action {
     margin-top: auto;
-    width: 100%;
 }
 
 .pricing-card__feature {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
     font-size: var(--text-sm);
+    font-weight: 500;
     color: var(--text-secondary);
 }
 
+.pricing-card__feature strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
 .pricing-card__feature--disabled {
-    color: var(--text-tertiary);
+    opacity: 0.5;
     text-decoration: line-through;
 }
 
@@ -174,13 +203,17 @@
     flex-shrink: 0;
     width: 20px;
     height: 20px;
+    padding: 2px;
+    border-radius: 50%;
 }
 
 .pricing-card__icon--check {
+    background: var(--success-light);
     color: var(--success);
 }
 
 .pricing-card__icon--x {
+    background: var(--bg-secondary);
     color: var(--text-tertiary);
 }
 

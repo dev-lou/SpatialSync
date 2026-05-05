@@ -4,29 +4,18 @@
 
 @push('styles')
 <style>
-/* ── ABOUT PAGE STYLES ───────────────────────── */
+/* ── ABOUT HERO ────────────────────────────── */
 .about-hero {
     position: relative;
-    padding: calc(80px + var(--space-8)) 0 var(--space-20);
-    background: radial-gradient(circle at 50% -20%, var(--accent-muted) 0%, var(--bg) 60%);
+    padding: calc(120px + var(--space-8)) 0 var(--space-24);
+    background: radial-gradient(circle at 50% -20%, var(--accent-muted) 0%, var(--bg) 70%);
     overflow: hidden;
-    border-bottom: 1px solid var(--border-default);
-}
-
-.about-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        radial-gradient(circle at 20% 50%, rgba(0, 102, 255, 0.06) 0%, transparent 50%),
-        radial-gradient(circle at 80% 30%, rgba(129, 140, 248, 0.05) 0%, transparent 40%);
-    pointer-events: none;
 }
 
 .about-hero__content {
     position: relative;
     z-index: 1;
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     text-align: center;
 }
@@ -35,49 +24,48 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-1) var(--space-3);
-    background: var(--accent-light);
+    padding: var(--space-2) var(--space-4);
+    background: rgba(0, 102, 255, 0.08);
+    backdrop-filter: blur(10px);
     color: var(--accent);
     border-radius: var(--radius-full);
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: var(--space-6);
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-8);
+    border: 1px solid rgba(0, 102, 255, 0.1);
 }
 
 .about-hero__title {
     font-family: var(--font-display);
-    font-size: clamp(3rem, 7vw, 5rem);
+    font-size: clamp(3.5rem, 8vw, 6rem);
     font-weight: 900;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.04em;
     color: var(--text-primary);
-    margin-bottom: var(--space-6);
-    line-height: 1.05;
+    margin-bottom: var(--space-8);
+    line-height: 0.95;
 }
 
 .about-hero__title span {
-    background: linear-gradient(to right, var(--accent), #9333EA, var(--accent));
+    display: block;
+    background: linear-gradient(135deg, var(--accent) 0%, #9333EA 50%, var(--accent) 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: text-shine 4s linear infinite;
-}
-
-@keyframes text-shine {
-    to { background-position: 200% center; }
+    animation: text-shine 5s linear infinite;
 }
 
 .about-hero__subtitle {
     font-size: var(--text-xl);
     color: var(--text-secondary);
-    line-height: 1.7;
-    max-width: 600px;
+    line-height: 1.6;
+    max-width: 720px;
     margin: 0 auto;
 }
 
-/* ── STORY ───────────────────────────────────── */
+/* ── STORY SECTION ───────────────────────────── */
 .story-section {
     padding: var(--space-24) 0;
     background: var(--bg);
@@ -86,14 +74,12 @@
 .story-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-12);
+    gap: var(--space-20);
     align-items: center;
 }
 
 @media (min-width: 1024px) {
-    .story-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+    .story-grid { grid-template-columns: 1fr 1fr; }
 }
 
 .story-content__badge {
@@ -101,43 +87,54 @@
     padding: var(--space-1) var(--space-3);
     background: var(--accent-light);
     color: var(--accent);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: var(--space-4);
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-6);
 }
 
 .story-content__title {
     font-family: var(--font-display);
-    font-size: var(--text-3xl);
-    font-weight: 400;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
     color: var(--text-primary);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-8);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
 }
 
 .story-content__text {
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
     color: var(--text-secondary);
     line-height: 1.8;
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-6);
 }
 
 .story-content__quote {
-    padding-left: var(--space-6);
-    border-left: 3px solid var(--accent);
-    font-size: var(--text-lg);
+    position: relative;
+    padding: var(--space-8);
+    background: var(--bg-secondary);
+    border-radius: 32px;
+    font-size: var(--text-xl);
+    font-weight: 500;
     font-style: italic;
     color: var(--text-primary);
-    margin: var(--space-8) 0;
+    margin: var(--space-10) 0;
+    border-left: 4px solid var(--accent);
 }
 
 .story-image {
-    border-radius: var(--radius-xl);
+    position: relative;
+    border-radius: 48px;
     overflow: hidden;
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.1);
+    transform: rotate(-1deg);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+.story-image:hover { transform: rotate(0deg) scale(1.02); }
 
 .story-image img {
     width: 100%;
@@ -145,7 +142,7 @@
     display: block;
 }
 
-/* ── VALUES ──────────────────────────────────── */
+/* ── VALUES GRID ─────────────────────────────── */
 .values-section {
     padding: var(--space-24) 0;
     background: var(--bg-secondary);
@@ -153,163 +150,116 @@
 
 .values-section__header {
     text-align: center;
-    max-width: 640px;
-    margin: 0 auto var(--space-12);
+    max-width: 800px;
+    margin: 0 auto var(--space-16);
 }
 
 .values-section__title {
     font-family: var(--font-display);
-    font-size: var(--text-3xl);
-    font-weight: 400;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
     color: var(--text-primary);
-    margin-bottom: var(--space-4);
-}
-
-.values-section__subtitle {
-    font-size: var(--text-lg);
-    color: var(--text-secondary);
-    line-height: 1.7;
+    letter-spacing: -0.03em;
 }
 
 .values-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(12, 1fr);
     gap: var(--space-6);
 }
 
+.value-card {
+    grid-column: span 12;
+    padding: var(--space-10);
+    background: var(--surface);
+    border: 1px solid var(--border-default);
+    border-radius: 40px;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @media (min-width: 768px) {
-    .values-grid { grid-template-columns: repeat(2, 1fr); }
+    .value-card { grid-column: span 6; }
 }
 
 @media (min-width: 1024px) {
-    .values-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
-.value-card {
-    padding: var(--space-8);
-    background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-default);
-    border-radius: 32px;
-    box-shadow: var(--shadow-sm);
-    transition: border-color var(--dur-base), box-shadow var(--dur-base), transform var(--dur-base);
-    position: relative;
-    overflow: hidden;
-}
-
-.value-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent);
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    .value-card { grid-column: span 4; }
 }
 
 .value-card:hover {
     border-color: var(--accent);
-    box-shadow: 0 20px 40px -10px rgba(0, 102, 255, 0.15);
     transform: translateY(-8px);
-}
-
-.value-card:hover::before {
-    opacity: 1;
+    box-shadow: 0 40px 80px -20px rgba(0, 102, 255, 0.1);
 }
 
 .value-card__icon {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 3rem;
-    height: 3rem;
+    width: 3.5rem;
+    height: 3.5rem;
     background: var(--accent-light);
     color: var(--accent);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--space-4);
+    border-radius: 20px;
+    margin-bottom: var(--space-6);
+    transition: transform 0.4s var(--ease-spring);
 }
 
+.value-card:hover .value-card__icon { transform: scale(1.1) rotate(-5deg); }
+
 .value-card__title {
-    font-size: var(--text-lg);
-    font-weight: 600;
+    font-size: var(--text-xl);
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
+    letter-spacing: -0.01em;
 }
 
 .value-card__description {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     color: var(--text-secondary);
     line-height: 1.7;
 }
 
-/* ── TECH STACK ──────────────────────────────── */
+/* ── TECH MOSAIC ─────────────────────────────── */
 .tech-section {
     padding: var(--space-24) 0;
     background: var(--bg);
 }
 
-.tech-section__header {
-    text-align: center;
-    max-width: 640px;
-    margin: 0 auto var(--space-12);
-}
-
-.tech-section__title {
-    font-family: var(--font-display);
-    font-size: var(--text-3xl);
-    font-weight: 400;
-    color: var(--text-primary);
-    margin-bottom: var(--space-4);
-}
-
-.tech-section__subtitle {
-    font-size: var(--text-lg);
-    color: var(--text-secondary);
-}
-
 .tech-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: var(--space-4);
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
-@media (min-width: 768px) {
-    .tech-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
 .tech-item {
-    text-align: center;
-    padding: var(--space-8) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
     background: var(--bg-secondary);
     border: 1px solid var(--border-default);
-    border-radius: 28px;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 20px;
+    transition: all 0.3s ease;
 }
 
 .tech-item:hover {
     border-color: var(--accent);
     background: var(--surface);
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1);
+    transform: scale(1.05);
 }
 
-.tech-item__icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    margin: 0 auto var(--space-3);
-    background: var(--accent-light);
-    color: var(--accent);
-    border-radius: var(--radius-lg);
-}
+.tech-item__icon { color: var(--accent); }
 
 .tech-item__name {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 /* ── CTA ─────────────────────────────────────── */
@@ -485,36 +435,33 @@
 <section class="tech-section">
     <div class="container">
         <div class="tech-section__header gs-fade">
-            <h2 class="tech-section__title">Built with modern technology</h2>
-            <p class="tech-section__subtitle">
-                Industry-grade tools powering every part of the platform.
-            </p>
+            <h2 class="tech-section__title">The engine under the hood</h2>
         </div>
 
         <div class="tech-grid">
             <div class="tech-item gs-fade">
-                <div class="tech-item__icon">
-                    <i data-lucide="code-2" class="w-6 h-6"></i>
-                </div>
-                <span class="tech-item__name">Laravel</span>
+                <i data-lucide="code-2" class="w-5 h-5 tech-item__icon"></i>
+                <span class="tech-item__name">Laravel 11</span>
             </div>
             <div class="tech-item gs-fade">
-                <div class="tech-item__icon">
-                    <i data-lucide="box" class="w-6 h-6"></i>
-                </div>
+                <i data-lucide="box" class="w-5 h-5 tech-item__icon"></i>
                 <span class="tech-item__name">Three.js</span>
             </div>
             <div class="tech-item gs-fade">
-                <div class="tech-item__icon">
-                    <i data-lucide="database" class="w-6 h-6"></i>
-                </div>
+                <i data-lucide="database" class="w-5 h-5 tech-item__icon"></i>
                 <span class="tech-item__name">Supabase</span>
             </div>
             <div class="tech-item gs-fade">
-                <div class="tech-item__icon">
-                    <i data-lucide="radio" class="w-6 h-6"></i>
-                </div>
-                <span class="tech-item__name">Real-Time Sync</span>
+                <i data-lucide="zap" class="w-5 h-5 tech-item__icon"></i>
+                <span class="tech-item__name">Realtime Sync</span>
+            </div>
+            <div class="tech-item gs-fade">
+                <i data-lucide="shield" class="w-5 h-5 tech-item__icon"></i>
+                <span class="tech-item__name">Stripe</span>
+            </div>
+            <div class="tech-item gs-fade">
+                <i data-lucide="layout" class="w-5 h-5 tech-item__icon"></i>
+                <span class="tech-item__name">Blade + Vite</span>
             </div>
         </div>
     </div>
