@@ -32,7 +32,7 @@ class DashboardController extends Controller
         });
 
         $allMemberships = $this->supabase->select('build_members', ['build_id', 'user_id', 'role'], []);
-        $allUsers = $this->supabase->select('users', ['id', 'name', 'email'], []); // Removed 'plan' to prevent crash if column missing
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'email', 'plan'], []); 
         $userMap = collect($allUsers)->keyBy('id');
 
         // Identify shared builds (user is in members, but not created_by)
