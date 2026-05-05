@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// Keep-alive ping (prevents Render free tier from sleeping)
+Route::get('/ping', fn() => response('ok', 200));
+
 // Public marketing pages
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/features', [PageController::class, 'features'])->name('features');
