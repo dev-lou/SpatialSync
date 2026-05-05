@@ -506,32 +506,55 @@ class BuildController extends Controller
         abort(404, 'Export format not supported');
     }
 
-    public function shared($buildId, string $token)
+    public function shared(Request $request, $buildId, string $token)
     {
+        $userId = $this->getUserId($request);
+
         $shares = $this->supabase->select('build_shares', ['*'], [
             'build_id' => $buildId,
             'share_token' => $token,
         ]);
 
         if (empty($shares)) {
-            abort(403, 'Invalid share link.');
+            abort(403, 'Invalid or expired share link.');
         }
 
-        $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
+        $share = $shares[0];
 
+        $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
         if (empty($builds)) {
             abort(404, 'Build not found');
         }
-
         $build = (object) $builds[0];
 
-        $presetsData = $this->supabase->select('part_presets', ['*'], ['is_active' => 'true']);
-        $presets = collect($presetsData)->groupBy('type');
+        // Check if the user is already the owner
+        if ($build->created_by === $userId) {
+            return redirect()->route('builds.show', $buildId);
+        }
 
-        $members = collect([]);
-        $messages = collect([]);
+        // Check if user is already a member
+        $memberships = $this->supabase->select('build_members', ['*'], [
+            'build_id' => $buildId,
+            'user_id' => $userId
+        ]);
 
-        return view('builds.shared', compact('build', 'members', 'messages', 'presets'));
+        if (empty($memberships)) {
+            // Determine role from share link (default to viewer if not specified)
+            $role = isset($share['access_level']) && $share['access_level'] === 'edit' ? 'editor' : 'viewer';
+
+            // Add user as a member
+            $this->supabase->insert('build_members', [
+                'id' => \Illuminate\Support\Str::uuid()->toString(),
+                'build_id' => $buildId,
+                'user_id' => $userId,
+                'role' => $role,
+            ]);
+
+            return redirect()->route('builds.show', $buildId)->with('success', 'You have successfully joined the project!');
+        }
+
+        // User is already a member, just redirect
+        return redirect()->route('builds.show', $buildId);
     }
 
     /**
