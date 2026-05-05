@@ -100,31 +100,51 @@
     /* ── LOADER ───────────────────────────────────── */
     .spatial-loader {
         position: fixed; inset: 0;
-        background: radial-gradient(circle at center, #fff 0%, #f0f4f8 100%);
+        background: var(--bg);
         z-index: 9999;
         display: flex; flex-direction: column;
-        align-items: center; justify-content: center; gap: 2.5rem;
-        transition: opacity 0.8s ease;
+        align-items: center; justify-content: center;
+        transition: opacity 0.8s var(--ease-out);
     }
     .spatial-loader.done { opacity: 0; pointer-events: none; }
-    .loader-orb {
-        width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
-        box-shadow: 0 0 30px 20px rgba(0, 102, 255, 0.12);
-        animation: pulse-orb 2s ease-in-out infinite;
+    
+    .splash-logo {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin-bottom: var(--space-12);
     }
-    @keyframes pulse-orb {
-        0%, 100% { transform: scale(1); opacity: 0.8; }
-        50% { transform: scale(1.6); opacity: 1; }
+    .splash-logo__inner {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 10px 20px rgba(0, 102, 255, 0.2));
+    }
+    .splash-logo__glow {
+        position: absolute;
+        inset: -20px;
+        background: radial-gradient(circle, rgba(0, 102, 255, 0.1) 0%, transparent 70%);
+        animation: pulse-glow 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+        0%, 100% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.3); opacity: 0.6; }
     }
     .loader-text {
-        font-family: var(--font-display); font-size: 1rem; color: #1e293b;
-        font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+        font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);
+        font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase;
+        margin-bottom: var(--space-5);
+        transition: opacity 0.4s ease;
     }
     .loader-bar-track {
-        width: 200px; height: 2px; background: rgba(0,0,0,0.08);
-        border-radius: 4px; overflow: hidden;
+        width: 240px; height: 3px; background: var(--bg-tertiary);
+        border-radius: var(--radius-full); overflow: hidden;
     }
-    .loader-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+    .loader-bar-fill { 
+        height: 100%; 
+        background: var(--accent); 
+        transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); 
+        box-shadow: 0 0 12px rgba(0, 102, 255, 0.3); 
+    }
 
     /* ── SIGN IN BUTTON ──────────────────────────── */
     .btn--ghost-dark {
@@ -173,10 +193,20 @@
 @section('content')
 <div x-data="scrollytellingEngine()" x-init="init()" x-cloak>
 
-    <!-- Loader -->
+    <!-- Loader (Premium Smooth) -->
     <div class="spatial-loader" :class="ready ? 'done' : ''">
-        <div class="loader-orb"></div>
-        <div class="loader-text">Initializing Spatial Sync</div>
+        <div class="splash-logo">
+            <div class="splash-logo__glow"></div>
+            <svg class="splash-logo__inner" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="20" fill="var(--accent)"/>
+                <path d="M50 20 L80 38 L80 62 L50 80 L20 62 L20 38 Z" fill="none" stroke="white" stroke-width="5"/>
+                <path d="M50 20 L50 80 M20 38 L80 62 M80 38 L20 62" stroke="white" stroke-width="3" opacity="0.3"/>
+            </svg>
+        </div>
+        <div class="loader-text" 
+             :style="progress > 95 ? 'opacity: 0' : 'opacity: 1'"
+             :key="currentNarrative"
+             x-text="currentNarrative"></div>
         <div class="loader-bar-track">
             <div class="loader-bar-fill" :style="`width: ${progress}%`"></div>
         </div>
@@ -249,22 +279,43 @@ function scrollytellingEngine() {
         _wheelHandler: null,
         _touchHandler: null,
         _accumulator: 0,
+        narrativeMessages: [
+            "Initializing 3D geometry engine",
+            "Syncing with architectural grid",
+            "Optimizing spatial data",
+            "Aligning holographic projections",
+            "SpatialSync is ready"
+        ],
+        currentNarrative: "Initializing system",
 
         async init() {
             this.canvas = document.getElementById('scrolly-canvas');
             this.ctx = this.canvas.getContext('2d');
             const loads = [];
+            let loadedCount = 0;
+
+            const updateProgress = () => {
+                loadedCount++;
+                this.progress = Math.round((loadedCount / this.frameCount) * 100);
+                
+                // Narrative Rotation Logic
+                const msgIndex = Math.min(
+                    Math.floor((this.progress / 100) * this.narrativeMessages.length),
+                    this.narrativeMessages.length - 1
+                );
+                this.currentNarrative = this.narrativeMessages[msgIndex];
+            };
 
             for (let i = 0; i < 160; i++) {
                 const img = new Image();
                 img.src = `/img/sequence/frame_${i.toString().padStart(3,'0')}_delay-0.05s.webp`;
-                loads.push(this._load(img));
+                loads.push(this._load(img).then(updateProgress));
                 this.images.push(img);
             }
             for (let i = 0; i < 180; i++) {
                 const img = new Image();
                 img.src = `/img/sequence/part2/frame_${i.toString().padStart(3,'0')}_delay-0.05s.webp`;
-                loads.push(this._load(img));
+                loads.push(this._load(img).then(updateProgress));
                 this.images.push(img);
             }
 
@@ -283,18 +334,16 @@ function scrollytellingEngine() {
             // Listen for wheel events to advance frames
             this._wheelHandler = (e) => {
                 if (this.finished) {
-                    // Relock if we scrolled back up to the top
                     if (window.scrollY <= 0 && e.deltaY < 0) {
                         e.preventDefault();
                         this._lock();
                     } else {
-                        return; // Yield to native scrolling down
+                        return;
                     }
                 } else {
-                    e.preventDefault(); // Lock the page and eat the scroll
+                    e.preventDefault();
                 }
 
-                // Accumulate wheel delta, ~120 per scroll tick
                 this._accumulator += e.deltaY;
                 const step = Math.sign(this._accumulator) * Math.floor(Math.abs(this._accumulator) / 40);
 
@@ -305,7 +354,6 @@ function scrollytellingEngine() {
                     this.frameProgress = (this.currentFrame / (this.frameCount - 1)) * 100;
                     this._updateChapters(this.currentFrame / (this.frameCount - 1));
 
-                    // Unlock when we reach the last frame and keep scrolling down
                     if (this.currentFrame >= this.frameCount - 1 && e.deltaY > 0) {
                         this._unlock();
                     }
@@ -360,17 +408,11 @@ function scrollytellingEngine() {
         _unlock() {
             this.finished = true;
             document.body.style.overflow = '';
-            // Deliberately NOT removing event listeners here.
-            // This allows us to yield to native scrolling down to the footer,
-            // while still monitoring if the user scrolls back up to the top.
         },
 
         _load(img) {
             return new Promise(r => {
-                img.onload = () => {
-                    this.progress = Math.round(((this.images.indexOf(img) + 1) / this.frameCount) * 100);
-                    r();
-                };
+                img.onload = () => r();
                 img.onerror = () => r();
             });
         },
@@ -401,7 +443,6 @@ function scrollytellingEngine() {
             const t3 = document.getElementById('tier-3');
             const bg = document.getElementById('tier-3-bg');
 
-            // Chapter 1: visible 0–20%, fades 20–30%
             if (p < 0.20) {
                 t1.style.opacity = '1'; t1.style.transform = 'translateY(0)';
                 this.currentTier = 1;
@@ -412,7 +453,6 @@ function scrollytellingEngine() {
                 t1.style.opacity = '0';
             }
 
-            // Chapter 2: in 35–45%, hold 45–60%, out 60–70%
             if (p < 0.35 || p > 0.70) {
                 t2.style.opacity = '0';
             } else if (p < 0.45) {
@@ -427,7 +467,6 @@ function scrollytellingEngine() {
                 t2.style.opacity = f; t2.style.transform = `translateY(${-(1-f)*40}px)`;
             }
 
-            // Chapter 3: in 78–88%, holds to end
             if (p < 0.78) {
                 t3.style.opacity = '0'; bg.style.opacity = '0';
             } else if (p < 0.88) {
