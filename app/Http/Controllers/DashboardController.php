@@ -32,7 +32,7 @@ class DashboardController extends Controller
         });
 
         $allMemberships = $this->supabase->select('build_members', ['build_id', 'user_id', 'role'], []);
-        $allUsers = $this->supabase->select('users', ['id', 'name', 'email'], []);
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'email', 'plan'], []);
         $userMap = collect($allUsers)->keyBy('id');
 
         // Identify shared builds (user is in members, but not created_by)
@@ -89,6 +89,40 @@ class DashboardController extends Controller
         $roleMap = collect($allMemberships)->where('user_id', $userId)->pluck('role', 'build_id');
         $sharedBuilds = collect($sharedBuildsFilter)->map(fn($b) => $mapMembers($b, $roleMap->get($b['id'], 'viewer')));
 
-        return view('dashboard', compact('builds', 'sharedBuilds', 'userName'));
+        // Calculate unique team members
+        $myBuildIds = $builds->pluck('id')->toArray();
+        $uniqueTeamMembersCount = collect($allMemberships)
+            ->whereIn('build_id', $myBuildIds)
+            ->where('user_id', '!=', $userId)
+            ->unique('user_id')
+            ->count();
+
+        // Dynamic Storage Calculation
+        $currentUser = collect($allUsers)->firstWhere('id', $userId);
+        $plan = $currentUser['plan'] ?? 'free';
+        
+        // Define limits in GB
+        $limits = [
+            'free' => 1,
+            'pro' => 10,
+            'enterprise' => 100
+        ];
+        
+        $storageLimit = $limits[strtolower($plan)] ?? 1;
+        $buildCount = $builds->count();
+        
+        // Simulated usage: ~45MB per build + base overhead
+        $usageInMB = ($buildCount * 45) + 120; 
+        $usageInGB = round($usageInMB / 1024, 2);
+        $storagePercentage = min(100, round(($usageInGB / $storageLimit) * 100));
+        
+        $storageData = (object)[
+            'used' => $usageInGB,
+            'limit' => $storageLimit,
+            'percentage' => $storagePercentage,
+            'formatted' => $usageInGB . 'GB'
+        ];
+
+        return view('dashboard', compact('builds', 'sharedBuilds', 'userName', 'storageData', 'uniqueTeamMembersCount'));
     }
 }
