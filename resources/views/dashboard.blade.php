@@ -679,7 +679,7 @@
                         8%
                     </span>
                 </div>
-                <div class="kpi-card__value">{{ $builds->count() }}</div>
+                <div class="kpi-card__value">{{ $uniqueTeamMembersCount ?? 0 }}</div>
                 <div class="kpi-card__label">Team Members</div>
             </div>
 
@@ -699,10 +699,10 @@
                         <i data-lucide="database" class="w-5 h-5"></i>
                     </div>
                     <div class="kpi-card__trend trend--up">
-                        <span>1.2GB</span>
+                        <span>{{ $storageData->formatted ?? '0GB' }}</span>
                     </div>
                 </div>
-                <div class="kpi-card__value">42%</div>
+                <div class="kpi-card__value">{{ $storageData->percentage ?? 0 }}%</div>
                 <div class="kpi-card__label">Storage Used</div>
             </div>
 

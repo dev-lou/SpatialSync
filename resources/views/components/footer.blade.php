@@ -41,20 +41,21 @@
             </div>
         </div>
 
-        <div class="footer__bottom">
-            <p class="footer__copyright">
-                &copy; {{ date('Y') }} SpatialSync. All rights reserved.
-            </p>
-            <!-- Back to Top -->
-            <a href="#" class="btn btn--ghost btn--sm" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" aria-label="Back to top">
-                <i data-lucide="arrow-up" class="w-4 h-4"></i>
-                <span class="sr-only">Back to top</span>
-            </a>
-        </div>
-
-        <!-- Antigravity / Premium Mega Text -->
-        <div class="footer__giant-text" aria-hidden="true">
-            SpatialSync
+        <div class="footer__branding-row">
+            <div class="footer__giant-text" aria-hidden="true">
+                SpatialSync
+            </div>
+            
+            <div class="footer__legal-info">
+                <p class="footer__copyright">
+                    &copy; {{ date('Y') }} SpatialSync. All rights reserved.
+                </p>
+                <!-- Back to Top -->
+                <a href="#" class="btn btn--ghost btn--sm" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" aria-label="Back to top">
+                    <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                    <span class="sr-only">Back to top</span>
+                </a>
+            </div>
         </div>
     </div>
 </footer>
