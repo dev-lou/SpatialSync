@@ -1,15 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'ConstructHub') — 3D House Builder</title>
-    <meta name="description" content="@yield('description', 'Build houses and buildings together with real-time collaboration. Perfect for anyone who wants to create their dream home.')">
+
+    <!-- Primary Meta Tags -->
+    <title>@yield('title', 'SpatialSync') — Collaborative 3D Architecture</title>
+    <meta name="title" content="@yield('title', 'SpatialSync') — Collaborative 3D Architecture">
+    <meta name="description" content="@yield('description', 'Design, iterate, and collaborate on premium 3D blueprints in real-time. Built for the next generation of architects.')">
+
+    <!-- Schema.org for Google+ / Apps -->
+    <meta itemprop="name" content="SpatialSync — Collaborative 3D Architecture">
+    <meta itemprop="description" content="@yield('description', 'Design, iterate, and collaborate on premium 3D blueprints in real-time.')">
+    <meta itemprop="image" content="{{ url('/images/og-meta.png') }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:site_name" content="SpatialSync">
+    <meta property="og:title" content="@yield('title', 'SpatialSync') — Collaborative 3D Architecture">
+    <meta property="og:description" content="@yield('description', 'Design, iterate, and collaborate on premium 3D blueprints in real-time. Built for the next generation of architects.')">
+    <meta property="og:image" content="{{ url('/images/og-meta.png') }}">
+    <meta property="og:image:secure_url" content="{{ url('/images/og-meta.png') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="@yield('title', 'SpatialSync') — Collaborative 3D Architecture">
+    <meta property="twitter:description" content="@yield('description', 'Design, iterate, and collaborate on premium 3D blueprints in real-time.')">
+    <meta property="twitter:image" content="{{ url('/images/og-meta.png') }}">
+
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230066FF'/><path d='M50 20 L80 38 L80 62 L50 80 L20 62 L20 38 Z' fill='none' stroke='white' stroke-width='5'/><path d='M50 20 L50 80 M20 38 L80 62 M80 38 L20 62' stroke='white' stroke-width='3' opacity='0.5'/></svg>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=plus-jakarta-sans:300,400,500,600,700|instrument-serif:400|jetbrains-mono:400,500">
+
+    <!-- Vite Assets (CSS & JS) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Design Tokens -->
     <link rel="stylesheet" href="{{ asset('css/tokens.css') }}">
@@ -19,6 +52,10 @@
 
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- GSAP + ScrollTrigger -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

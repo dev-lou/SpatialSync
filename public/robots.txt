@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Explicitly welcome social bots
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /

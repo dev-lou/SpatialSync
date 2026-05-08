@@ -70,7 +70,7 @@
 
 @media (min-width: 768px) {
     .kpi-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
     }
 }
 
@@ -133,6 +133,87 @@
 .kpi-card__label {
     font-size: var(--text-sm);
     color: var(--text-secondary);
+}
+
+/* ── RECENT ACTIVITY ─────────────────────────── */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-10);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: var(--surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    text-decoration: none;
+    transition: border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.activity-item:hover {
+    border-color: var(--accent);
+    background: var(--bg-secondary);
+    transform: translateX(8px);
+    box-shadow: var(--shadow-md);
+}
+
+.activity-item__icon {
+    width: 44px;
+    height: 44px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    border: 1px solid var(--border-default);
+    flex-shrink: 0;
+}
+
+.activity-item__content {
+    flex-grow: 1;
+}
+
+.activity-item__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.activity-item__meta {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.activity-item__badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.activity-item__action {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    color: var(--accent);
+}
+
+.activity-item:hover .activity-item__action {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 /* ── SECTION HEADER ──────────────────────────── */
@@ -565,7 +646,7 @@
             <div class="welcome-card">
                 <div class="welcome-card__content">
                     <div class="welcome-card__text">
-                        <h2>Welcome back, {{ auth()->user()->name ?? 'Designer' }}!</h2>
+                        <h2>Welcome back, {{ $auth_user_name ?? 'Designer' }}!</h2>
                         <p>Ready to create something amazing? Start a new build or continue where you left off.</p>
                     </div>
                 </div>
@@ -598,7 +679,7 @@
                         8%
                     </span>
                 </div>
-                <div class="kpi-card__value">{{ $builds->sum(function($b) { return $b->collaborators ? $b->collaborators->count() : 0; }) + 1 }}</div>
+                <div class="kpi-card__value">{{ $uniqueTeamMembersCount ?? 0 }}</div>
                 <div class="kpi-card__label">Team Members</div>
             </div>
 
@@ -614,42 +695,46 @@
 
             <div class="kpi-card glow-card reveal">
                 <div class="kpi-card__header">
-                    <div class="kpi-card__icon">
-                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    <div class="kpi-card__icon" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                    </div>
+                    <div class="kpi-card__trend trend--up">
+                        <span>{{ $storageData->formatted ?? '0GB' }}</span>
                     </div>
                 </div>
-                <div class="kpi-card__value">{{ $builds->where('updated_at', '>=', now()->subDays(7))->count() }}</div>
-                <div class="kpi-card__label">Active This Week</div>
+                <div class="kpi-card__value">{{ $storageData->percentage ?? 0 }}%</div>
+                <div class="kpi-card__label">Storage Used</div>
+            </div>
+
+            <div class="kpi-card glow-card reveal">
+                <div class="kpi-card__header">
+                    <div class="kpi-card__icon" style="background: {{ 
+                        ($auth_user->plan ?? 'free') === 'pro' ? 'rgba(59, 130, 246, 0.1)' : 
+                        (($auth_user->plan ?? 'free') === 'enterprise' ? 'rgba(147, 51, 234, 0.1)' : 'var(--bg-tertiary)') 
+                    }}; color: {{ 
+                        ($auth_user->plan ?? 'free') === 'pro' ? 'var(--accent)' : 
+                        (($auth_user->plan ?? 'free') === 'enterprise' ? '#9333EA' : 'var(--text-tertiary)') 
+                    }};">
+                        <i data-lucide="award" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="kpi-card__value" style="font-size: var(--text-xl); text-transform: uppercase; letter-spacing: 0.05em; color: {{ 
+                    ($auth_user->plan ?? 'free') === 'pro' ? 'var(--accent)' : 
+                    (($auth_user->plan ?? 'free') === 'enterprise' ? '#9333EA' : 'var(--text-primary)') 
+                }};">
+                    {{ $auth_user->plan ?? 'Free' }}
+                </div>
+                <div class="kpi-card__label">
+                    <a href="{{ route('pricing') }}" style="color: var(--accent); text-decoration: none; font-weight: 600;">Manage Plan</a>
+                </div>
             </div>
         </div>
 
-        <!-- Quick Actions (Removed New Build - it's now a FAB) -->
-        <div class="quick-actions stagger">
-            <a href="{{ route('builds.index') }}" class="quick-action glow-card reveal">
-                <div class="quick-action__icon">
-                    <i data-lucide="folder" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">All Builds</span>
-            </a>
-            <a href="{{ route('builds.index') }}?filter=shared" class="quick-action glow-card reveal">
-                <div class="quick-action__icon">
-                    <i data-lucide="users" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">Shared With Me</span>
-            </a>
-            <button type="button" class="quick-action glow-card reveal" @click="openModal()">
-                <div class="quick-action__icon">
-                    <i data-lucide="plus" class="w-6 h-6"></i>
-                </div>
-                <span class="quick-action__label">New Build</span>
-            </button>
-        </div>
-
-        <!-- Builds Section -->
+        <!-- Builds Section: Recent Builds (Own) -->
         <div class="dashboard-header">
             <div>
                 <h2 class="dashboard-header__title">Recent Builds</h2>
-                <p class="dashboard-header__subtitle">Your most recently updated projects</p>
+                <p class="dashboard-header__subtitle">Your most recently updated personal projects</p>
             </div>
             <div class="dashboard-header__actions">
                 <button type="button" class="btn btn--primary btn--sm btn-glow" @click="openModal()">
@@ -664,26 +749,17 @@
         </div>
 
         @if($builds->count() > 0)
-            <div class="blueprints-grid stagger">
-                @foreach($builds->take(6) as $build)
-                    <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
+            <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
+                @foreach($builds->take(3) as $build)
+                    <x-build-card :build="$build" class="glow-card reveal" />
                 @endforeach
             </div>
-
-            @if($builds->count() > 6)
-                <div class="text-center mt-8">
-                    <a href="{{ route('builds.index') }}" class="btn btn--secondary">
-                        View all {{ $builds->count() }} builds
-                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </a>
-                </div>
-            @endif
         @else
-            <div class="dashboard-empty reveal">
+            <div class="dashboard-empty reveal" style="margin-bottom: var(--space-12);">
                 <div class="dashboard-empty__icon">
                     <i data-lucide="folder-plus" class="w-8 h-8"></i>
                 </div>
-                <h3 class="dashboard-empty__title">No builds yet</h3>
+                <h3 class="dashboard-empty__title">No personal builds yet</h3>
                 <p class="dashboard-empty__description">
                     Create your first build to start designing houses, buildings, and architectural designs.
                 </p>
@@ -694,29 +770,64 @@
             </div>
         @endif
 
-        <!-- Recent Activity (if user has builds) -->
-        @if($builds->count() > 0)
+        <!-- Builds Section: Shared With Me -->
+        @if(isset($sharedBuilds) && $sharedBuilds->count() > 0)
+            <div class="dashboard-header reveal">
+                <div>
+                    <h2 class="dashboard-header__title">Shared With Me</h2>
+                    <p class="dashboard-header__subtitle">Projects you have been invited to collaborate on</p>
+                </div>
+                <div class="dashboard-header__actions">
+                    <a href="{{ route('builds.index') }}?filter=shared" class="btn btn--secondary btn--sm">
+                        View All
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="blueprints-grid stagger" style="margin-bottom: var(--space-12);">
+                @foreach($sharedBuilds->take(3) as $build)
+                    <x-build-card :build="$build" class="glow-card reveal" />
+                @endforeach
+            </div>
+        @endif
+
+
+        @php
+            $allActivity = $builds->concat($sharedBuilds ?? collect())->sortByDesc('updated_at')->take(5);
+        @endphp
+
+        <!-- Recent Activity -->
+        @if($allActivity->count() > 0)
             <div class="activity-section reveal">
                 <div class="dashboard-header">
                     <div>
                         <h2 class="dashboard-header__title">Recent Activity</h2>
-                        <p class="dashboard-header__subtitle">Latest updates across your projects</p>
+                        <p class="dashboard-header__subtitle">Latest updates across your personal and shared projects</p>
                     </div>
                 </div>
 
                 <div class="activity-list">
-                    @foreach($builds->sortByDesc('updated_at')->take(5) as $build)
-                        <a href="{{ route('builds.show', $build) }}" class="activity-item">
+                    @foreach($allActivity as $build)
+                        <a href="{{ route('builds.show', $build->id) }}" class="activity-item reveal">
                             <div class="activity-item__icon">
-                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                <i data-lucide="edit-3"></i>
                             </div>
                             <div class="activity-item__content">
-                                <div class="activity-item__text">
-                                    You edited <strong>{{ $build->name }}</strong>
+                                <div class="activity-item__title">
+                                    {{ $build->name }}
                                 </div>
-                                <div class="activity-item__time">
-                                    {{ $build->updated_at->diffForHumans() }}
+                                <div class="activity-item__meta">
+                                    <span>Updated {{ $build->updated_at ? \Carbon\Carbon::parse($build->updated_at)->diffForHumans() : 'recently' }}</span>
+                                    @if(isset($build->user_role) && $build->user_role !== 'owner')
+                                        <span class="activity-item__badge">Shared with you</span>
+                                    @else
+                                        <span class="activity-item__badge" style="background: var(--bg-tertiary); color: var(--text-tertiary);">Personal Build</span>
+                                    @endif
                                 </div>
+                            </div>
+                            <div class="activity-item__action">
+                                <i data-lucide="arrow-right" class="w-5 h-5"></i>
                             </div>
                         </a>
                     @endforeach

@@ -1,43 +1,59 @@
 @extends('layouts.app')
 @section('title', 'Pricing')
-@section('description', 'Simple, transparent pricing for ConstructHub. Start free and upgrade when you need more.')
+@section('description', 'Simple, transparent pricing for SpatialSync. Start free and upgrade when you need more.')
 
 @push('styles')
 <style>
-/* ── PRICING PAGE STYLES ─────────────────────── */
+/* ── PRICING HERO ────────────────────────────── */
 .pricing-hero {
-    padding: var(--space-16) 0 var(--space-8);
+    position: relative;
+    padding: calc(100px + var(--space-8)) 0 var(--space-20);
     text-align: center;
-    background: linear-gradient(135deg, var(--bg) 0%, var(--bg-secondary) 100%);
+    background: radial-gradient(circle at 50% -20%, var(--accent-muted) 0%, var(--bg) 70%);
+    overflow: hidden;
 }
 
 .pricing-hero__title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 400;
+    font-size: clamp(3.5rem, 8vw, 5.5rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
     color: var(--text-primary);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-6);
+    line-height: 1;
+}
+
+.pricing-hero__title span {
+    display: block;
+    background: linear-gradient(135deg, var(--accent) 0%, #9333EA 50%, var(--accent) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: text-shine 5s linear infinite;
 }
 
 .pricing-hero__subtitle {
     font-size: var(--text-xl);
     color: var(--text-secondary);
-    max-width: 500px;
-    margin: 0 auto var(--space-8);
+    max-width: 600px;
+    margin: 0 auto var(--space-10);
+    line-height: 1.6;
 }
 
 /* ── PRICING CARDS ───────────────────────────── */
 .pricing-section {
-    padding: var(--space-8) 0 var(--space-20);
+    padding: var(--space-8) 0 var(--space-24);
     background: var(--bg);
 }
 
 .pricing-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-6);
-    max-width: 1100px;
+    gap: var(--space-8);
+    max-width: 1200px;
     margin: 0 auto;
+    align-items: center;
 }
 
 @media (min-width: 768px) {
@@ -48,60 +64,82 @@
 
 .pricing-card {
     position: relative;
-    padding: var(--space-8);
-    background: var(--surface);
+    padding: var(--space-10);
+    background: rgba(255, 255, 255, 0.01);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border-default);
-    border-radius: var(--radius-xl);
-    transition: border-color var(--dur-base), box-shadow var(--dur-base), transform var(--dur-base);
-    overflow: visible !important; /* Allow badge to render outside card */
-}
-
-.pricing-card.glow-card::before {
-    border-radius: var(--radius-xl);
+    border-radius: 40px;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: visible !important;
 }
 
 .pricing-card:hover {
-    border-color: var(--border-strong);
-    transform: translateY(-4px);
+    border-color: rgba(0, 102, 255, 0.3);
+    transform: translateY(-8px);
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 123, 0.08);
 }
 
 .pricing-card--featured {
     border-color: var(--accent);
-    box-shadow: var(--shadow-accent), var(--shadow-lg);
-    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 20px 60px -15px rgba(0, 102, 255, 0.15);
+    transform: scale(1.05);
+    z-index: 2;
+}
+
+.pricing-card--featured::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 40px;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--accent), #9333EA, var(--accent));
+    -webkit-mask: 
+       linear-gradient(#fff 0 0) content-box, 
+       linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .pricing-card--featured:hover {
-    transform: scale(1.02) translateY(-4px);
+    transform: scale(1.05) translateY(-8px);
+    box-shadow: 0 40px 100px -20px rgba(0, 102, 255, 0.25);
 }
 
 .pricing-card__badge {
     position: absolute;
-    top: -12px;
+    top: -16px;
     left: 50%;
     transform: translateX(-50%);
-    padding: var(--space-1) var(--space-4);
-    background: var(--accent);
+    padding: var(--space-2) var(--space-6);
+    background: linear-gradient(135deg, var(--accent) 0%, #4338CA 100%);
     color: white;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: 700;
     border-radius: var(--radius-full);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    box-shadow: 0 10px 20px -5px rgba(0, 102, 255, 0.4);
 }
 
 .pricing-card__header {
     text-align: center;
-    margin-bottom: var(--space-6);
-    padding-bottom: var(--space-6);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-8);
     border-bottom: 1px solid var(--border-default);
 }
 
 .pricing-card__name {
     font-size: var(--text-xl);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-primary);
     margin-bottom: var(--space-4);
+    letter-spacing: -0.01em;
 }
 
 .pricing-card__price {
@@ -114,17 +152,20 @@
 
 .pricing-card__amount {
     font-size: var(--text-5xl);
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-primary);
+    letter-spacing: -0.04em;
 }
 
 .pricing-card__period {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
+    font-weight: 500;
     color: var(--text-tertiary);
 }
 
 .pricing-card__billing {
     font-size: var(--text-sm);
+    font-weight: 500;
     color: var(--text-tertiary);
 }
 
@@ -132,20 +173,30 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    margin-bottom: var(--space-8);
+    gap: var(--space-4);
+    margin-bottom: var(--space-10);
+}
+
+.pricing-card__action {
+    margin-top: auto;
 }
 
 .pricing-card__feature {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
     font-size: var(--text-sm);
+    font-weight: 500;
     color: var(--text-secondary);
 }
 
+.pricing-card__feature strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
 .pricing-card__feature--disabled {
-    color: var(--text-tertiary);
+    opacity: 0.5;
     text-decoration: line-through;
 }
 
@@ -153,13 +204,17 @@
     flex-shrink: 0;
     width: 20px;
     height: 20px;
+    padding: 2px;
+    border-radius: 50%;
 }
 
 .pricing-card__icon--check {
+    background: var(--success-light);
     color: var(--success);
 }
 
 .pricing-card__icon--x {
+    background: var(--bg-secondary);
     color: var(--text-tertiary);
 }
 
@@ -252,8 +307,15 @@
     color: var(--text-secondary);
 }
 
+.comparison-table th:not(:first-child),
 .comparison-table td:not(:first-child) {
     text-align: center;
+}
+
+.comparison-table td:not(:first-child) i,
+.comparison-table td:not(:first-child) svg {
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .comparison-table tbody tr:last-child td {
@@ -397,7 +459,7 @@
 <section class="pricing-hero">
     <div class="container">
         <div class="reveal">
-            <h1 class="pricing-hero__title">Simple, transparent pricing</h1>
+            <h1 class="pricing-hero__title">Simple, <span>transparent pricing</span></h1>
             <p class="pricing-hero__subtitle">
                 Start for free. Upgrade when you need more. No hidden fees.
             </p>
@@ -423,7 +485,11 @@
                 <ul class="pricing-card__features">
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Up to 10 blueprints
+                        1 Workspace
+                    </li>
+                    <li class="pricing-card__feature">
+                        <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
+                        Up to 5 builds
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
@@ -431,25 +497,34 @@
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Full shape library
-                    </li>
-                    <li class="pricing-card__feature">
-                        <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Export to PNG
+                        Basic 3D parts library
                     </li>
                     <li class="pricing-card__feature pricing-card__feature--disabled">
                         <i data-lucide="x" class="pricing-card__icon pricing-card__icon--x"></i>
-                        Priority support
-                    </li>
-                    <li class="pricing-card__feature pricing-card__feature--disabled">
-                        <i data-lucide="x" class="pricing-card__icon pricing-card__icon--x"></i>
-                        Version history
+                        Advanced Team Management
                     </li>
                 </ul>
 
-                <a href="{{ route('register') }}" class="btn btn--secondary btn--lg w-full">
-                    Get started free
-                </a>
+                <div class="pricing-card__action">
+                    @php $isLoggedIn = (bool)session('supabase_user_id'); @endphp
+                    @if($isLoggedIn && ($auth_user->plan ?? 'free') === 'free')
+                        <button class="btn btn--secondary btn--lg w-full" disabled style="opacity: 0.6; cursor: default;">
+                            Your Current Plan
+                        </button>
+                    @elseif($isLoggedIn)
+                        <form action="{{ route('checkout.process') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="plan" value="free">
+                            <button type="submit" class="btn btn--secondary btn--lg w-full">
+                                Return to Free
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('register') }}" class="btn btn--secondary btn--lg w-full">
+                            Get started free
+                        </a>
+                    @endif
+                </div>
             </div>
 
             <!-- Pro Plan (Featured) -->
@@ -467,7 +542,11 @@
                 <ul class="pricing-card__features">
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        <strong>Unlimited</strong> blueprints
+                        3 Workspaces
+                    </li>
+                    <li class="pricing-card__feature">
+                        <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
+                        <strong>Unlimited</strong> builds
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
@@ -475,25 +554,26 @@
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Full shape library
+                        Full 3D parts + materials library
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Export to PNG, JSON & PDF
-                    </li>
-                    <li class="pricing-card__feature">
-                        <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Priority support
-                    </li>
-                    <li class="pricing-card__feature">
-                        <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        30-day version history
+                        Real-time chat & issue tracking
                     </li>
                 </ul>
 
-                <a href="{{ route('register') }}" class="btn btn--primary btn--lg w-full btn-glow">
-                    Start 14-day free trial
-                </a>
+                <div class="pricing-card__action">
+                    @php $isLoggedIn = (bool)session('supabase_user_id'); @endphp
+                    @if($isLoggedIn && ($auth_user->plan ?? 'free') === 'pro')
+                        <button class="btn btn--primary btn--lg w-full" disabled style="opacity: 0.6; cursor: default;">
+                            Your Current Plan
+                        </button>
+                    @else
+                        <a href="{{ $isLoggedIn ? route('checkout', 'pro') : route('register') }}" class="btn btn--primary btn--lg w-full btn-glow">
+                            Start 14-day free trial
+                        </a>
+                    @endif
+                </div>
             </div>
 
             <!-- Team Plan -->
@@ -514,29 +594,33 @@
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        5 workspaces
+                        Unlimited Workspaces
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Admin dashboard
+                        Organization Management
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        SSO & SAML
+                        Role-based access permissions
                     </li>
                     <li class="pricing-card__feature">
                         <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Dedicated account manager
-                    </li>
-                    <li class="pricing-card__feature">
-                        <i data-lucide="check" class="pricing-card__icon pricing-card__icon--check"></i>
-                        Unlimited version history
+                        Priority database scaling
                     </li>
                 </ul>
 
-                <a href="{{ route('register') }}" class="btn btn--secondary btn--lg w-full">
-                    Contact sales
-                </a>
+                <div class="pricing-card__action">
+                    @if(session('supabase_user_id') && ($auth_user->plan ?? 'free') === 'enterprise')
+                        <button class="btn btn--secondary btn--lg w-full" disabled style="opacity: 0.6; cursor: default;">
+                            Your Current Plan
+                        </button>
+                    @else
+                        <a href="{{ route('contact.sales') }}" class="btn btn--secondary btn--lg w-full">
+                            Contact sales
+                        </a>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -587,7 +671,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Blueprints</td>
+                        <td>builds</td>
                         <td>10</td>
                         <td>Unlimited</td>
                         <td>Unlimited</td>
@@ -617,33 +701,15 @@
                         <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
                     </tr>
                     <tr>
-                        <td>Export PNG</td>
-                        <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
-                        <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
-                        <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
-                    </tr>
-                    <tr>
-                        <td>Export PDF & JSON</td>
-                        <td><i data-lucide="x" class="w-5 h-5 comparison-x"></i></td>
+                        <td>Role-based Access</td>
+                        <td>Owner & Editor only</td>
                         <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
                         <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
                     </tr>
                     <tr>
-                        <td>Version history</td>
-                        <td><i data-lucide="x" class="w-5 h-5 comparison-x"></i></td>
-                        <td>30 days</td>
-                        <td>Unlimited</td>
-                    </tr>
-                    <tr>
-                        <td>Priority support</td>
+                        <td>Issue Tracking</td>
                         <td><i data-lucide="x" class="w-5 h-5 comparison-x"></i></td>
                         <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
-                        <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
-                    </tr>
-                    <tr>
-                        <td>SSO / SAML</td>
-                        <td><i data-lucide="x" class="w-5 h-5 comparison-x"></i></td>
-                        <td><i data-lucide="x" class="w-5 h-5 comparison-x"></i></td>
                         <td><i data-lucide="check" class="w-5 h-5 comparison-check"></i></td>
                     </tr>
                     <tr>
@@ -663,21 +729,21 @@
     <div class="container">
         <div class="pricing-testimonial__content reveal">
             <blockquote class="pricing-testimonial__quote">
-                "Switching to ConstructHub Pro saved our firm over $50,000 a year in software licenses. 
-                The collaboration features alone are worth 10x the price."
+                "SpatialSync completely transformed how our team reviews 3D designs together. 
+                The real-time collaboration and issue pinning alone save us hours every week."
             </blockquote>
             <div class="pricing-testimonial__author">
                 <img 
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=112&h=112&fit=crop" 
-                    alt="David Kim"
+                    src="https://ui-avatars.com/api/?name=Alex+Rivera&background=0066FF&color=fff&size=112" 
+                    alt="Alex Rivera"
                     class="pricing-testimonial__avatar"
                     width="56"
                     height="56"
                     loading="lazy"
                 >
                 <div class="pricing-testimonial__info">
-                    <span class="pricing-testimonial__name">David Kim</span>
-                    <span class="pricing-testimonial__role">Managing Partner, Kim Architecture Studio</span>
+                    <span class="pricing-testimonial__name">Alex Rivera</span>
+                    <span class="pricing-testimonial__role">Design Lead, Spatial Studio</span>
                 </div>
             </div>
         </div>
@@ -697,7 +763,7 @@
                 ['question' => 'Can I upgrade or downgrade anytime?', 'answer' => 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades apply at your next billing cycle. We\'ll prorate any charges.'],
                 ['question' => 'What payment methods do you accept?', 'answer' => 'We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers for annual Enterprise plans. All payments are processed securely through Stripe.'],
                 ['question' => 'Is there a free trial?', 'answer' => 'Yes! All paid plans include a 14-day free trial with full access to features. No credit card required to start. You can also use our Free plan indefinitely.'],
-                ['question' => 'What happens to my data if I downgrade?', 'answer' => 'Your blueprints are always safe. If you downgrade to Free and exceed the 10 blueprint limit, your existing blueprints remain accessible but you won\'t be able to create new ones until you\'re under the limit.'],
+                ['question' => 'What happens to my data if I downgrade?', 'answer' => 'Your builds are always safe. If you downgrade to Free and exceed the 10 build limit, your existing builds remain accessible but you won\'t be able to create new ones until you\'re under the limit.'],
                 ['question' => 'Do you offer discounts for non-profits or education?', 'answer' => 'Yes! We offer 50% discounts for verified non-profit organizations and educational institutions. Contact our sales team with your organization details.'],
                 ['question' => 'Can I get a refund?', 'answer' => 'We offer a 30-day money-back guarantee for all paid plans. If you\'re not satisfied, contact support within 30 days of purchase for a full refund.'],
             ]" />
@@ -711,7 +777,7 @@
         <div class="reveal">
             <h2 class="pricing-cta__title">Ready to start designing?</h2>
             <p class="pricing-cta__subtitle">
-                Join 12,000+ architects and engineers using ConstructHub.
+                Join teams already building in 3D with SpatialSync.
             </p>
             <a href="{{ route('register') }}" class="btn btn--xl">
                 Start your free trial
@@ -720,4 +786,26 @@
         </div>
     </div>
 </section>
+@if(session('payment_success'))
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            title: 'Payment Successful!',
+            text: "{{ session('payment_success') }}",
+            icon: 'success',
+            background: 'var(--surface)',
+            color: 'var(--text-primary)',
+            confirmButtonColor: 'var(--accent)',
+            confirmButtonText: 'Great!',
+            backdrop: `
+                rgba(0,0,123,0.1)
+                left top
+                no-repeat
+            `
+        });
+    });
+</script>
+@endif
 @endsection
+

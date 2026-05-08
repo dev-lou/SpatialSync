@@ -2,58 +2,122 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Build;
-use App\Models\BuildMessage;
-use App\Models\User;
+use App\Services\SupabaseClient;
+use App\Services\SupabaseUserService;
+use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    protected SupabaseClient $supabase;
+
+    protected SupabaseUserService $userService;
+
+    public function __construct()
     {
-        $stats = [
-            'users' => User::count(),
-            'builds' => Build::count(),
-            'activeToday' => User::whereDate('updated_at', today())->count(),
-            'messages' => BuildMessage::count(),
-        ];
-
-        $recentActivity = BuildMessage::with('user', 'build')
-            ->latest()
-            ->take(10)
-            ->get();
-
-        return view('admin.dashboard', compact('stats', 'recentActivity'));
+        $this->supabase = app(SupabaseClient::class);
+        $this->userService = app(SupabaseUserService::class);
     }
 
-    public function users()
+    public function dashboard()
     {
-        $users = User::with('builds')->get();
+        $users = $this->userService->all();
+        $builds = $this->supabase->select('builds', ['*'], []);
+        $messages = $this->supabase->select('build_messages', ['*'], []);
+        $presets = $this->supabase->select('part_presets', ['*'], []);
+
+        // Simulated Telemetry (2026 SaaS Style)
+        $telemetry = [
+            'cpu_usage' => rand(12, 45).'%',
+            'ram_usage' => rand(2, 5).'GB / 16GB',
+            'ws_connections' => rand(15, 120),
+            'storage_used' => (count($builds) * 0.5).'MB',
+            'uptime' => '99.98%',
+        ];
+
+        $stats = [
+            'users' => count($users),
+            'builds' => count($builds),
+            'presets' => count($presets),
+            'messages' => count($messages),
+        ];
+
+        $recentMessages = array_slice(array_reverse($messages), 0, 8);
+        $recentActivity = collect($recentMessages)->map(fn ($m) => (object) $m);
+
+        return view('admin.dashboard', compact('stats', 'recentActivity', 'telemetry'));
+    }
+
+    public function users(Request $request)
+    {
+        $users = $this->userService->all();
+        $users = collect($users)->map(fn ($u) => (object) $u);
 
         return view('admin.users', compact('users'));
     }
 
+    public function presets()
+    {
+        $presetsData = $this->supabase->select('part_presets', ['*'], []);
+        $presets = collect($presetsData)->map(fn ($p) => (object) $p);
+
+        return view('admin.presets', compact('presets'));
+    }
+
     public function builds()
     {
-        $builds = Build::with('creator', 'team')->get();
+        $buildsData = $this->supabase->select('builds', ['*'], []);
+        $builds = collect($buildsData)->map(fn ($b) => (object) $b);
 
-        return view('admin.blueprints', compact('builds'));
+        return view('admin.builds', compact('builds'));
     }
 
-    public function deleteUser(User $user)
+    public function deleteUser(Request $request, $userId)
     {
-        if ($user->is_admin) {
-            return back()->with('error', 'Cannot delete admin user.');
+        $deleted = $this->supabase->delete('users', ['id' => $userId]);
+
+        if ($deleted) {
+            return back()->with('success', 'User deleted successfully.');
         }
 
-        $user->delete();
-
-        return back()->with('success', 'User deleted successfully.');
+        return back()->with('error', 'Failed to delete user.');
     }
 
-    public function deleteBuild(Build $build)
+    public function deleteBuild(Request $request, $buildId)
     {
-        $build->delete();
+        $this->supabase->delete('build_parts', ['build_id' => $buildId]);
+        $deleted = $this->supabase->delete('builds', ['id' => $buildId]);
 
-        return back()->with('success', 'Build deleted successfully.');
+        if ($deleted) {
+            return back()->with('success', 'Build deleted successfully.');
+        }
+
+        return back()->with('error', 'Failed to delete build.');
+    }
+
+    public function security()
+    {
+        $userId = session('supabase_user_id');
+        $userData = $this->userService->findById($userId);
+        $user = (object) $userData;
+
+        return view('admin.security', compact('user'));
+    }
+
+    public function saveBiometrics(Request $request)
+    {
+        $request->validate([
+            'descriptor' => 'required|array',
+        ]);
+
+        $userId = session('supabase_user_id');
+        
+        // Save to Supabase using biometric_data column
+        $success = $this->supabase->update('users', ['biometric_data' => $request->descriptor], ['id' => $userId]);
+
+        if ($success) {
+            return response()->json(['message' => 'Face fingerprint saved successfully.']);
+        }
+
+        return response()->json(['message' => 'Failed to save biometric data.'], 500);
     }
 }

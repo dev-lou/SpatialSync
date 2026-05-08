@@ -1,8 +1,11 @@
 /node_modules
-/public/build
 /public/hot
 /public/storage
 /storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*.php
+/storage/logs/*.log
 /vendor
 .env
 .env.backup

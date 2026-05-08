@@ -14,11 +14,16 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// Keep-alive ping (prevents Render free tier from sleeping)
+Route::get('/ping', fn() => response('ok', 200));
+
 // Public marketing pages
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/features', [PageController::class, 'features'])->name('features');
 Route::get('/pricing', [PageController::class, 'pricing'])->name('pricing');
 Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/contact-sales', [\App\Http\Controllers\ContactController::class, 'sales'])->name('contact.sales');
+Route::post('/contact-sales', [\App\Http\Controllers\ContactController::class, 'submit']);
 
 // Guest routes (auth)
 Route::middleware('guest')->group(function () {
@@ -26,15 +31,23 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store']);
+    
+    // Neural Face Login
+    Route::post('/login/biometrics', [\App\Http\Controllers\Auth\BiometricAuthController::class, 'login'])->name('login.biometrics');
 });
 
 // Logout
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout')->middleware('auth');
 
-// Authenticated routes
-Route::middleware(['auth'])->group(function () {
+// Authenticated routes (web middleware first for CSRF, then auth)
+Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Checkout Simulation
+    Route::get('/checkout/{plan}', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout/process', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
+    Route::get('/checkout/success', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
 
     // Build routes
     Route::get('/builds', [BuildController::class, 'index'])->name('builds.index');
@@ -46,13 +59,32 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/builds/{build}', [BuildController::class, 'destroy'])->name('builds.destroy');
     Route::post('/builds/{build}/members', [BuildController::class, 'addMember'])->name('builds.members.add');
     Route::delete('/builds/{build}/members/{user}', [BuildController::class, 'removeMember'])->name('builds.members.remove');
+    Route::patch('/builds/{build}/members/{user}', [BuildController::class, 'updateMemberRole'])->name('builds.members.updateRole');
     Route::get('/users/search', [BuildController::class, 'searchUsers'])->name('users.search');
     Route::post('/builds/{build}/share', [BuildController::class, 'createShare'])->name('builds.share.create');
     Route::get('/builds/{build}/export/{format}', [BuildController::class, 'export'])->name('builds.export');
 
+    // Editor API routes (using /editor/ prefix to get web middleware CSRF)
+    Route::get('/editor/builds/{buildId}/parts', [\App\Http\Controllers\Api\BuildPartController::class, 'allParts']);
+    Route::get('/editor/builds/{buildId}/parts/floor', [\App\Http\Controllers\Api\BuildPartController::class, 'index']);
+    Route::post('/editor/builds/{buildId}/parts', [\App\Http\Controllers\Api\BuildPartController::class, 'store'])
+        ->middleware('build.permission:edit_geometry');
+    Route::put('/editor/builds/{buildId}/parts/{partId}', [\App\Http\Controllers\Api\BuildPartController::class, 'update'])
+        ->middleware('build.permission:edit_geometry');
+    Route::delete('/editor/builds/{buildId}/parts/{partId}', [\App\Http\Controllers\Api\BuildPartController::class, 'destroy'])
+        ->middleware('build.permission:delete_parts');
+    
+    // Issue API routes
+    Route::get('/editor/builds/{buildId}/issues', [\App\Http\Controllers\Api\BuildIssueController::class, 'index']);
+    Route::post('/editor/builds/{buildId}/issues', [\App\Http\Controllers\Api\BuildIssueController::class, 'store']);
+    Route::get('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'show']);
+    Route::put('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'update']);
+    Route::delete('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'destroy']);
+    Route::patch('/editor/builds/{buildId}/issues/{issueId}/status', [\App\Http\Controllers\Api\BuildIssueController::class, 'updateStatus']);
+
     // Chat API
-    Route::get('/api/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'index'])->name('api.builds.messages.index');
-    Route::post('/api/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'store'])->name('api.builds.messages.store');
+    Route::get('/editor/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'index'])->name('api.builds.messages.index');
+    Route::post('/editor/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'store'])->name('api.builds.messages.store');
 
     // Shared build view
     Route::get('/builds/{build}/shared/{token}', [BuildController::class, 'shared'])->name('builds.shared');
@@ -61,8 +93,13 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
-        Route::get('/builds', [AdminController::class, 'builds'])->name('admin.builds');
+        Route::get('/presets', [AdminController::class, 'presets'])->name('admin.presets');
+        Route::get('/blueprints', [AdminController::class, 'builds'])->name('admin.builds');
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
         Route::delete('/builds/{build}', [AdminController::class, 'deleteBuild'])->name('admin.builds.delete');
+        
+        // Biometrics & Security (Admin Personal)
+        Route::get('/security', [AdminController::class, 'security'])->name('admin.security');
+        Route::post('/biometrics/save', [AdminController::class, 'saveBiometrics'])->name('admin.biometrics.save');
     });
 });

@@ -25,7 +25,7 @@ use Illuminate\Validation\ValidationServiceProvider;
 use Illuminate\View\ViewServiceProvider;
 
 return [
-    'name' => env('APP_NAME', 'ConstructHub'),
+    'name' => env('APP_NAME', 'SpatialSync'),
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),

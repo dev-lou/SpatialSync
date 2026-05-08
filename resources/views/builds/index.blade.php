@@ -235,19 +235,19 @@
 @endpush
 
 @section('content')
-<div class="builds-page" x-data="{ search: '', filter: 'all' }">
+<div class="builds-page" x-data="buildsIndexApp()">
     <div class="container">
         <!-- Header -->
         <div class="builds-header reveal">
             <div>
-                <h1 class="builds-header__title">My Builds</h1>
-                <p class="builds-header__subtitle">{{ $builds->count() }} project{{ $builds->count() !== 1 ? 's' : '' }} total</p>
+                <h1 class="builds-header__title">Workspace Projects</h1>
+                <p class="builds-header__subtitle">{{ $builds->count() }} active project{{ $builds->count() !== 1 ? 's' : '' }} (Personal & Shared)</p>
             </div>
             <div class="builds-header__actions">
-                <a href="{{ route('builds.create') }}" class="btn btn--primary btn-glow">
+                <button type="button" @click="openModal()" class="btn btn--primary btn-glow">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     New Build
-                </a>
+                </button>
             </div>
         </div>
 
@@ -265,32 +265,40 @@
             </button>
         </div>
 
-        <!-- Builds Grid -->
-        @if($builds->count() > 0)
-            <div class="builds-grid stagger">
-                @foreach($builds as $build)
+        @php
+            $personalBuilds = $builds->filter(fn($b) => $b->user_role === 'owner');
+            $sharedWithMe = $builds->filter(fn($b) => $b->user_role !== 'owner');
+        @endphp
+
+        <!-- Personal Builds Grid -->
+        @if($personalBuilds->count() > 0)
+            <div class="mb-4 mt-8">
+                <h2 class="text-lg font-semibold text-primary">Personal Builds</h2>
+            </div>
+            <div class="builds-grid stagger mb-12">
+                @foreach($personalBuilds as $build)
                     <div x-show="
                         (search === '' || '{{ strtolower($build->name) }}'.includes(search.toLowerCase())) &&
                         (filter === 'all' || filter === 'recent')
                     " x-transition>
-                        <x-blueprint-card :blueprint="$build" class="glow-card reveal" />
+                        <x-build-card :build="$build" class="glow-card reveal" />
                     </div>
                 @endforeach
             </div>
         @else
-            <div class="builds-empty reveal">
+            <div class="builds-empty reveal mb-12">
                 <div class="builds-empty__icon">
                     <i data-lucide="layers" class="w-8 h-8"></i>
                 </div>
-                <h3 class="builds-empty__title">No builds yet</h3>
+                <h3 class="builds-empty__title">No personal builds yet</h3>
                 <p class="builds-empty__description">
                     Start creating your first building design to join thousands of architects and engineers designing better buildings together.
                 </p>
                 <div class="builds-empty__cta">
-                    <a href="{{ route('builds.create') }}" class="btn btn--primary btn--lg btn-glow">
+                    <button type="button" @click="openModal()" class="btn btn--primary btn--lg btn-glow">
                         <i data-lucide="plus" class="w-5 h-5"></i>
                         Create your first build
-                    </a>
+                    </button>
                     <a href="{{ route('home') }}" class="btn btn--secondary btn--lg">
                         <i data-lucide="help-circle" class="w-5 h-5"></i>
                         Learn how
@@ -312,6 +320,45 @@
                 </div>
             </div>
         @endif
+
+        <!-- Shared With Me Grid -->
+        @if($sharedWithMe->count() > 0)
+            <div class="mb-4 mt-8">
+                <h2 class="text-lg font-semibold text-primary">Shared With Me</h2>
+            </div>
+            <div class="builds-grid stagger mb-12">
+                @foreach($sharedWithMe as $build)
+                    <div x-show="
+                        (search === '' || '{{ strtolower($build->name) }}'.includes(search.toLowerCase())) &&
+                        (filter === 'all' || filter === 'recent')
+                    " x-transition>
+                        <x-build-card :build="$build" class="glow-card reveal" />
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
+
+    @include('builds.partials.create-modal')
 </div>
+
+@push('scripts')
+<script>
+function buildsIndexApp() {
+    return {
+        search: '',
+        filter: 'all',
+        ...createBuildModalApp()
+    }
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const app = document.querySelector('[x-data="buildsIndexApp()"]');
+        if (app && app.__x && app.__x.$data.showModal) {
+            app.__x.$data.closeModal();
+        }
+    }
+});
+</script>
+@endpush
 @endsection

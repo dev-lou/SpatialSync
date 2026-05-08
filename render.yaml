@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: blueprintflow
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: standard
+    
+    # Environment variables (set these in Render Dashboard)
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: APP_URL
+        sync: false
+    
+    # Health check
+    healthCheckPath: /up
+    healthCheckInterval: 300
+    
+    # Build settings
+    buildCommand: npm install && npm run build
+    startCommand: /usr/local/bin/start-container
+    
+    # Disk space (if needed for logs/storage)
+    disk:
+      name: storage
+      mountPath: /var/www/html/storage
+      sizeGB: 10
+    
+    # Automatic deployments from GitHub
+    autoDeploy: true
+    
+    # Scaling
+    numInstances: 1
+    
+    # Environment variable requirements (to be set in Render Dashboard):
+    # Required:
+    #   - APP_KEY: Generate with 'php artisan key:generate' locally
+    #   - SUPABASE_URL: Your Supabase project URL
+    #   - SUPABASE_SERVICE_KEY: Your Supabase service role key
+    #   - SUPABASE_ANON_KEY: Your Supabase anonymous key
+    #   - DB_HOST: Your Supabase PostgreSQL host
+    #   - DB_DATABASE: postgres
+    #   - DB_USERNAME: postgres
+    #   - DB_PASSWORD: Your Supabase database password

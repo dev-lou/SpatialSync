@@ -3,42 +3,128 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Build;
-use App\Models\BuildPart;
+use App\Services\SupabaseClient;
 use Illuminate\Http\Request;
 
 class BuildPartController extends Controller
 {
-    public function index(Build $build)
-    {
-        $this->authorize('view', $build);
+    protected SupabaseClient $supabase;
 
-        $parts = $build->parts()
-            ->where('floor_number', $build->current_floor)
-            ->orderBy('z_index')
-            ->get();
+    public function __construct()
+    {
+        $this->supabase = app(SupabaseClient::class);
+    }
+
+    /**
+     * Check if user has access to build
+     */
+    protected function checkBuildAccess(Request $request, $buildId): bool
+    {
+        $userId = $request->session()->get('supabase_user_id');
+
+        // Get build to check ownership
+        $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
+        if (empty($builds)) {
+            return false;
+        }
+
+        // Owner has access
+        if ($builds[0]['created_by'] === $userId) {
+            return true;
+        }
+
+        // Check if user is a member
+        $members = $this->supabase->select('build_members', ['role'], [
+            'build_id' => $buildId,
+            'user_id' => $userId
+        ]);
+
+        return !empty($members);
+    }
+
+    /**
+     * Check if user can modify build (owner or editor)
+     */
+    protected function canModifyBuild(Request $request, $buildId): bool
+    {
+        $userId = $request->session()->get('supabase_user_id');
+
+        // Get build to check ownership
+        $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
+        if (empty($builds)) {
+            return false;
+        }
+
+        // Owner can modify
+        if ($builds[0]['created_by'] === $userId) {
+            return true;
+        }
+
+        // Check if user is an editor
+        $members = $this->supabase->select('build_members', ['role'], [
+            'build_id' => $buildId,
+            'user_id' => $userId
+        ]);
+
+        return !empty($members) && $members[0]['role'] === 'editor';
+    }
+
+    public function index(Request $request, $buildId)
+    {
+        // Check access
+        if (!$this->checkBuildAccess($request, $buildId)) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
+
+        // Get build to check current floor
+        $builds = $this->supabase->select('builds', ['current_floor'], ['id' => $buildId]);
+        if (empty($builds)) {
+            return response()->json(['error' => 'Build not found'], 404);
+        }
+
+        $currentFloor = $builds[0]['current_floor'] ?? 1;
+
+        // Get parts for this floor
+        $parts = $this->supabase->select('build_parts', ['*'], [
+            'build_id' => $buildId,
+            'floor_number' => $currentFloor,
+        ]);
 
         return response()->json($parts);
     }
 
-    public function allParts(Build $build)
+    public function allParts(Request $request, $buildId)
     {
-        $this->authorize('view', $build);
+        // Check access
+        if (!$this->checkBuildAccess($request, $buildId)) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
 
-        $parts = $build->parts()
-            ->orderBy('floor_number')
-            ->orderBy('z_index')
-            ->get();
+        $parts = $this->supabase->select('build_parts', ['*'], ['build_id' => $buildId]);
+
+        // Sort by floor_number then z_index
+        usort($parts, function ($a, $b) {
+            $floorCompare = ($a['floor_number'] ?? 1) - ($b['floor_number'] ?? 1);
+            if ($floorCompare !== 0) {
+                return $floorCompare;
+            }
+
+            return ($a['z_index'] ?? 0) - ($b['z_index'] ?? 0);
+        });
 
         return response()->json($parts);
     }
 
-    public function store(Request $request, Build $build)
+    public function store(Request $request, $buildId)
     {
-        $this->authorize('update', $build);
+        // Check modify permission
+        if (!$this->canModifyBuild($request, $buildId)) {
+            return response()->json(['error' => 'Access denied - editor role required'], 403);
+        }
 
         $validated = $request->validate([
-            'type' => 'required|string|in:wall,floor,roof,door,window,stairs,custom_floor,custom_roof',
+            'type' => 'required|string|in:wall,floor,roof,door,window,stairs,furniture,structural,fixture,landscape',
+
             'variant' => 'required|string',
             'position_x' => 'required|numeric',
             'position_y' => 'required|numeric',
@@ -56,17 +142,27 @@ class BuildPartController extends Controller
             'z_index' => 'integer|min:0',
         ]);
 
-        $part = $build->parts()->create($validated);
+        $validated['build_id'] = $buildId;
+
+        $part = $this->supabase->insert('build_parts', $validated);
+
+        if (! $part) {
+            return response()->json(['error' => 'Failed to create part'], 500);
+        }
+
+        // Touch build updated_at
+        $this->supabase->update('builds', [
+            'updated_at' => now()->toIso8601String()
+        ], ['id' => $buildId]);
 
         return response()->json($part, 201);
     }
 
-    public function update(Request $request, Build $build, BuildPart $part)
+    public function update(Request $request, $buildId, $partId)
     {
-        $this->authorize('update', $build);
-
-        if ($part->build_id !== $build->id) {
-            abort(403, 'Part does not belong to this build.');
+        // Check modify permission
+        if (!$this->canModifyBuild($request, $buildId)) {
+            return response()->json(['error' => 'Access denied - editor role required'], 403);
         }
 
         $validated = $request->validate([
@@ -86,20 +182,46 @@ class BuildPartController extends Controller
             'z_index' => 'integer|min:0',
         ]);
 
-        $part->update($validated);
+        $count = $this->supabase->update('build_parts', $validated, [
+            'id' => $partId,
+            'build_id' => $buildId,
+        ]);
 
-        return response()->json($part);
-    }
-
-    public function destroy(Build $build, BuildPart $part)
-    {
-        $this->authorize('update', $build);
-
-        if ($part->build_id !== $build->id) {
-            abort(403, 'Part does not belong to this build.');
+        if ($count === 0) {
+            return response()->json(['error' => 'Part not found'], 404);
         }
 
-        $part->delete();
+        // Get updated part
+        $parts = $this->supabase->select('build_parts', ['*'], ['id' => $partId]);
+
+        // Touch build updated_at
+        $this->supabase->update('builds', [
+            'updated_at' => now()->toIso8601String()
+        ], ['id' => $buildId]);
+
+        return response()->json($parts[0] ?? []);
+    }
+
+    public function destroy(Request $request, $buildId, $partId)
+    {
+        // Check modify permission
+        if (!$this->canModifyBuild($request, $buildId)) {
+            return response()->json(['error' => 'Access denied - editor role required'], 403);
+        }
+
+        $deleted = $this->supabase->delete('build_parts', [
+            'id' => $partId,
+            'build_id' => $buildId,
+        ]);
+
+        if (! $deleted) {
+            return response()->json(['error' => 'Failed to delete part'], 500);
+        }
+
+        // Touch build updated_at
+        $this->supabase->update('builds', [
+            'updated_at' => now()->toIso8601String()
+        ], ['id' => $buildId]);
 
         return response()->json(['message' => 'Part deleted successfully']);
     }
