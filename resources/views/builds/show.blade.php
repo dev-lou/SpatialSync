@@ -257,6 +257,13 @@
                                 </div>
                             </div>
                         </template>
+                        <template x-if="members.length === 0">
+                            <div class="member-empty-state">
+                                <i data-lucide="users-x" class="w-6 h-6"></i>
+                                <p>No team members invited yet</p>
+                                <small>Add members above to start collaborating</small>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -3000,6 +3007,37 @@ document.addEventListener('alpine:init', () => {
         gap: 14px;
         flex: 1;
         min-width: 0;
+    }
+
+    .member-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 20px 16px;
+        text-align: center;
+        color: var(--text-secondary);
+        border: 1px dashed var(--border-default);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+    }
+
+    .member-empty-state i {
+        color: var(--text-tertiary);
+        opacity: 0.6;
+    }
+
+    .member-empty-state p {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .member-empty-state small {
+        margin: 0;
+        font-size: 12px;
+        color: var(--text-tertiary);
     }
 
     .avatar--sm {
