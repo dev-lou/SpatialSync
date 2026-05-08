@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 
+# Explicitly welcome social bots
 User-agent: facebookexternalhit
 Allow: /
 
@@ -9,5 +10,3 @@ Allow: /
 
 User-agent: Twitterbot
 Allow: /
-
-Sitemap: https://spatialsync.onrender.com/sitemap.xml

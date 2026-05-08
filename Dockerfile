@@ -39,19 +39,6 @@ RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/p
 
 # Custom Nginx Config
 COPY <<'EOF' /etc/nginx/http.d/default.conf
-# Map to detect social media bots by User-Agent
-map $http_user_agent $is_social_bot {
-    default 0;
-    ~*facebookexternalhit 1;
-    ~*Facebot            1;
-    ~*Twitterbot         1;
-    ~*LinkedInBot        1;
-    ~*WhatsApp           1;
-    ~*Slackbot           1;
-    ~*TelegramBot        1;
-    ~*Discordbot         1;
-}
-
 server {
     listen 80;
     server_name _;
@@ -63,14 +50,6 @@ server {
     index index.php;
 
     charset utf-8;
-
-    # Serve static OG page to social media bots — instant, no PHP needed
-    location = / {
-        if ($is_social_bot) {
-            rewrite ^ /og.html last;
-        }
-        try_files $uri $uri/ /index.php?$query_string;
-    }
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
