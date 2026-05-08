@@ -33,7 +33,8 @@ COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
 # Set permissions - ensure all files are readable
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public \
+RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public \
     && chmod -R a+rX /var/www/html/public
 
 # Custom Nginx Config
