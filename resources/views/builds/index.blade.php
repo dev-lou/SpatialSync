@@ -169,6 +169,54 @@
     margin: 0 auto var(--space-8);
 }
 
+.builds-empty__cta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: center;
+    margin-bottom: var(--space-8);
+}
+
+@media (min-width: 768px) {
+    .builds-empty__cta {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+.builds-empty__features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: center;
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-default);
+}
+
+@media (min-width: 768px) {
+    .builds-empty__features {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+.feature-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: 500;
+}
+
+.feature-badge i {
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
 /* ── COUNT BADGE ─────────────────────────────── */
 .count-badge {
     display: inline-flex;
@@ -232,16 +280,36 @@
         @else
             <div class="builds-empty reveal">
                 <div class="builds-empty__icon">
-                    <i data-lucide="folder-plus" class="w-8 h-8"></i>
+                    <i data-lucide="layers" class="w-8 h-8"></i>
                 </div>
                 <h3 class="builds-empty__title">No builds yet</h3>
                 <p class="builds-empty__description">
-                    Create your first build to start designing houses, buildings, and architectural designs.
+                    Start creating your first building design to join thousands of architects and engineers designing better buildings together.
                 </p>
-                <a href="{{ route('builds.create') }}" class="btn btn--primary btn--lg btn-glow">
-                    <i data-lucide="plus" class="w-5 h-5"></i>
-                    Create your first build
-                </a>
+                <div class="builds-empty__cta">
+                    <a href="{{ route('builds.create') }}" class="btn btn--primary btn--lg btn-glow">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                        Create your first build
+                    </a>
+                    <a href="{{ route('home') }}" class="btn btn--secondary btn--lg">
+                        <i data-lucide="help-circle" class="w-5 h-5"></i>
+                        Learn how
+                    </a>
+                </div>
+                <div class="builds-empty__features">
+                    <div class="feature-badge">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span>Real-time collaboration</span>
+                    </div>
+                    <div class="feature-badge">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        <span>Cloud-based &amp; secure</span>
+                    </div>
+                    <div class="feature-badge">
+                        <i data-lucide="share-2" class="w-4 h-4"></i>
+                        <span>Easy to share</span>
+                    </div>
+                </div>
             </div>
         @endif
     </div>

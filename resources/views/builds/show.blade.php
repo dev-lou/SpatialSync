@@ -145,6 +145,13 @@
                                 </button>
                             </div>
                         </template>
+                        <template x-if="members.length === 0">
+                            <div class="member-empty-state">
+                                <i data-lucide="users-x" class="w-6 h-6"></i>
+                                <p>No team members invited yet</p>
+                                <small>Add members above to start collaborating</small>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -155,10 +162,19 @@
                     <i data-lucide="message-square"></i> Project Chat
                 </div>
                 <div class="chat-messages" id="chat-messages">
-                    <template x-for="msg in chatMessages" :key="msg.id">
-                        <div class="message" :class="msg.user_id === {{ Auth::id() }} ? 'message--mine' : 'message--other'">
-                            <div class="message__user" x-show="msg.user_id !== {{ Auth::id() }}" x-text="msg.user.name"></div>
-                            <div x-text="msg.message"></div>
+                    <template x-if="chatMessages.length > 0">
+                        <template x-for="msg in chatMessages" :key="msg.id">
+                            <div class="message" :class="msg.user_id === {{ Auth::id() }} ? 'message--mine' : 'message--other'">
+                                <div class="message__user" x-show="msg.user_id !== {{ Auth::id() }}" x-text="msg.user.name"></div>
+                                <div x-text="msg.message"></div>
+                            </div>
+                        </template>
+                    </template>
+                    <template x-if="chatMessages.length === 0">
+                        <div class="chat-empty-state">
+                            <i data-lucide="message-circle" class="w-8 h-8"></i>
+                            <p>No messages yet</p>
+                            <small>Start a conversation with your team</small>
                         </div>
                     </template>
                 </div>
@@ -1229,6 +1245,67 @@ document.addEventListener('alpine:init', () => {
     .swal-toast {
         padding: 12px 20px !important;
         border-radius: 16px !important;
+    }
+
+    /* ============ EMPTY STATE STYLES ============ */
+    .member-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 20px 16px;
+        text-align: center;
+        color: var(--text-secondary);
+        border: 1px dashed var(--border-default);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+    }
+
+    .member-empty-state i {
+        color: var(--text-tertiary);
+        opacity: 0.6;
+    }
+
+    .member-empty-state p {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .member-empty-state small {
+        margin: 0;
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+
+    .chat-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        flex: 1;
+    }
+
+    .chat-empty-state i {
+        color: var(--text-tertiary);
+        opacity: 0.5;
+    }
+
+    .chat-empty-state p {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .chat-empty-state small {
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-tertiary);
     }
 </style>
 @endpush
