@@ -51,7 +51,7 @@
                     &copy; {{ date('Y') }} SpatialSync. All rights reserved.
                 </p>
                 <!-- Back to Top -->
-                <a href="#" class="btn btn--ghost btn--sm" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" aria-label="Back to top">
+                <a href="#" class="btn btn--ghost btn--sm" x-on:click.prevent="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="Back to top">
                     <i data-lucide="arrow-up" class="w-4 h-4"></i>
                     <span class="sr-only">Back to top</span>
                 </a>

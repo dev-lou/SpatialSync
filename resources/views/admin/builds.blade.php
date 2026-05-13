@@ -4,7 +4,7 @@
 
 @section('actions')
 <button class="os-btn os-btn-secondary os-btn-sm"
-    onclick="Swal.fire('Export','PDF report generation coming soon.','info')">
+    x-on:click="Swal.fire('Export','PDF report generation coming soon.','info')">
     <i data-lucide="file-bar-chart" style="width:13px;height:13px;"></i>
     Export Report
 </button>
@@ -22,9 +22,9 @@
                 <input type="text" class="os-input" id="b-search"
                     placeholder="Search builds…"
                     style="width:240px;"
-                    oninput="filterBuilds(this.value)">
+                    x-on:input="filterBuilds($el.value)">
             </div>
-            <select class="os-input" id="b-sort" style="width:160px;" onchange="sortBuilds(this.value)">
+            <select class="os-input" id="b-sort" style="width:160px;" x-on:change="sortBuilds($el.value)">
                 <option value="">All Projects</option>
                 <option value="name">Sort by Name</option>
                 <option value="date">Sort by Date</option>
@@ -87,10 +87,18 @@
                                class="os-btn os-btn-secondary os-btn-icon os-btn-sm" title="Open in editor">
                                 <i data-lucide="external-link" style="width:13px;height:13px;"></i>
                             </a>
-                            <form action="{{ route('admin.builds.delete', $build->id) }}" method="POST">
+                            <form action="{{ route('admin.builds.delete', $build->id) }}" method="POST"
+                                  x-data x-on:submit.prevent="
+                                    Swal.fire({
+                                        title: 'Delete Build?',
+                                        text: 'Permanently delete {{ addslashes($build->name) }}?',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Yes, delete'
+                                    }).then(r => r.isConfirmed && $el.submit())
+                                  ">
                                 @csrf @method('DELETE')
-                                <button type="button" class="os-btn os-btn-danger os-btn-icon os-btn-sm" title="Delete build"
-                                    onclick="confirmDelete(this.closest('form'),'Permanently delete {{ addslashes($build->name) }}?')">
+                                <button type="submit" class="os-btn os-btn-danger os-btn-icon os-btn-sm" title="Delete build">
                                     <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
                                 </button>
                             </form>

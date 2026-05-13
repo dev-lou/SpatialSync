@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class SupabaseUserService
 {
@@ -124,9 +125,7 @@ class SupabaseUserService
             return null;
         }
 
-        // For now, we'll store password as plain text in Supabase
-        // and compare directly. In production, you'd use Supabase Auth.
-        if (isset($user['password']) && $user['password'] === $password) {
+        if (isset($user['password']) && Hash::check($password, $user['password'])) {
             return $user;
         }
 

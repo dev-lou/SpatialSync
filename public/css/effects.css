@@ -1102,7 +1102,162 @@
   letter-spacing: 0.05em;
 }
 
-/* ── REDUCED MOTION ─────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   FEATURE 2: PAGE TRANSITIONS (View Transitions API)
+   ═══════════════════════════════════════════════════════ */
+::view-transition-old(root) {
+  animation: pt-fade-out 0.3s ease-out;
+}
+::view-transition-new(root) {
+  animation: pt-fade-in 0.3s ease-out;
+}
+@keyframes pt-fade-out {
+  to { opacity: 0; transform: scale(0.98); }
+}
+@keyframes pt-fade-in {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* GSAP fallback curtain */
+.page-curtain {
+  position: fixed; inset: 0; z-index: 9998;
+  background: var(--bg, #fff);
+  pointer-events: none;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0s !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   FEATURE 3: CUSTOM CURSOR (Premium Modern)
+   ═══════════════════════════════════════════════════════ */
+.custom-cursor {
+  position: fixed; pointer-events: none; z-index: 99999;
+  top: 0; left: 0;
+  transition: opacity 0.2s ease;
+}
+.custom-cursor--hidden { opacity: 0; }
+
+.custom-cursor__dot {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: var(--accent, #0066FF);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
+}
+.custom-cursor__ring {
+  position: absolute;
+  width: 28px; height: 28px;
+  border: 1.5px solid var(--accent, #0066FF);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s ease, height 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+/* Interactive element hover → ring grows */
+.custom-cursor--interact .custom-cursor__dot {
+  width: 10px; height: 10px;
+  background: var(--accent-hover, #0052CC);
+}
+.custom-cursor--interact .custom-cursor__ring {
+  width: 44px; height: 44px;
+  border-color: var(--accent-hover, #0052CC);
+  opacity: 0.5;
+}
+
+/* Hide default cursor on relevant elements */
+body.custom-cursor-active a,
+body.custom-cursor-active button,
+body.custom-cursor-active .btn,
+body.custom-cursor-active input[type="submit"] {
+  cursor: none;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FEATURE 6: FORM MICRO-INTERACTIONS
+   ═══════════════════════════════════════════════════════ */
+.input-field {
+  position: relative;
+}
+.input-field__input {
+  width: 100%; padding: 1.25rem 1rem 0.5rem;
+  border: 1.5px solid var(--border-default, #E2E8F0);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface, #fff);
+  font-size: var(--text-base, 1rem);
+  color: var(--text-primary, #0F172A);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+.input-field__input:focus {
+  border-color: var(--accent, #0066FF);
+  box-shadow: 0 0 0 3px var(--accent-light, #EFF4FF);
+}
+.input-field__label {
+  position: absolute; left: 1rem; top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--text-base, 1rem);
+  color: var(--text-tertiary, #94A3B8);
+  pointer-events: none;
+  transition: all 0.2s ease;
+  background: var(--surface, #fff);
+  padding: 0 0.25rem;
+}
+.input-field__input:focus + .input-field__label,
+.input-field__input:not(:placeholder-shown) + .input-field__label {
+  top: 0.5rem; font-size: var(--text-xs, 0.75rem);
+  color: var(--accent, #0066FF);
+  transform: translateY(0);
+}
+.input-field__input.has-value + .input-field__label {
+  top: 0.5rem; font-size: var(--text-xs, 0.75rem);
+  transform: translateY(0);
+}
+
+/* Skeleton loaders (enhanced) */
+.skeleton--enhanced {
+  position: relative; overflow: hidden;
+  background: var(--bg-tertiary, #F1F5F9);
+  border-radius: var(--radius-md, 8px);
+}
+.skeleton--enhanced::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+.skeleton--text { height: 1rem; margin-bottom: 0.5rem; width: 80%; }
+.skeleton--title { height: 1.5rem; margin-bottom: 0.75rem; width: 60%; }
+.skeleton--avatar { width: 48px; height: 48px; border-radius: 50%; }
+.skeleton--card { height: 200px; border-radius: var(--radius-xl, 16px); }
+.skeleton--button { height: 2.5rem; width: 120px; border-radius: var(--radius-lg, 12px); }
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   FEATURE 4: CANVAS PARTICLE BACKGROUND
+   ═══════════════════════════════════════════════════════ */
+.particle-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
 @media (prefers-reduced-motion: reduce) {
   .mesh-bg,
   .particle,

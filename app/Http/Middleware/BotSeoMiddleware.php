@@ -20,6 +20,15 @@ class BotSeoMiddleware
         'TelegramBot',
         'Discordbot',
         'ia_archiver',
+        'Googlebot',
+        'Bingbot',
+        'Applebot',
+        'Slurp',
+        'MetaInspector',
+        'curl',
+        'wget',
+        'python-requests',
+        'SemrushBot',
     ];
 
     public function handle(Request $request, Closure $next)
@@ -41,7 +50,7 @@ class BotSeoMiddleware
         // Serve a clean, instant OG page to the bot — no sessions, no auth, no JS
         $appUrl   = config('app.url', 'https://spatialsync.onrender.com');
         $imageUrl = $appUrl . '/images/og-meta.png';
-        $pageUrl  = $appUrl . '/';
+        $pageUrl  = $request->url();
 
         $html = <<<HTML
 <!DOCTYPE html>
@@ -58,6 +67,8 @@ class BotSeoMiddleware
     <meta property="og:description"       content="Design, iterate, and collaborate on premium 3D blueprints in real-time. Built for the next generation of architects.">
     <meta property="og:image"             content="{$imageUrl}">
     <meta property="og:image:secure_url"  content="{$imageUrl}">
+    <meta property="og:image:type"        content="image/png">
+    <meta property="og:image:alt"         content="SpatialSync — Collaborative 3D architecture and design platform">
     <meta property="og:image:width"       content="1200">
     <meta property="og:image:height"      content="630">
     <meta property="og:locale"            content="en_US">

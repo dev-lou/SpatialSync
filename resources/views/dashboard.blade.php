@@ -68,7 +68,12 @@
     margin-bottom: var(--space-10);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 1023px) {
+    .kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (min-width: 1024px) {
     .kpi-grid {
         grid-template-columns: repeat(5, 1fr);
     }

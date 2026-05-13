@@ -273,15 +273,15 @@
 
     @if(!isset($build->user_role) || $build->user_role === 'owner')
     <div class="build-options">
-        <button class="build-options__btn" onclick="toggleBuildOptions(this, event)">
+        <button class="build-options__btn" x-on:click="toggleBuildOptions($el, event)">
             <i data-lucide="more-horizontal" class="w-4 h-4"></i>
         </button>
         <div class="build-options__dropdown">
-            <button class="build-options__item" onclick="editBuild('{{ $build->id }}', '{{ addslashes($build->name) }}', '{{ addslashes($build->description ?? '') }}')">
+            <button class="build-options__item" x-on:click="editBuild('{{ $build->id }}', '{{ addslashes($build->name) }}', '{{ addslashes($build->description ?? '') }}')">
                 <i data-lucide="edit-2" class="w-4 h-4"></i>
                 Edit Details
             </button>
-            <button class="build-options__item build-options__item--danger" onclick="deleteBuild('{{ $build->id }}', '{{ addslashes($build->name) }}')">
+            <button class="build-options__item build-options__item--danger" x-on:click="deleteBuild('{{ $build->id }}', '{{ addslashes($build->name) }}')">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                 Delete Build
             </button>

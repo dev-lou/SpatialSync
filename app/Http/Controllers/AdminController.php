@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\SupabaseClient;
 use App\Services\SupabaseUserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 
 class AdminController extends Controller
 {
@@ -111,8 +112,8 @@ class AdminController extends Controller
 
         $userId = session('supabase_user_id');
         
-        // Save to Supabase using biometric_data column
-        $success = $this->supabase->update('users', ['biometric_data' => $request->descriptor], ['id' => $userId]);
+        // Save to Supabase using biometric_data column (AES-256 encrypted at rest)
+        $success = $this->supabase->update('users', ['biometric_data' => Crypt::encryptString(json_encode($request->descriptor))], ['id' => $userId]);
 
         if ($success) {
             return response()->json(['message' => 'Face fingerprint saved successfully.']);

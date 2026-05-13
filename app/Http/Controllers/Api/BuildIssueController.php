@@ -78,10 +78,10 @@ class BuildIssueController extends Controller
         });
 
         // Get user names for each issue
-        $userIds = array_unique(array_filter(array_column($issues, 'created_by')));
+        $userIds = array_values(array_unique(array_filter(array_column($issues, 'created_by'))));
         $users = [];
         if (!empty($userIds)) {
-            $userData = $this->supabase->select('users', ['id', 'name'], []);
+            $userData = $this->supabase->select('users', ['id', 'name'], ['id' => $userIds]);
             $users = collect($userData)->keyBy('id')->toArray();
         }
 

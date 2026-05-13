@@ -45,19 +45,61 @@
         .swal-global-body { font-size: 0.95rem !important; line-height: 1.6 !important; }
     </style>
 
+    <style>
+        @media (max-width: 768px) {
+            .os-mobile-trigger { display: flex !important; }
+            .os-mobile-toggle { display: flex !important; }
+            .os-breadcrumb-prefix,
+            .os-breadcrumb-prefix + span { display: none !important; }
+            .os-breadcrumb-section { display: none !important; }
+            .os-breadcrumb-section + span { display: none !important; }
+        }
+    </style>
     @stack('styles')
 </head>
-<body x-data="{ searchOpen: false }" @open-search.window="searchOpen=true">
+<body x-data="{ searchOpen: false, mobNavOpen: false, theme: localStorage.getItem('admin-theme') || 'light' }" @open-search.window="searchOpen=true" :class="theme" x-init="$watch('theme', val => { document.documentElement.classList.toggle('dark', val === 'dark'); localStorage.setItem('admin-theme', val); })">
 
     {{-- SIDEBAR --}}
     <x-admin.sidebar />
 
+    {{-- MOBILE NAV TOGGLE --}}
+    <button class="os-mobile-toggle" @click="mobNavOpen = !mobNavOpen" aria-label="Toggle navigation" style="display:none;position:fixed;bottom:16px;left:16px;z-index:999;width:48px;height:48px;border-radius:50%;background:var(--c-accent);color:#fff;border:none;box-shadow:0 4px 16px rgba(0,102,255,0.3);cursor:pointer;align-items:center;justify-content:center;">
+        <i data-lucide="menu" style="width:20px;height:20px;"></i>
+    </button>
+
+    {{-- MOBILE NAV DRAWER --}}
+    <div x-show="mobNavOpen" x-cloak @click.self="mobNavOpen=false" @keydown.escape.window="mobNavOpen=false" style="position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,0.4);" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+        <div style="position:absolute;top:0;left:0;bottom:0;width:min(85vw,300px);background:var(--c-surface);padding:24px 16px;box-shadow:4px 0 24px rgba(0,0,0,0.1);overflow-y:auto;" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--c-border);">
+                <span style="font-size:15px;font-weight:700;color:var(--c-text);">Admin OS</span>
+                <button @click="mobNavOpen=false" style="width:32px;height:32px;display:grid;place-items:center;border:none;background:var(--c-bg);border-radius:8px;cursor:pointer;color:var(--c-muted);">
+                    <i data-lucide="x" style="width:16px;height:16px;"></i>
+                </button>
+            </div>
+            @foreach([
+                ['icon'=>'layout-dashboard', 'label'=>'Mission Control',  'route'=>'admin.dashboard'],
+                ['icon'=>'users',             'label'=>'Users & Tiers',    'route'=>'admin.users'],
+                ['icon'=>'layers',            'label'=>'All Builds',       'route'=>'admin.builds'],
+                ['icon'=>'package',           'label'=>'Asset Library',    'route'=>'admin.presets'],
+                ['icon'=>'shield-check',      'label'=>'Biometric Auth',   'route'=>'admin.security'],
+            ] as $item)
+            <a href="{{ route($item['route']) }}" @click="mobNavOpen=false" style="display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:10px;text-decoration:none;color:var(--c-text);font-size:14px;font-weight:500;margin-bottom:4px;transition:background .15s;" @mouseenter="$el.style.background='var(--c-bg)'" @mouseleave="$el.style.background=''">
+                <i data-lucide="{{ $item['icon'] }}" style="width:16px;height:16px;color:var(--c-muted);flex-shrink:0;"></i>
+                {{ $item['label'] }}
+            </a>
+            @endforeach
+        </div>
+    </div>
+
     {{-- TOP BAR --}}
     <header class="os-topbar">
         <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:13px;color:var(--c-muted);">SpatialSync</span>
+            <button class="os-mobile-trigger" @click="mobNavOpen = true" aria-label="Open navigation" style="display:none;width:32px;height:32px;border:none;background:var(--c-bg);border-radius:8px;cursor:pointer;color:var(--c-muted);align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="menu" style="width:16px;height:16px;"></i>
+            </button>
+            <span class="os-breadcrumb-prefix" style="font-size:13px;color:var(--c-muted);">SpatialSync</span>
             <span style="color:var(--c-border);font-size:13px;">/</span>
-            <span style="font-size:13px;color:var(--c-muted);">Admin OS</span>
+            <span class="os-breadcrumb-section" style="font-size:13px;color:var(--c-muted);">Admin OS</span>
             <span style="color:var(--c-border);font-size:13px;">/</span>
             <span style="font-size:13px;font-weight:600;color:var(--c-text);">@yield('title', 'Overview')</span>
         </div>
@@ -74,7 +116,7 @@
             </button>
 
             {{-- Theme toggle --}}
-            <button class="os-icon-btn" title="Theme" onclick="document.documentElement.classList.toggle('dark')">
+            <button class="os-icon-btn" title="Theme" @click="theme = theme === 'dark' ? 'light' : 'dark'">
                 <i data-lucide="sun" style="width:14px;height:14px;"></i>
             </button>
 
@@ -143,7 +185,7 @@
                     display:flex;align-items:center;gap:10px;padding:9px 10px;
                     border-radius:8px;text-decoration:none;color:var(--c-text);
                     font-size:13.5px;font-weight:500;transition:background .1s;
-                " onmouseover="this.style.background='var(--c-bg)'" onmouseout="this.style.background=''">
+                " @mouseenter="$el.style.background='var(--c-bg)'" @mouseleave="$el.style.background=''">
                     <i data-lucide="{{ $item['icon'] }}" style="width:15px;height:15px;color:var(--c-muted);flex-shrink:0;"></i>
                     {{ $item['label'] }}
                     <span style="margin-left:auto;font-size:10px;font-weight:700;color:var(--c-muted);background:var(--c-bg);border:1px solid var(--c-border);padding:1px 6px;border-radius:4px;">{{ $item['type'] }}</span>

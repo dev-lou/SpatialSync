@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 
 class ProfileController extends Controller
 {
@@ -128,8 +129,8 @@ class ProfileController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // Save to Supabase using biometric_data column
-        $success = $supabaseClient->update('users', ['biometric_data' => json_encode($request->descriptor)], ['id' => $userId]);
+        // Save to Supabase using biometric_data column (AES-256 encrypted at rest)
+        $success = $supabaseClient->update('users', ['biometric_data' => Crypt::encryptString(json_encode($request->descriptor))], ['id' => $userId]);
 
         if ($success) {
             // Update session so UI knows it's setup

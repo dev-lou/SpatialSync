@@ -1132,6 +1132,7 @@
 @media (max-width: 768px) {
   .navbar__nav { display: none; }
   .navbar__mobile-toggle { display: flex; }
+  .navbar__actions > *:not(.navbar__mobile-toggle) { display: none !important; }
 }
 
 /* ==========================================================

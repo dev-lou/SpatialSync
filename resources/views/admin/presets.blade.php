@@ -4,7 +4,7 @@
 
 @section('actions')
 <button class="os-btn os-btn-primary os-btn-sm"
-    onclick="Swal.fire('Ingest Asset','Asset ingestion panel is in development.','info')">
+    x-on:click="Swal.fire('Ingest Asset','Asset ingestion panel is in development.','info')">
     <i data-lucide="plus" style="width:13px;height:13px;"></i>
     Ingest Asset
 </button>
@@ -21,7 +21,7 @@
     @foreach($categories as $cat)
     <button class="os-tab {{ $loop->first ? 'active' : '' }}"
             data-cat="{{ $cat }}"
-            onclick="filterAssets(this,'{{ $cat }}')">
+            x-on:click="filterAssets($el,'{{ $cat }}')">
         {{ $cat === 'all' ? 'All Assets' : ucfirst($cat) }}
     </button>
     @endforeach
@@ -71,7 +71,7 @@
             {{-- Toggle top-right --}}
             <label class="os-toggle-wrap" style="position:absolute;top:8px;right:8px;z-index:2;">
                 <input type="checkbox" class="os-toggle-input" {{ !empty($preset->is_active) ? 'checked' : '' }}
-                       onchange="toggleAsset('{{ $preset->id ?? '' }}', this.checked)">
+                       x-on:change="toggleAsset('{{ $preset->id ?? '' }}', $el.checked)">
                 <div class="os-toggle-track"></div>
             </label>
         </div>
@@ -96,7 +96,7 @@
             {{-- Actions --}}
             <div style="display:flex;gap:6px;margin-top:auto;">
                 <button class="os-btn os-btn-secondary os-btn-sm" style="flex:1;"
-                        onclick="editAsset('{{ $preset->id ?? '' }}','{{ addslashes($preset->name) }}')">
+                        x-on:click="editAsset('{{ $preset->id ?? '' }}','{{ addslashes($preset->name) }}')">
                     <i data-lucide="edit-3" style="width:11px;height:11px;"></i>
                     Edit Specs
                 </button>

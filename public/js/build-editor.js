@@ -2,7 +2,7 @@
 // Bloxburg 2026 Build Mode - Full Feature Set
 // UPDATED: 2026-04-09
 
-const DEBUG_MODE = true;
+const DEBUG_MODE = typeof window !== 'undefined' && window.DEBUG_MODE === true;
 
 class BuildEditor {
     constructor(container, buildId, csrfToken) {
@@ -540,8 +540,8 @@ class BuildEditor {
         this.rebuildGrid();
         
         // OrbitControls
-        if (typeof THREE.OrbitControls !== 'undefined') {
-            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        if (typeof OrbitControls !== 'undefined') {
+            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
             this.controls.enableDamping = true;
             this.controls.dampingFactor = 0.05;
             this.controls.minDistance = 5;
@@ -3054,7 +3054,7 @@ class BuildEditor {
         };
         
         this.scene.add(mesh);
-        this.parts.set(tempId, mesh);
+        this.parts.set(tempId, { mesh, data: mesh.userData });
         
         this.saveUndoState('create', { parts: [{ id: tempId, data: mesh.userData, position: mesh.position.clone(), rotation: mesh.rotation.clone() }] });
         this.createPartOnServer(mesh, tempId);
@@ -4014,10 +4014,16 @@ class BuildEditor {
             }
             this.starField.visible = true;
 
-            // Scenery goes dark
+            // Scenery goes dark (save originals first time)
             if (this.sceneryObjects) {
-                this.sceneryObjects.forEach(obj => {
-                    if (obj.material) obj.material.color.multiplyScalar(0.25);
+                if (!this._sceneryColorStore) this._sceneryColorStore = [];
+                this.sceneryObjects.forEach((obj, idx) => {
+                    if (obj.material && obj.material.color) {
+                        if (!this._sceneryColorStore[idx]) {
+                            this._sceneryColorStore[idx] = obj.material.color.getHex();
+                        }
+                        obj.material.color.setHex(0x222233);
+                    }
                 });
             }
 
@@ -4064,10 +4070,12 @@ class BuildEditor {
             if (this.lampLight) { this.scene.remove(this.lampLight); this.lampLight = null; }
             if (this.starField) { this.starField.visible = false; }
 
-            // Restore scenery colors
-            if (this.sceneryObjects) {
-                this.sceneryObjects.forEach(obj => {
-                    if (obj.material) obj.material.color.multiplyScalar(4.0); // reverse the 0.25
+            // Restore scenery colors from saved originals
+            if (this.sceneryObjects && this._sceneryColorStore) {
+                this.sceneryObjects.forEach((obj, idx) => {
+                    if (obj.material && obj.material.color && this._sceneryColorStore[idx]) {
+                        obj.material.color.setHex(this._sceneryColorStore[idx]);
+                    }
                 });
             }
 
@@ -4628,13 +4636,6 @@ class BuildEditor {
         }
         
         this.renderer.render(this.scene, this.camera);
-        
-        if (!this.frameCount) this.frameCount = 0;
-        this.frameCount++;
-        if (this.frameCount >= 10) {
-            this.updateMinimap();
-            this.frameCount = 0;
-        }
     }
     
     // ============ ISSUE PINS SYSTEM ============

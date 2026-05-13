@@ -283,7 +283,7 @@
                             <form action="{{ route('profile.avatar') }}" method="POST" enctype="multipart/form-data" id="avatarForm">
                                 @csrf
                                 <div class="avatar-upload">
-                                    <div class="avatar-preview" onclick="document.getElementById('avatarInput').click()">
+                                    <div class="avatar-preview" x-on:click="document.getElementById('avatarInput').click()">
                                         @if($user->avatar_url)
                                             <img src="{{ $user->avatar_url }}" alt="Profile Avatar">
                                         @else
@@ -299,7 +299,7 @@
                                     <div class="avatar-upload__actions">
                                         <h3 class="text-sm font-bold">Profile Picture</h3>
                                         <p class="text-xs text-tertiary">JPG, PNG or GIF. Max size 5MB.</p>
-                                        <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden" onchange="document.getElementById('avatarForm').submit()">
+                                        <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden" x-on:change="document.getElementById('avatarForm').submit()">
                                     </div>
                                 </div>
                             </form>
@@ -343,7 +343,7 @@
                                 <h4 class="font-bold text-sm">Delete Account</h4>
                                 <p class="text-xs text-tertiary">Once your account is deleted, all of its resources and data will be permanently deleted.</p>
                             </div>
-                            <button class="btn btn--danger btn--sm" onclick="confirmDelete()">
+                            <button class="btn btn--danger btn--sm" x-on:click="confirmDelete()">
                                 Delete Account
                             </button>
                         </div>
@@ -371,7 +371,7 @@
                                 </div>
                                 <div style="flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                                     <template x-if="!faceIdSetup">
-                                        <button type="button" class="btn btn--secondary btn--sm" onclick="window.dispatchEvent(new CustomEvent('open-scanner'))">
+                                        <button type="button" class="btn btn--secondary btn--sm" x-on:click="window.dispatchEvent(new CustomEvent('open-scanner'))">
                                             Setup Face ID
                                         </button>
                                     </template>
@@ -381,10 +381,12 @@
                                                 <i data-lucide="check-circle" class="w-3 h-3"></i> Face ID Enabled
                                             </div>
                                              <div style="display: flex; align-items: center; gap: 8px;">
-                                                <button type="button" class="btn btn--secondary btn--sm" onclick="window.dispatchEvent(new CustomEvent('open-scanner'))">
+                                        <button type="button" class="btn btn--secondary btn--sm" x-on:click="window.dispatchEvent(new CustomEvent('open-scanner'))">
+
+                                
                                                     <i data-lucide="refresh-cw" class="w-3 h-3"></i> Rescan
                                                 </button>
-                                                <button type="button" class="btn btn--sm" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="window.dispatchEvent(new CustomEvent('remove-biometrics'))">
+                                                <button type="button" class="btn btn--sm" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);" x-on:click="window.dispatchEvent(new CustomEvent('remove-biometrics'))">
                                                     <i data-lucide="trash-2" class="w-3 h-3"></i> Remove
                                                 </button>
                                              </div>
@@ -547,8 +549,8 @@
 <!-- Global Biometric Identity Scanner for Setup -->
 <div x-data="faceEnrollment" @open-scanner.window="openScanner()" @remove-biometrics.window="removeBiometrics()">
     <template x-teleport="body">
-        <div x-show="scannerOpen" 
-             style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: rgba(0, 0, 0, 0.85) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; display: flex; align-items: center; justify-content: center;"
+         <div x-show="scannerOpen" 
+             style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: rgba(0, 0, 0, 0.85) !important; display: flex; align-items: center; justify-content: center;"
              x-transition:enter="transition ease-out duration-400"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
@@ -614,7 +616,7 @@
                         </div>
                         <h4 style="font-weight: 950; font-size: 2rem; margin: 0; color: #1e293b;">SCAN FAILED</h4>
                         <p style="font-size: 1rem; color: #ef4444; margin-top: 0.5rem; font-weight: 600;" x-text="errorMessage"></p>
-                        <button type="button" @click="retryScan()" style="margin-top: 2rem; background: #ef4444; color: #fff; border: none; padding: 12px 24px; border-radius: 99px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">Try Again</button>
+                        <button type="button" @click="retryScan()" style="margin-top: 2rem; background: #ef4444; color: #fff; border: none; padding: 12px 24px; border-radius: 99px; font-weight: 700; cursor: pointer; transition: all 0.2s;" @mouseenter="$el.style.background='#dc2626'" @mouseleave="$el.style.background='#ef4444'">Try Again</button>
                     </div>
                 </div>
 
@@ -697,7 +699,7 @@
 
             async loadModels() {
                 if (this.modelsLoaded) return;
-                const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+                const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -707,22 +709,30 @@
             },
 
             async startCamera() {
-                this.$nextTick(async () => {
+                await this.$nextTick();
+                await this.$nextTick();
+                await new Promise(r => setTimeout(r, 100));
+
+                this.video = document.getElementById('enroll-video');
+                if (!this.video) {
+                    await new Promise(r => setTimeout(r, 300));
                     this.video = document.getElementById('enroll-video');
-                    if (!this.video) {
-                        setTimeout(() => this.startCamera(), 100);
-                        return;
-                    }
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        this.video.srcObject = stream;
-                        await this.video.play();
-                        this.detectionActive = true;
-                        this.startDetection();
-                    } catch (err) {
-                        this.errorMessage = 'Face recognition requires camera access.';
-                    }
-                });
+                }
+
+                if (!this.video) {
+                    this.errorMessage = 'Could not find camera element. Please try again.';
+                    return;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    this.video.srcObject = stream;
+                    await this.video.play();
+                    this.detectionActive = true;
+                    this.startDetection();
+                } catch (err) {
+                    this.errorMessage = 'Face recognition requires camera access.';
+                }
             },
 
             startDetection() {

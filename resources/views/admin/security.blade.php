@@ -111,7 +111,7 @@
             <div style="padding:28px;">
                 {{-- Drop zone --}}
                 <div id="enroll-zone"
-                     onclick="startEnroll()"
+                     x-on:click="startEnroll()"
                      style="
                         border:2px dashed var(--c-border-2);
                         border-radius:var(--r-xl);
@@ -121,8 +121,8 @@
                         background:var(--c-bg);
                         transition:all .2s;
                      "
-                     onmouseenter="this.style.borderColor='var(--c-accent)';this.style.background='var(--c-accent-bg)';"
-                     onmouseleave="this.style.borderColor='var(--c-border-2)';this.style.background='var(--c-bg)';">
+                     x-on:mouseenter="$el.style.borderColor='var(--c-accent)';$el.style.background='var(--c-accent-bg)'"
+                     x-on:mouseleave="$el.style.borderColor='var(--c-border-2)';$el.style.background='var(--c-bg)'">
                     <div style="
                         width:56px;height:56px;border-radius:var(--r-xl);
                         background:white;border:1px solid var(--c-border);
@@ -147,10 +147,10 @@
 
             <div style="padding:14px 20px;background:var(--c-bg);border-top:1px solid var(--c-border);border-radius:0 0 var(--r-xl) var(--r-xl);display:flex;justify-content:flex-end;gap:8px;">
                 <button class="os-btn os-btn-secondary os-btn-sm"
-                    onclick="Swal.fire({title:'Reset Vault',text:'This will delete all biometric data. Contact your system administrator.',icon:'warning'})">
+                    x-on:click="Swal.fire({title:'Reset Vault',text:'This will delete all biometric data. Contact your system administrator.',icon:'warning'})">
                     Reset Vault
                 </button>
-                <button class="os-btn os-btn-primary os-btn-sm" onclick="startEnroll()">
+                <button class="os-btn os-btn-primary os-btn-sm" x-on:click="startEnroll()">
                     <i data-lucide="shield" style="width:13px;height:13px;"></i>
                     Update Security Vault
                 </button>

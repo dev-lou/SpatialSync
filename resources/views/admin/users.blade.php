@@ -4,7 +4,7 @@
 
 @section('actions')
 <button class="os-btn os-btn-primary os-btn-sm"
-    onclick="Swal.fire('Provision','User provisioning panel coming soon.','info')">
+    @click="Swal.fire('Provision','User provisioning panel coming soon.','info')">
     <i data-lucide="user-plus" style="width:13px;height:13px;"></i>
     Provision Member
 </button>
@@ -22,7 +22,7 @@
                 <input type="text" class="os-input" id="u-search"
                     placeholder="Search by name or email…"
                     style="width:260px;"
-                    oninput="filterUsers(this.value)">
+                    x-on:input="filterUsers($el.value)">
             </div>
         </div>
         <div class="os-toolbar-right">
@@ -87,13 +87,21 @@
                         <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;">
                             <button class="os-btn os-btn-secondary os-btn-icon os-btn-sm"
                                     title="Edit permissions"
-                                    onclick="Swal.fire('Permissions','Role management coming soon.','info')">
+                                    x-on:click="Swal.fire('Permissions','Role management coming soon.','info')">
                                 <i data-lucide="shield-check" style="width:13px;height:13px;"></i>
                             </button>
-                            <form action="{{ route('admin.users.delete', $user->id) }}" method="POST">
+                            <form action="{{ route('admin.users.delete', $user->id) }}" method="POST"
+                                  x-data x-on:submit.prevent="
+                                    Swal.fire({
+                                        title: 'Remove Access?',
+                                        text: 'Remove {{ addslashes($user->name) }}\'s access?',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Yes, remove'
+                                    }).then(r => r.isConfirmed && $el.submit())
+                                  ">
                                 @csrf @method('DELETE')
-                                <button type="button" class="os-btn os-btn-danger os-btn-icon os-btn-sm" title="Revoke access"
-                                    onclick="confirmDelete(this.closest('form'),'Remove {{ addslashes($user->name) }}\'s access?')">
+                                <button type="submit" class="os-btn os-btn-danger os-btn-icon os-btn-sm" title="Revoke access">
                                     <i data-lucide="user-minus" style="width:13px;height:13px;"></i>
                                 </button>
                             </form>

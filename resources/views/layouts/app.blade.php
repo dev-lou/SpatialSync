@@ -23,6 +23,8 @@
     <meta property="og:description" content="@yield('description', 'Design, iterate, and collaborate on premium 3D blueprints in real-time. Built for the next generation of architects.')">
     <meta property="og:image" content="{{ url('/images/og-meta.png') }}">
     <meta property="og:image:secure_url" content="{{ url('/images/og-meta.png') }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="SpatialSync — Collaborative 3D architecture and design platform">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:locale" content="en_US">
@@ -35,6 +37,7 @@
     <meta property="twitter:image" content="{{ url('/images/og-meta.png') }}">
 
 
+    <link rel="canonical" href="{{ url()->current() }}">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230066FF'/><path d='M50 20 L80 38 L80 62 L50 80 L20 62 L20 38 Z' fill='none' stroke='white' stroke-width='5'/><path d='M50 20 L50 80 M20 38 L80 62 M80 38 L20 62' stroke='white' stroke-width='3' opacity='0.5'/></svg>">
 
     <!-- Fonts -->
@@ -312,6 +315,114 @@
             card.addEventListener('mouseleave', function() {
                 card.style.setProperty('--tilt-x', '0deg');
                 card.style.setProperty('--tilt-y', '0deg');
+            });
+        });
+    });
+    </script>
+
+    <!-- ═══ FEATURE 2: PAGE TRANSITIONS ═══ -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!document.startViewTransition) {
+            var curtain = document.createElement('div');
+            curtain.className = 'page-curtain';
+            document.body.appendChild(curtain);
+            var links = document.querySelectorAll('a:not([target="_blank"]):not([href^="#"]):not([href^="mailto:"]):not([href^="tel:"]):not([download]):not(.mobile-drawer a):not([x-data] a)');
+            links.forEach(function(link) {
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('http') || href.startsWith('//')) return;
+                link.addEventListener('click', function(e) {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                    e.preventDefault();
+                    var target = href;
+                    gsap.to(curtain, { opacity: 1, duration: 0.2, ease: 'power2.in', onComplete: function() {
+                        window.location.href = target;
+                    }});
+                });
+            });
+            window.addEventListener('pageshow', function() {
+                gsap.to(curtain, { opacity: 0, duration: 0.3, ease: 'power2.out' });
+            });
+        } else {
+            document.addEventListener('click', function(e) {
+                var link = e.target.closest('a:not([target="_blank"]):not([href^="#"]):not([href^="mailto:"]):not([href^="tel:"]):not([download])');
+                if (!link) return;
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('http') || href.startsWith('//') || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                e.preventDefault();
+                document.startViewTransition(function() {
+                    window.location.href = href;
+                });
+            });
+        }
+    });
+    </script>
+
+    <!-- ═══ FEATURE 3: CUSTOM CURSOR ═══ -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (isTouchDevice || prefersReduced) return;
+
+        var body = document.body;
+        body.classList.add('custom-cursor-active');
+
+        var cursor = document.createElement('div');
+        cursor.className = 'custom-cursor';
+        cursor.innerHTML = '<div class="custom-cursor__dot"></div><div class="custom-cursor__ring"></div>';
+        document.body.appendChild(cursor);
+
+        var dot = cursor.querySelector('.custom-cursor__dot');
+        var ring = cursor.querySelector('.custom-cursor__ring');
+        var mouseX = 0, mouseY = 0;
+        var ringX = 0, ringY = 0;
+        var isHidden = false;
+
+        document.addEventListener('mousemove', function(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            dot.style.transform = 'translate(' + mouseX + 'px, ' + mouseY + 'px) translate(-50%, -50%)';
+            cursor.classList.remove('custom-cursor--hidden');
+            isHidden = false;
+
+            var target = e.target.closest('a, button, .btn, input, select, textarea, [role="button"]');
+            cursor.classList.toggle('custom-cursor--interact', !!target);
+        });
+
+        document.addEventListener('mouseleave', function() {
+            cursor.classList.add('custom-cursor--hidden');
+            isHidden = true;
+        });
+
+        document.addEventListener('mouseenter', function() {
+            cursor.classList.remove('custom-cursor--hidden');
+            isHidden = false;
+        });
+
+        function animateRing() {
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+            ring.style.transform = 'translate(' + ringX + 'px, ' + ringY + 'px) translate(-50%, -50%)';
+            if (!isHidden) requestAnimationFrame(animateRing);
+        }
+        animateRing();
+    });
+    </script>
+
+    <!-- ═══ FEATURE 6: FORM MICRO-INTERACTIONS ═══ -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.input-field__input').forEach(function(input) {
+            if (input.value) input.classList.add('has-value');
+            input.addEventListener('input', function() {
+                input.classList.toggle('has-value', !!input.value);
+            });
+            input.addEventListener('focus', function() {
+                input.closest('.input-field')?.classList.add('input-field--focused');
+            });
+            input.addEventListener('blur', function() {
+                input.closest('.input-field')?.classList.remove('input-field--focused');
             });
         });
     });

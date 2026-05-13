@@ -981,6 +981,56 @@
                 width: 100%;
                 left: -100%;
             }
+            .editor-topbar {
+                grid-template-columns: 1fr auto auto !important;
+                gap: 6px !important;
+                padding: 0 8px !important;
+            }
+            .editor-topbar__left {
+                min-width: 0 !important;
+            }
+            .editor-topbar__title {
+                display: none !important;
+            }
+            .editor-topbar__center .navbar-shortcuts,
+            .editor-topbar__center .nav-shortcut-divider,
+            .editor-topbar__right .export-dropdown,
+            .editor-topbar__right .editor-topbar__divider {
+                display: none !important;
+            }
+            .floor-btn--arrow {
+                width: 28px !important;
+                height: 24px !important;
+            }
+            .floor-display {
+                font-size: 11px !important;
+            }
+            .properties-panel {
+                width: 100% !important;
+                right: 0 !important;
+                left: 0 !important;
+                top: auto !important;
+                bottom: 0 !important;
+                max-height: 50vh !important;
+                border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+                z-index: 1100 !important;
+            }
+            .keyboard-hint {
+                display: none !important;
+            }
+            .editor-tab span {
+                display: none !important;
+            }
+            .editor-tab {
+                padding: 8px !important;
+            }
+            .editor-bottom {
+                min-height: auto !important;
+            }
+            .editor-parts {
+                padding: 8px !important;
+                min-height: 64px !important;
+            }
         }
 
         /* ── Dropdown Divider ── */

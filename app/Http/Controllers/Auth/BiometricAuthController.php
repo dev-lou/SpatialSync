@@ -7,7 +7,9 @@ use App\Services\SupabaseClient;
 use App\Services\SupabaseUserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class BiometricAuthController extends Controller
 {
@@ -42,7 +44,32 @@ class BiometricAuthController extends Controller
         foreach ($allUsers as $userData) {
             if (empty($userData['biometric_data'])) continue;
 
-            $storedDescriptor = $userData['biometric_data'];
+            $rawData = $userData['biometric_data'];
+            $storedDescriptor = null;
+
+            // Handle 3 possible storage formats:
+            // 1. Encrypted string (new format via Crypt::encryptString)
+            if (is_string($rawData) && str_starts_with($rawData, 'ey')) {
+                try {
+                    $decrypted = Crypt::decryptString($rawData);
+                    $storedDescriptor = json_decode($decrypted, true);
+                } catch (DecryptException $e) {
+                    // Not encrypted data — fall through
+                }
+            }
+
+            // 2. JSON-encoded string (old ProfileController format)
+            if ($storedDescriptor === null && is_string($rawData)) {
+                $storedDescriptor = json_decode($rawData, true);
+            }
+
+            // 3. Native array (old AdminController format)
+            if ($storedDescriptor === null && is_array($rawData)) {
+                $storedDescriptor = $rawData;
+            }
+
+            if (!is_array($storedDescriptor) || empty($storedDescriptor)) continue;
+
             $distance = $this->calculateEuclideanDistance($liveDescriptor, $storedDescriptor);
 
             if ($distance < $threshold && $distance < $minDistance) {
@@ -60,16 +87,15 @@ class BiometricAuthController extends Controller
                 'supabase_user_id' => $user->id,
                 'supabase_user_email' => $user->email,
                 'supabase_user_name' => $user->name,
+                'supabase_user_avatar' => $user->avatar_url ?? '',
                 'supabase_user_plan' => $user->plan ?? 'free',
                 'supabase_user_admin' => $user->is_admin ?? false,
             ]);
 
-            // NOTE: We do not use Auth::loginUsingId() as the project 
-            // uses a custom session-based authentication flow.
-
             return response()->json([
                 'success' => true,
                 'name' => $user->name,
+                'avatar_url' => $user->avatar_url ?? '',
                 'message' => 'Identity verified. Welcome back, ' . $user->name,
                 'redirect' => route('dashboard')
             ]);

@@ -186,6 +186,7 @@
         50% { opacity: 1; }
     }
 
+    @media (max-width: 768px) { .story-progress { right: 12px !important; } }
     [x-cloak] { display: none !important; }
 </style>
 @endpush
@@ -214,9 +215,10 @@
 
     <!-- The Frame — never moves, fills viewport below navbar -->
     <div class="scrolly-viewport">
-        <div class="scrolly-frame" id="scrolly-frame">
-            <div class="tier-3-bg" id="tier-3-bg"></div>
-            <canvas id="scrolly-canvas"></canvas>
+            <div class="scrolly-frame" id="scrolly-frame">
+                <div class="tier-3-bg" id="tier-3-bg"></div>
+                <canvas id="particle-canvas" class="particle-canvas"></canvas>
+                <canvas id="scrolly-canvas"></canvas>
 
             <div class="narrative-tier" id="tier-1">
                 <div class="narrative-tier__content narrative-tier__glass">
@@ -264,6 +266,99 @@
 
 @push('scripts')
 <script>
+(function() {
+    var c = document.getElementById('particle-canvas');
+    if (!c || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var ctx = c.getContext('2d');
+    var particles = [];
+    var mouse = { x: -9999, y: -9999 };
+    var frameId;
+
+    function resize() {
+        c.width = c.parentElement.clientWidth * devicePixelRatio;
+        c.height = c.parentElement.clientHeight * devicePixelRatio;
+        c.style.width = c.parentElement.clientWidth + 'px';
+        c.style.height = c.parentElement.clientHeight + 'px';
+    }
+
+    function init() {
+        resize();
+        var count = Math.min(80, Math.floor(c.width * c.height / 12000));
+        particles = [];
+        for (var i = 0; i < count; i++) {
+            particles.push({
+                x: Math.random() * c.width,
+                y: Math.random() * c.height,
+                vx: (Math.random() - 0.5) * 0.3,
+                vy: (Math.random() - 0.5) * 0.3,
+                r: Math.random() * 2 + 1,
+                o: Math.random() * 0.4 + 0.15
+            });
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, c.width, c.height);
+        for (var i = 0; i < particles.length; i++) {
+            var p = particles[i];
+            // Move
+            p.x += p.vx;
+            p.y += p.vy;
+            // Wrap around
+            if (p.x < 0) p.x = c.width;
+            if (p.x > c.width) p.x = 0;
+            if (p.y < 0) p.y = c.height;
+            if (p.y > c.height) p.y = 0;
+            // Draw particle
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 102, 255, ' + p.o + ')';
+            ctx.fill();
+            // Draw connections
+            for (var j = i + 1; j < particles.length; j++) {
+                var p2 = particles[j];
+                var dx = p.x - p2.x;
+                var dy = p.y - p2.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 120 * devicePixelRatio) {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = 'rgba(0, 102, 255, ' + (0.06 * (1 - dist / (120 * devicePixelRatio))) + ')';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+            // Mouse connection
+            var mdx = mouse.x * devicePixelRatio - p.x;
+            var mdy = mouse.y * devicePixelRatio - p.y;
+            var mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+            if (mdist < 200 * devicePixelRatio) {
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(mouse.x * devicePixelRatio, mouse.y * devicePixelRatio);
+                ctx.strokeStyle = 'rgba(0, 102, 255, ' + (0.12 * (1 - mdist / (200 * devicePixelRatio))) + ')';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+        }
+        frameId = requestAnimationFrame(draw);
+    }
+
+    document.addEventListener('mousemove', function(e) {
+        var rect = c.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    c.addEventListener('mouseleave', function() { mouse.x = -9999; mouse.y = -9999; });
+
+    init();
+    draw();
+    window.addEventListener('resize', function() { resize(); });
+})();
+</script>
+<script>
 function scrollytellingEngine() {
     return {
         ready: false,
@@ -289,37 +384,79 @@ function scrollytellingEngine() {
         currentNarrative: "Initializing system",
 
         async init() {
+            var isMobile = window.innerWidth <= 768;
+            var maxWait = isMobile ? 8000 : 12000;
             this.canvas = document.getElementById('scrolly-canvas');
             this.ctx = this.canvas.getContext('2d');
             const loads = [];
             let loadedCount = 0;
+            var totalToLoad = isMobile ? 170 : 340;
+            var step = isMobile ? 2 : 1;
+
+            // Fake progress so bar doesn't freeze on slow networks
+            var fakeProgress = 0;
+            var fakeTimer = setInterval(() => {
+                if (this.progress >= 95) { clearInterval(fakeTimer); return; }
+                fakeProgress = Math.min(95, fakeProgress + (isMobile ? 3 : 1.5));
+                if (fakeProgress > this.progress) this.progress = Math.round(fakeProgress);
+                var idx = Math.min(Math.floor((this.progress / 100) * this.narrativeMessages.length), this.narrativeMessages.length - 1);
+                this.currentNarrative = this.narrativeMessages[idx];
+            }, 200);
 
             const updateProgress = () => {
                 loadedCount++;
-                this.progress = Math.round((loadedCount / this.frameCount) * 100);
-                
-                // Narrative Rotation Logic
-                const msgIndex = Math.min(
-                    Math.floor((this.progress / 100) * this.narrativeMessages.length),
-                    this.narrativeMessages.length - 1
-                );
-                this.currentNarrative = this.narrativeMessages[msgIndex];
+                var real = Math.round((loadedCount / totalToLoad) * 100);
+                if (real > this.progress) this.progress = real;
+                if (real >= 95) clearInterval(fakeTimer);
+                var idx = Math.min(Math.floor((this.progress / 100) * this.narrativeMessages.length), this.narrativeMessages.length - 1);
+                this.currentNarrative = this.narrativeMessages[idx];
             };
 
-            for (let i = 0; i < 160; i++) {
+            // Load part1 (frames 0-159)
+            for (let i = 0; i < 160; i += step) {
                 const img = new Image();
                 img.src = `/img/sequence/frame_${i.toString().padStart(3,'0')}_delay-0.05s.webp`;
+                if (i > 20) img.loading = 'lazy';
                 loads.push(this._load(img).then(updateProgress));
-                this.images.push(img);
+                this.images[i] = img;
             }
-            for (let i = 0; i < 180; i++) {
+            // Load part2 (frames 160-339)
+            for (let i = 0; i < 180; i += step) {
                 const img = new Image();
                 img.src = `/img/sequence/part2/frame_${i.toString().padStart(3,'0')}_delay-0.05s.webp`;
+                img.loading = 'lazy';
                 loads.push(this._load(img).then(updateProgress));
-                this.images.push(img);
+                this.images[160 + i] = img;
             }
 
-            await Promise.all(loads);
+            // On mobile, fill missing slots with nearest loaded frame
+            if (isMobile) {
+                var lastLoaded = null;
+                for (var j = 0; j < 340; j++) {
+                    if (this.images[j]) { lastLoaded = this.images[j]; }
+                    else if (lastLoaded) { this.images[j] = lastLoaded; }
+                }
+            }
+
+            // Timeout: force ready after maxWait even if images haven't all loaded
+            var timeout = setTimeout(() => {
+                clearInterval(fakeTimer);
+                if (this.progress < 100) this.progress = 100;
+                this.ready = true;
+                this._resize();
+                this._draw(0);
+                this._lock();
+                document.getElementById('tier-1').style.opacity = '1';
+                document.getElementById('tier-1').style.transform = 'translateY(0)';
+            }, maxWait);
+
+            await Promise.race([
+                Promise.all(loads),
+                new Promise(r => setTimeout(r, maxWait))
+            ]);
+            clearTimeout(timeout);
+            clearInterval(fakeTimer);
+            this.progress = 100;
             this._resize();
             window.addEventListener('resize', () => this._resize());
             this._draw(0);

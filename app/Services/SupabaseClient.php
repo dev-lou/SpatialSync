@@ -54,7 +54,12 @@ class SupabaseClient
         $url = "{$this->url}/rest/v1/{$table}?select=".implode(',', $columns);
 
         foreach ($filters as $key => $value) {
-            $url .= '&'.urlencode($key).'=eq.'.urlencode($value);
+            if (is_array($value)) {
+                $vals = implode(',', array_map('urlencode', $value));
+                $url .= '&'.urlencode($key).'=in.('.$vals.')';
+            } else {
+                $url .= '&'.urlencode($key).'=eq.'.urlencode((string)$value);
+            }
         }
 
         try {

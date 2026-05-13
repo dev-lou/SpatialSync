@@ -215,7 +215,7 @@
                                 <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                                 <span class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Active</span>
                             </div>
-                            <span @click="shareUrl = ''" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">Hide</span>
+                            <span @click="shareUrl = ''" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; cursor: pointer; transition: color 0.2s;" @mouseenter="$el.style.color='#ef4444'" @mouseleave="$el.style.color='#94a3b8'">Hide</span>
                         </div>
                     </div>
                 </div>
@@ -323,8 +323,8 @@
                     <template x-for="msg in chatMessages" :key="msg.id || msg.temp_id">
                         <div class="message-row">
                             <div class="message"
-                                 :class="msg.user_id === '{{ $auth_user_id }}' ? 'message--mine' : 'message--other'">
-                                <div class="message__header" x-show="msg.user_id !== '{{ $auth_user_id }}'">
+                                 :class="String(msg.user_id) === String('{{ $auth_user_id }}') ? 'message--mine' : 'message--other'">
+                                <div class="message__header" x-show="String(msg.user_id) !== String('{{ $auth_user_id }}')">
                                     <span class="message__user" x-text="msg.user?.name || msg.user_name || 'Collaborator'"></span>
                                 </div>
                                 <div class="message__content" x-text="msg.message || msg.content || msg.text || ''"></div>
@@ -880,20 +880,59 @@
         </div>
     </div>
 </div>
+
+<!-- Mobile sidebar toggle -->
+<button class="mobile-sidebar-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Toggle sidebar">
+    <i data-lucide="users" class="w-5 h-5"></i>
+</button>
+<style>
+    .mobile-sidebar-toggle { display: none; }
+    @media (max-width: 768px) {
+        .mobile-sidebar-toggle {
+            display: flex !important;
+            position: fixed; bottom: 80px; right: 16px;
+            z-index: 1002; width: 48px; height: 48px;
+            border-radius: 50%; background: var(--accent); color: #fff;
+            border: none; box-shadow: 0 4px 16px rgba(0,102,255,0.3);
+            cursor: pointer; align-items: center; justify-content: center;
+        }
+    }
+</style>
+
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script>
-    if (typeof THREE !== 'undefined') {
-        document.getElementById('debug-three').textContent = 'Three.js: OK';
-        document.getElementById('debug-three').className = 'status-ok';
-    } else {
-        document.getElementById('debug-three').textContent = 'Three.js: FAILED';
-        document.getElementById('debug-three').className = 'status-error';
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    window.THREE = THREE;
+    window.OrbitControls = OrbitControls;
+    const el = document.getElementById('debug-three');
+    if (el) {
+        el.textContent = 'Three.js: OK';
+        el.className = 'status-ok';
     }
 </script>
+<script>
+// Production-safe debug logging — gated behind APP_DEBUG
+window.DEBUG_MODE = {{ app()->environment('local') ? 'true' : 'false' }};
+function debugLog(...args) {
+    if (window.DEBUG_MODE) console.log(...args);
+}
+function debugWarn(...args) {
+    if (window.DEBUG_MODE) console.warn(...args);
+}
+function debugError(...args) {
+    if (window.DEBUG_MODE) console.error(...args);
+}
 </script>
 <script src="{{ asset('js/build-editor.js') }}?v={{ filemtime(public_path('js/build-editor.js')) }}"></script>
 <script>
@@ -972,8 +1011,8 @@ document.addEventListener('alpine:init', () => {
 
         async init() {
             // Debug: Log issues data
-            console.log('[Issues] Loaded from server:', this.issues.length, 'issues');
-            console.log('[Issues] Data:', JSON.parse(JSON.stringify(this.issues)));
+            debugLog('[Issues] Loaded from server:', this.issues.length, 'issues');
+            debugLog('[Issues] Data:', JSON.parse(JSON.stringify(this.issues)));
             
             // Initialize Supabase for Realtime
             this.supabase = supabase.createClient(
@@ -981,7 +1020,12 @@ document.addEventListener('alpine:init', () => {
                 '{{ config('supabase.anon_key') }}',
                 {
                     realtime: {
-                        timeout: 20000,
+                        timeout: 30000,
+                        logger: (kind, msg, data) => {
+                            if (kind === 'error' || msg?.includes('close') || msg?.includes('error')) {
+                                debugWarn('[RT Logger]', kind, msg, data);
+                            }
+                        },
                         params: {
                             eventsPerSecond: 10
                         }
@@ -989,23 +1033,30 @@ document.addEventListener('alpine:init', () => {
                 }
             );
 
-            console.log('Supabase client initialized:', this.supabase ? 'OK' : 'FAILED');
+            debugLog('Supabase client initialized:', this.supabase ? 'OK' : 'FAILED');
+            
+            // Realtime keepalive — sends tiny heartbeat every 5s to prevent Render idle timeout
+            this._rtKeepalive = setInterval(() => {
+                if (this.rtStatus === 'connected') {
+                    this.rtChannel?.track({ ts: Date.now() });
+                }
+            }, 5000);
             
             // Test REST API connectivity first
             try {
                 const { data, error } = await this.supabase.from('builds').select('id').limit(1);
                 if (error) {
-                    console.error('Supabase REST API test failed:', error);
-                    console.error('%c[DIAGNOSTIC] Cannot connect to Supabase REST API. Check:', 'color: #ff6b6b; font-weight: bold;');
-                    console.error('  - SUPABASE_URL in .env is correct');
-                    console.error('  - SUPABASE_ANON_KEY in .env is correct');
-                    console.error('  - Your project is not paused');
-                    console.error('  - Network connectivity to Supabase');
+                    debugError('Supabase REST API test failed:', error);
+                    debugError('%c[DIAGNOSTIC] Cannot connect to Supabase REST API. Check:', 'color: #ff6b6b; font-weight: bold;');
+                    debugError('  - SUPABASE_URL in .env is correct');
+                    debugError('  - SUPABASE_ANON_KEY in .env is correct');
+                    debugError('  - Your project is not paused');
+                    debugError('  - Network connectivity to Supabase');
                 } else {
-                    console.log('Supabase REST API test: OK (connected to database)');
+                    debugLog('Supabase REST API test: OK (connected to database)');
                 }
             } catch (testErr) {
-                console.error('Supabase REST API test error:', testErr);
+                debugError('Supabase REST API test error:', testErr);
             }
 
             // Room-based channel for absolute real-time
@@ -1014,12 +1065,12 @@ document.addEventListener('alpine:init', () => {
             
             this.rtChannel = this.supabase.channel('build:{{ $build->id }}', {
                 config: {
-                    broadcast: { self: false }, // Don't receive own broadcasts
+                    broadcast: { self: false, ack: true },
                     presence: { key: '{{ $auth_user_id }}' + '_' + this.tabId }
                 }
             });
             
-            console.log('RT Created new channel with ID:', channelId);
+            debugLog('RT Created new channel with ID:', channelId);
 
             this.rtChannel
                 .on('presence', { event: 'sync' }, () => {
@@ -1027,13 +1078,13 @@ document.addEventListener('alpine:init', () => {
                     if (window.editor) window.editor.updateRemoteCursors(state);
                 })
                 .on('broadcast', { event: 'chat' }, (payload) => {
-                    console.log('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
+                    debugLog('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
 
                     // Supabase sends: payload.payload = { data: { message, user, user_id, ... } }
                     // Try multiple possible payload structures
                     let msg = payload.payload?.data || payload.payload || payload.data || payload;
                     
-                    console.log('RT Extracted chat message:', msg);
+                    debugLog('RT Extracted chat message:', msg);
                     
                     if (msg && (msg.message || msg.content || msg.text)) {
                         // Ensure message has a unique key for Alpine
@@ -1051,35 +1102,36 @@ document.addEventListener('alpine:init', () => {
                         
                         if (!exists) {
                             this.chatMessages.push(messageWithId);
+                            if (this.chatMessages.length > 500) this.chatMessages.shift();
                             this.scrollToBottom();
-                            console.log('RT Chat message added:', messageWithId);
+                            debugLog('RT Chat message added:', messageWithId);
                         } else {
-                            console.log('RT Chat: Duplicate message ignored');
+                            debugLog('RT Chat: Duplicate message ignored');
                         }
                     } else {
-                        console.warn('RT Chat: Invalid message structure received', { payload, extractedMsg: msg });
+                        debugWarn('RT Chat: Invalid message structure received', { payload, extractedMsg: msg });
                     }
                 })
                 .on('broadcast', { event: 'sync-part' }, (payload) => {
-                    console.log('RT Received Sync-Part Envelope:', JSON.stringify(payload, null, 2));
+                    debugLog('RT Received Sync-Part Envelope:', JSON.stringify(payload, null, 2));
 
                     // Supabase sends: payload.payload = { action: 'add', data: {...} }
                     const data = payload.payload;
                     
                     if (!data || !data.action) {
-                        console.warn('RT Sync: Invalid payload - missing action', { payload, extractedData: data });
+                        debugWarn('RT Sync: Invalid payload - missing action', { payload, extractedData: data });
                         return;
                     }
 
                     // Queue event if editor not ready yet
                     if (!window.editor) {
-                        console.log('RT Sync: Editor not ready, queuing event:', data.action, 'Queue size:', this.pendingSyncEvents.length + 1);
+                        debugLog('RT Sync: Editor not ready, queuing event:', data.action, 'Queue size:', this.pendingSyncEvents.length + 1);
                         this.pendingSyncEvents.push(data);
                         
                         // Also try to process queue immediately in case editor just became ready
                         this.$nextTick(() => {
                             if (window.editor && this.pendingSyncEvents.length > 0) {
-                                console.log('RT Editor now ready, processing', this.pendingSyncEvents.length, 'queued events');
+                                debugLog('RT Editor now ready, processing', this.pendingSyncEvents.length, 'queued events');
                                 const events = [...this.pendingSyncEvents];
                                 this.pendingSyncEvents = [];
                                 events.forEach(evt => this.processSyncEvent(evt));
@@ -1093,24 +1145,24 @@ document.addEventListener('alpine:init', () => {
                 .subscribe(async (status, err) => {
                     // Check if this channel is still the active one
                     if (channelId !== this.activeChannelId) {
-                        console.log(`RT Ignoring event from old channel ${channelId}, current is ${this.activeChannelId}`);
+                        debugLog(`RT Ignoring event from old channel ${channelId}, current is ${this.activeChannelId}`);
                         return;
                     }
                     
-                    console.log('RT Subscription Status:', status, err ? 'Error:' + err.message : '');
+                    debugLog('RT Subscription Status:', status, err ? 'Error:' + err.message : '');
                     
                     if (err) {
-                        console.error('RT Subscription Error:', err);
+                        debugError('RT Subscription Error:', err);
                         
                         // Specific diagnostic for common errors
                         if (err.message && err.message.includes('UnableToConnectToProject')) {
-                            console.error('%c[DIAGNOSTIC] Supabase Realtime cannot connect to your project database.', 'color: #ff6b6b; font-weight: bold;');
-                            console.error('%c[DIAGNOSTIC] Solutions to try:', 'color: #ff6b6b;');
-                            console.error('  1. Check if your Supabase project is active (not paused)');
-                            console.error('  2. Go to Database → Replication and ensure Realtime is enabled');
-                            console.error('  3. Try re-enabling Realtime: Database → Replication → Toggle Realtime OFF then ON');
-                            console.error('  4. Check your .env SUPABASE_URL and SUPABASE_ANON_KEY are correct');
-                            console.error('  5. Your project might need to be restarted - contact Supabase support if issue persists');
+                            debugError('%c[DIAGNOSTIC] Supabase Realtime cannot connect to your project database.', 'color: #ff6b6b; font-weight: bold;');
+                            debugError('%c[DIAGNOSTIC] Solutions to try:', 'color: #ff6b6b;');
+                            debugError('  1. Check if your Supabase project is active (not paused)');
+                            debugError('  2. Go to Database → Replication and ensure Realtime is enabled');
+                            debugError('  3. Try re-enabling Realtime: Database → Replication → Toggle Realtime OFF then ON');
+                            debugError('  4. Check your .env SUPABASE_URL and SUPABASE_ANON_KEY are correct');
+                            debugError('  5. Your project might need to be restarted - contact Supabase support if issue persists');
                         }
                     }
                     
@@ -1135,32 +1187,33 @@ document.addEventListener('alpine:init', () => {
                                 role: this.userRole,
                                 tabId: this.tabId
                             });
-                            console.log('RT Connected and presence tracked');
+                            debugLog('RT Connected and presence tracked');
                         } catch (trackErr) {
-                            console.error('RT Presence tracking failed:', trackErr);
+                            debugError('RT Presence tracking failed:', trackErr);
                         }
                         
                         // Sync any parts that may have been added while page was loading
                         setTimeout(() => this.syncMissedParts(), 500);
                     } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                        console.warn('RT Connection event (status: ' + status + ')');
+                        debugWarn('RT Connection event (status: ' + status + ')');
                         
                         // Skip if within grace period
                         if (Date.now() < this._graceUntil) {
-                            console.log('RT Within grace period, ignoring transient disconnect');
+                            debugLog('RT Within grace period, ignoring transient disconnect');
                             return;
                         }
                         
-                        // Debounce: only update display after 3s of continuous disconnect
+                        // Mark as reconnecting immediately so UI shows "Reconnecting" not "Offline"
+                        this.rtStatus = 'reconnecting';
                         this._setDisplayStatus('reconnecting');
                         
                         // Only trigger reconnection if not already reconnecting
                         if (!this.isReconnecting && this.reconnectAttempts < this.maxReconnectAttempts) {
-                            console.log('RT Scheduling reconnection...');
+                            debugLog('RT Scheduling reconnection...');
                             const delay = this.reconnectAttempts === 0 ? 5000 : 3000;
                             setTimeout(() => this.handleReconnection(), delay);
                         } else if (this.isReconnecting) {
-                            console.log('RT Reconnection already in progress, skipping...');
+                            debugLog('RT Reconnection already in progress, skipping...');
                         }
                     }
                 });
@@ -1168,10 +1221,10 @@ document.addEventListener('alpine:init', () => {
             // Link channel and role to editor
             this.$nextTick(() => {
                 const self = this;
-                console.log('RT Starting editor check interval, editor exists:', !!window.editor);
+                debugLog('RT Starting editor check interval, editor exists:', !!window.editor);
                 const checkEditor = setInterval(() => {
                     if (window.editor) {
-                        console.log('RT Editor found! Linking channel and processing', self.pendingSyncEvents.length, 'queued events');
+                        debugLog('RT Editor found! Linking channel and processing', self.pendingSyncEvents.length, 'queued events');
                         window.editor.rtChannel = self.rtChannel;
                         window.editor.userRole = self.userRole;
                         window.editor.myPresenceKey = '{{ $auth_user_id }}' + '_' + self.tabId;
@@ -1179,21 +1232,21 @@ document.addEventListener('alpine:init', () => {
                         
                         // Initialize issue pins
                         if (self.issues && self.issues.length > 0) {
-                            console.log('[Editor] Loading', self.issues.length, 'issue pins');
+                            debugLog('[Editor] Loading', self.issues.length, 'issue pins');
                             window.editor.loadIssuePins(self.issues);
                         }
                         
                         // Process any queued sync events
                         const queueLength = self.pendingSyncEvents.length;
                         if (queueLength > 0) {
-                            console.log('RT Processing', queueLength, 'queued sync events');
+                            debugLog('RT Processing', queueLength, 'queued sync events');
                             const eventsToProcess = [...self.pendingSyncEvents];
                             self.pendingSyncEvents = [];
                             eventsToProcess.forEach(data => {
                                 try {
                                     self.processSyncEvent(data);
                                 } catch (err) {
-                                    console.error('RT Error processing queued event:', err, data);
+                                    debugError('RT Error processing queued event:', err, data);
                                 }
                             });
                         }
@@ -1209,15 +1262,15 @@ document.addEventListener('alpine:init', () => {
             window.addEventListener('part-placed', async (e) => {
                 // Broadcast to others if we placed it locally
                 if (e.detail.isLocal) {
-                    console.log('RT Sending Sync-Part (add)');
+                    debugLog('RT Sending Sync-Part (add)');
                     const result = await this.sendBroadcast('sync-part', {
                         action: 'add',
                         data: e.detail.partData
                     });
                     if (result.success) {
-                        console.log('RT Sync-Part (add) broadcast sent via', result.method);
+                        debugLog('RT Sync-Part (add) broadcast sent via', result.method);
                     } else {
-                        console.error('RT Failed to send sync-part broadcast:', result.error);
+                        debugError('RT Failed to send sync-part broadcast:', result.error);
                     }
                 }
                 document.getElementById('parts-count').textContent = e.detail.count;
@@ -1225,31 +1278,31 @@ document.addEventListener('alpine:init', () => {
 
             window.addEventListener('part-deleted', async (e) => {
                 if (e.detail.isLocal) {
-                    console.log('RT Sending Sync-Part (delete)');
+                    debugLog('RT Sending Sync-Part (delete)');
                     const result = await this.sendBroadcast('sync-part', {
                         action: 'delete',
                         id: e.detail.id
                     });
                     if (result.success) {
-                        console.log('RT Sync-Part (delete) broadcast sent via', result.method);
+                        debugLog('RT Sync-Part (delete) broadcast sent via', result.method);
                     } else {
-                        console.error('RT Failed to send sync-part broadcast:', result.error);
+                        debugError('RT Failed to send sync-part broadcast:', result.error);
                     }
                 }
             });
 
             window.addEventListener('part-updated', async (e) => {
                 if (e.detail.isLocal) {
-                    console.log('RT Sending Sync-Part (update)');
+                    debugLog('RT Sending Sync-Part (update)');
                     const result = await this.sendBroadcast('sync-part', {
                         action: 'update',
                         id: e.detail.id,
                         data: e.detail.data
                     });
                     if (result.success) {
-                        console.log('RT Sync-Part (update) broadcast sent via', result.method);
+                        debugLog('RT Sync-Part (update) broadcast sent via', result.method);
                     } else {
-                        console.error('RT Failed to send sync-part broadcast:', result.error);
+                        debugError('RT Failed to send sync-part broadcast:', result.error);
                     }
                 }
             });
@@ -1260,7 +1313,7 @@ document.addEventListener('alpine:init', () => {
             });
 
             // Fetch latest messages from API to get any messages sent while away
-            console.log(`Init: ${this.initialMessagesCount} messages loaded from server, fetching from API...`);
+            debugLog(`Init: ${this.initialMessagesCount} messages loaded from server, fetching from API...`);
             this.fetchMessages();
             
             // Poll for new messages every 30 seconds (fallback when realtime misses messages)
@@ -1348,6 +1401,9 @@ document.addEventListener('alpine:init', () => {
                 if (this.reconnectTimer) {
                     clearTimeout(this.reconnectTimer);
                 }
+                if (this._rtKeepalive) {
+                    clearInterval(this._rtKeepalive);
+                }
                 if (this.messagePollInterval) {
                     clearInterval(this.messagePollInterval);
                 }
@@ -1368,7 +1424,7 @@ document.addEventListener('alpine:init', () => {
                 this.searchResults = await res.json();
                 this.$nextTick(() => lucide.createIcons());
             } catch (err) {
-                console.error('Search failed', err);
+                debugError('Search failed', err);
             }
         },
 
@@ -1417,7 +1473,15 @@ document.addEventListener('alpine:init', () => {
         },
 
         async removeMember(userId) {
-            if (!confirm('Are you sure you want to remove this member?')) return;
+            const confirmed = await Swal.fire({
+                title: 'Remove Member?',
+                text: 'Are you sure you want to remove this member?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, remove',
+                cancelButtonText: 'Cancel'
+            });
+            if (!confirmed.isConfirmed) return;
             try {
                 const res = await fetch(`/builds/{{ $build->id }}/members/${userId}`, {
                     method: 'DELETE',
@@ -1461,7 +1525,7 @@ document.addEventListener('alpine:init', () => {
             try {
                 const res = await fetch(`/editor/builds/{{ $build->id }}/messages`);
                 if (!res.ok) {
-                    console.error('Failed to fetch messages, status:', res.status);
+                    debugError('Failed to fetch messages, status:', res.status);
                     return;
                 }
                 const messages = await res.json();
@@ -1477,16 +1541,18 @@ document.addEventListener('alpine:init', () => {
                 const existingServerIds = new Set(this.chatMessages.filter(m => m.id).map(m => m.id));
                 const newMessages = processedMessages.filter(m => !existingServerIds.has(m.id));
                 
-                console.log(`Fetched ${messages.length} messages from server, ${newMessages.length} new, ${existingServerIds.size} existing`);
+                debugLog(`Fetched ${messages.length} messages from server, ${newMessages.length} new, ${existingServerIds.size} existing`);
                 
                 if (newMessages.length > 0) {
-                    this.chatMessages = [...this.chatMessages, ...newMessages].sort((a, b) => 
+                    var merged = [...this.chatMessages, ...newMessages].sort((a, b) => 
                         new Date(a.created_at || 0) - new Date(b.created_at || 0)
                     );
+                    if (merged.length > 500) merged = merged.slice(merged.length - 500);
+                    this.chatMessages = merged;
                     this.scrollToBottom();
                 }
             } catch (err) {
-                console.error('Failed to fetch messages', err);
+                debugError('Failed to fetch messages', err);
             }
         },
 
@@ -1507,17 +1573,17 @@ document.addEventListener('alpine:init', () => {
                 
                 if (!res.ok) {
                     const errorData = await res.json();
-                    console.error('Server error saving message:', res.status, errorData);
+                    debugError('Server error saving message:', res.status, errorData);
                     this.newMessage = messageText; // Restore for retry
                     this.showToast('Failed to save message: ' + (errorData.error || 'Server error'), 'error');
                     return;
                 }
                 
                 const data = await res.json();
-                console.log('Message saved successfully:', data);
+                debugLog('Message saved successfully:', data);
                 
                 if (!data.id) {
-                    console.error('CRITICAL: Message saved but no ID returned! Data:', data);
+                    debugError('CRITICAL: Message saved but no ID returned! Data:', data);
                     this.showToast('Message may not have saved properly', 'warning');
                 }
 
@@ -1532,25 +1598,26 @@ document.addEventListener('alpine:init', () => {
                 };
 
                 // Broadcast instantly using payload key
-                console.log('RT Sending Chat broadcast:', messageData);
+                debugLog('RT Sending Chat broadcast:', messageData);
                 const result = await this.sendBroadcast('chat', { data: messageData });
-                console.log('RT Chat broadcast result:', result);
+                debugLog('RT Chat broadcast result:', result);
                 if (result && result.success) {
-                    console.log('RT Chat broadcast sent via', result.method);
+                    debugLog('RT Chat broadcast sent via', result.method);
                 } else {
-                    console.error('RT Failed to send chat broadcast:', result?.error || 'No result returned');
+                    debugError('RT Failed to send chat broadcast:', result?.error || 'No result returned');
                 }
 
                 // Only add if not already in list (prevent duplicates from realtime)
                 const exists = this.chatMessages.some(m => m.id === messageData.id);
                 if (!exists) {
                     this.chatMessages.push(messageData);
+                    if (this.chatMessages.length > 500) this.chatMessages.shift();
                     this.scrollToBottom();
                 } else {
-                    console.log('Message already exists, skipping duplicate');
+                    debugLog('Message already exists, skipping duplicate');
                 }
             } catch (err) {
-                console.error('Failed to send message:', err);
+                debugError('Failed to send message:', err);
                 // Restore message so user can retry
                 this.newMessage = messageText;
                 this.showToast('Failed to send message. Check connection and try again.', 'error');
@@ -1573,32 +1640,32 @@ document.addEventListener('alpine:init', () => {
 
         processSyncEvent(data) {
             try {
-                console.log('RT Processing action:', data.action, 'Data:', data);
+                debugLog('RT Processing action:', data.action, 'Data:', data);
 
                 if (data.action === 'add' && data.data) {
-                    console.log('RT Rendering Remote Part:', data.data);
+                    debugLog('RT Rendering Remote Part:', data.data);
                     window.editor.addPartToScene(data.data, false);
                 } else if (data.action === 'delete' && data.id) {
-                    console.log('RT Deleting Remote Part ID:', data.id);
+                    debugLog('RT Deleting Remote Part ID:', data.id);
                     window.editor.deletePartFromRealtime(data.id);
                 } else if (data.action === 'update' && data.id && data.data) {
-                    console.log('RT Updating Remote Part ID:', data.id);
+                    debugLog('RT Updating Remote Part ID:', data.id);
                     window.editor.updatePartInRealtime(data.id, data.data);
                 } else {
-                    console.warn('RT Sync: Unknown action or missing data fields', data);
+                    debugWarn('RT Sync: Unknown action or missing data fields', data);
                 }
             } catch (err) {
-                console.error('RT Sync Error:', err);
+                debugError('RT Sync Error:', err);
             }
         },
 
         async syncMissedParts() {
             if (!window.editor) {
-                console.warn('RT Cannot sync parts - editor not ready');
+                debugWarn('RT Cannot sync parts - editor not ready');
                 return;
             }
             
-            console.log('RT Syncing missed parts from database...');
+            debugLog('RT Syncing missed parts from database...');
             
             try {
                 const response = await fetch(`/editor/builds/{{ $build->id }}/parts`, {
@@ -1625,7 +1692,7 @@ document.addEventListener('alpine:init', () => {
                     const exists = existingIds.some(id => id.includes(partData.id) || id === partData.id);
                     
                     if (!exists) {
-                        console.log('RT Adding missed part:', partData.id);
+                        debugLog('RT Adding missed part:', partData.id);
                         window.editor.addPartToScene(partData, false);
                         addedCount++;
                     } else {
@@ -1634,13 +1701,13 @@ document.addEventListener('alpine:init', () => {
                 });
                 
                 if (addedCount > 0) {
-                    console.log(`RT Synced ${addedCount} missed parts from database (${skippedCount} already existed)`);
+                    debugLog(`RT Synced ${addedCount} missed parts from database (${skippedCount} already existed)`);
                     this.showToast(`Synced ${addedCount} parts that were added while you were offline`, 'success');
                 } else {
-                    console.log(`RT No missed parts to sync - all ${skippedCount} parts already up to date`);
+                    debugLog(`RT No missed parts to sync - all ${skippedCount} parts already up to date`);
                 }
             } catch (error) {
-                console.error('RT Error syncing missed parts:', error);
+                debugError('RT Error syncing missed parts:', error);
                 this.showToast('Could not sync missed parts', 'warning');
             }
         },
@@ -1653,20 +1720,20 @@ document.addEventListener('alpine:init', () => {
                 this.displayStatus = 'connected';
                 return;
             }
-            // Non-connected states are debounced by 3 seconds
+            // Non-connected states are debounced by 1 second
             clearTimeout(this._statusDebounceTimer);
             this._statusDebounceTimer = setTimeout(() => {
                 // Only downgrade if still not connected
                 if (this.rtStatus !== 'connected') {
                     this.displayStatus = status;
                 }
-            }, 3000);
+            }, 1000);
         },
 
         handleReconnection() {
             if (this.isReconnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
                 if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-                    console.error('RT Max reconnection attempts reached. Please refresh the page.');
+                    debugError('RT Max reconnection attempts reached. Please refresh the page.');
                     this._setDisplayStatus('error');
                     this.showToast('Connection lost. Please refresh the page.', 'error');
                 }
@@ -1679,7 +1746,7 @@ document.addEventListener('alpine:init', () => {
             // Exponential backoff: 6s, 12s, 24s, ... up to 60s max (tuned for localhost)
             const delay = Math.min(this.reconnectDelay * 3 * Math.pow(2, this.reconnectAttempts - 1), 60000);
             
-            console.log(`RT Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
+            debugLog(`RT Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
             // Only show toast on first attempt to reduce spam
             if (!this._hasShownReconnectToast) {
                 this._hasShownReconnectToast = true;
@@ -1687,13 +1754,13 @@ document.addEventListener('alpine:init', () => {
             }
 
             this.reconnectTimer = setTimeout(() => {
-                console.log('RT Attempting to recreate channel...');
+                debugLog('RT Attempting to recreate channel...');
                 
                 // Generate new channel ID for this reconnection attempt
                 const reconnectionChannelId = 'reconn_' + Date.now() + '_' + this.reconnectAttempts;
                 const previousChannelId = this.activeChannelId;
                 this.activeChannelId = reconnectionChannelId;
-                console.log(`RT Switching from channel ${previousChannelId} to ${reconnectionChannelId}`);
+                debugLog(`RT Switching from channel ${previousChannelId} to ${reconnectionChannelId}`);
                 
                 // Unsubscribe from old channel if exists
                 if (this.rtChannel) {
@@ -1703,7 +1770,7 @@ document.addEventListener('alpine:init', () => {
                 // Create new channel
                 this.rtChannel = this.supabase.channel('build:{{ $build->id }}', {
                     config: {
-                        broadcast: { self: false },
+                        broadcast: { self: false, ack: true },
                         presence: { key: '{{ $auth_user_id }}' + '_' + this.tabId }
                     }
                 });
@@ -1715,10 +1782,10 @@ document.addEventListener('alpine:init', () => {
                         if (window.editor) window.editor.updateRemoteCursors(state);
                     })
                     .on('broadcast', { event: 'chat' }, (payload) => {
-                        console.log('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
+                        debugLog('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
                         // Try multiple possible payload structures
                         let msg = payload.payload?.data || payload.payload || payload.data || payload;
-                        console.log('RT Extracted chat message:', msg);
+                        debugLog('RT Extracted chat message:', msg);
                         
                         if (msg && (msg.message || msg.content || msg.text)) {
                             const messageWithId = {
@@ -1735,21 +1802,21 @@ document.addEventListener('alpine:init', () => {
                             if (!exists) {
                                 this.chatMessages.push(messageWithId);
                                 this.scrollToBottom();
-                                console.log('RT Chat message added:', messageWithId);
+                                debugLog('RT Chat message added:', messageWithId);
                             }
                         }
                     })
                     .on('broadcast', { event: 'sync-part' }, (payload) => {
-                        console.log('RT Received Sync-Part Envelope:', JSON.stringify(payload, null, 2));
+                        debugLog('RT Received Sync-Part Envelope:', JSON.stringify(payload, null, 2));
                         const data = payload.payload;
                         
                         if (!data || !data.action) {
-                            console.warn('RT Sync: Invalid payload - missing action', { payload, extractedData: data });
+                            debugWarn('RT Sync: Invalid payload - missing action', { payload, extractedData: data });
                             return;
                         }
 
                         if (!window.editor) {
-                            console.log('RT Sync: Editor not ready, queuing event:', data.action, 'Queue size:', this.pendingSyncEvents.length + 1);
+                            debugLog('RT Sync: Editor not ready, queuing event:', data.action, 'Queue size:', this.pendingSyncEvents.length + 1);
                             this.pendingSyncEvents.push(data);
                             return;
                         }
@@ -1759,12 +1826,12 @@ document.addEventListener('alpine:init', () => {
                     .subscribe(async (status) => {
                         // Check if this reconnection channel is still the active one
                         if (reconnectionChannelId !== this.activeChannelId) {
-                            console.log(`RT Ignoring reconnection event from old channel ${reconnectionChannelId}, current is ${this.activeChannelId}`);
+                            debugLog(`RT Ignoring reconnection event from old channel ${reconnectionChannelId}, current is ${this.activeChannelId}`);
                             return;
                         }
                         
-                        console.log('RT Reconnection Status:', status);
-                        this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : (status === 'CLOSED' ? 'closed' : 'error');
+                        debugLog('RT Reconnection Status:', status);
+                        this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : 'reconnecting';
                         
                         if (status === 'SUBSCRIBED') {
                             this.reconnectAttempts = 0;
@@ -1787,7 +1854,7 @@ document.addEventListener('alpine:init', () => {
                                 window.editor.rtChannel = this.rtChannel;
                             }
                             
-                            console.log('RT Reconnected and presence tracked');
+                            debugLog('RT Reconnected and presence tracked');
                             
                             // Sync any parts that were added while we were offline
                             await this.syncMissedParts();
@@ -1816,7 +1883,7 @@ document.addEventListener('alpine:init', () => {
                     });
                     return { success: true, method: 'websocket' };
                 } catch (err) {
-                    console.warn('RT WebSocket broadcast failed, falling back to REST:', err);
+                    debugWarn('RT WebSocket broadcast failed, falling back to REST:', err);
                 }
             }
             
@@ -1827,10 +1894,10 @@ document.addEventListener('alpine:init', () => {
                     event: event,
                     payload: payload
                 }, { httpSend: true });
-                console.log('RT Broadcast sent via REST API');
+                debugLog('RT Broadcast sent via REST API');
                 return { success: true, method: 'rest' };
             } catch (err) {
-                console.error('RT Both WebSocket and REST broadcast failed:', err);
+                debugError('RT Both WebSocket and REST broadcast failed:', err);
                 
                 // If connection is down, trigger reconnection
                 if (this.rtStatus === 'closed' || this.rtStatus === 'error') {
@@ -1968,7 +2035,7 @@ document.addEventListener('alpine:init', () => {
                 });
                 this.showToast('Blueprint downloaded!', 'success');
             } catch (e) {
-                console.error('Blueprint export error:', e);
+                debugError('Blueprint export error:', e);
                 this.showToast('Export failed — check console', 'error');
             } finally {
                 this.bpExporting = false;
@@ -2062,7 +2129,7 @@ document.addEventListener('alpine:init', () => {
                 this.newIssue = { title: '', description: '', priority: 'medium', part_id: null };
                 this.showToast('Issue created successfully!', 'success');
             } catch (err) {
-                console.error('Error creating issue:', err);
+                debugError('Error creating issue:', err);
                 this.showToast('Failed to create issue', 'error');
             }
         },
@@ -2097,15 +2164,21 @@ document.addEventListener('alpine:init', () => {
 
                 this.showToast(`Issue marked as ${this.getStatusLabel(data.status)}`, 'success');
             } catch (err) {
-                console.error('Error updating issue:', err);
+                debugError('Error updating issue:', err);
                 this.showToast('Failed to update issue status', 'error');
             }
         },
 
         async deleteIssue(issueId) {
-            if (!confirm('Are you sure you want to delete this issue?')) {
-                return;
-            }
+            const result = await Swal.fire({
+                title: 'Delete Issue?',
+                text: 'Are you sure you want to delete this issue?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
 
             try {
                 const buildId = '{{ $build->id }}';
@@ -2129,7 +2202,7 @@ document.addEventListener('alpine:init', () => {
 
                 this.showToast('Issue deleted', 'success');
             } catch (err) {
-                console.error('Error deleting issue:', err);
+                debugError('Error deleting issue:', err);
                 this.showToast('Failed to delete issue', 'error');
             }
         },
@@ -2425,7 +2498,9 @@ document.addEventListener('alpine:init', () => {
     }
 
     /* Collapse labels when sidebar is open or screen is small */
-    .sidebar-open .nb-shortcut span,
+    .sidebar-open .nb-shortcut span {
+        display: none;
+    }
     @media (max-width: 1400px) {
         .nb-shortcut span {
             display: none;

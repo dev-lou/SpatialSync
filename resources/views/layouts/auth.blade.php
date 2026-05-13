@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="canonical" href="{{ url()->current() }}">
     <!-- Primary Meta Tags -->
     <title>@yield('title', 'SpatialSync') — Identity-Driven Architecture</title>
     <meta name="title" content="SpatialSync — Identity-Driven Architecture">
@@ -12,26 +13,28 @@
     <!-- Schema.org for Google+ / Apps -->
     <meta itemprop="name" content="SpatialSync — Identity-Driven Architecture">
     <meta itemprop="description" content="Collaborate in real-time on premium 3D architectural blueprints.">
-    <meta itemprop="image" content="https://spatialsync.onrender.com/images/og-meta.png">
+    <meta itemprop="image" content="{{ url('/images/og-meta.png') }}">
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
+    <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:site_name" content="SpatialSync">
     <meta property="og:title" content="SpatialSync — Identity-Driven Architecture">
     <meta property="og:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
-    <meta property="og:image" content="https://spatialsync.onrender.com/images/og-meta.png">
-    <meta property="og:image:secure_url" content="https://spatialsync.onrender.com/images/og-meta.png">
+    <meta property="og:image" content="{{ url('/images/og-meta.png') }}">
+    <meta property="og:image:secure_url" content="{{ url('/images/og-meta.png') }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="SpatialSync — Collaborative 3D architecture and design platform">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://spatialsync.onrender.com{{ Request::getRequestUri() }}">
+    <meta property="twitter:url" content="{{ url()->current() }}">
     <meta property="twitter:title" content="SpatialSync — Identity-Driven Architecture">
     <meta property="twitter:description" content="Collaborate in real-time on premium 3D architectural blueprints with identity-driven security.">
-    <meta property="twitter:image" content="https://spatialsync.onrender.com/images/og-meta.png">
+    <meta property="twitter:image" content="{{ url('/images/og-meta.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -343,8 +346,8 @@
 
     <!-- Global Biometric Identity Scanner -->
     <template x-teleport="body">
-        <div x-show="scannerOpen" 
-             style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: rgba(255, 255, 255, 0.75) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important;"
+         <div x-show="scannerOpen" 
+             style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 2147483647 !important; background: rgba(255, 255, 255, 0.75) !important;"
              x-transition:enter="transition ease-out duration-400"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
@@ -353,7 +356,7 @@
             <div class="card" 
                  style="position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; width: 95% !important; max-width: 960px !important; background: #fff !important; padding: 0 !important; overflow: hidden !important; border-radius: 40px !important; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1) !important; border: 1px solid rgba(0, 0, 0, 0.05) !important;">
                 
-                <div style="padding: 2.5rem 3.5rem; border-bottom: 2px solid rgba(0, 0, 0, 0.03); display: flex; justify-content: space-between; align-items: center; background: #fff;">
+                <div class="scanner-card" style="padding: 2.5rem 3.5rem; border-bottom: 2px solid rgba(0, 0, 0, 0.03); display: flex; justify-content: space-between; align-items: center; background: #fff;">
                     <div style="display: flex; align-items: center; gap: 24px;">
                         <div style="width: 56px; height: 56px; background: var(--accent); border-radius: 16px; display: grid; place-items: center; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);">
                             <i data-lucide="scan-eye" style="width: 32px; height: 32px; color: #fff;"></i>
@@ -386,10 +389,23 @@
                         <!-- Neural Laser Sweep -->
                         <div class="scanning-laser" x-show="!isAuthenticating"></div>
                         
-                        <div style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #fff; backdrop-filter: blur(25px); padding: 1rem 2rem; border-radius: 20px; color: #0f172a; font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 1rem; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 15px 35px rgba(0,0,0,0.1); z-index: 20;">
-                            <div style="width: 12px; height: 12px; border-radius: 50%;" :style="faceDetected ? 'background: #22c55e; box-shadow: 0 0 20px #22c55e;' : 'background: #ef4444;'"></div>
-                            <span x-text="faceDetected ? 'Signature Match Confirmed' : 'Seeking Biometric Data...'"></span>
+                        <div x-show="!faceDetected && !isAuthenticating" style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #fff; backdrop-filter: blur(25px); padding: 1rem 2rem; border-radius: 20px; color: #0f172a; font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 1rem; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 15px 35px rgba(0,0,0,0.1); z-index: 20;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
+                            <span>Seeking Biometric Data...</span>
                         </div>
+                        <template x-if="faceDetected && !isAuthenticating">
+                            <div style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #fff; padding: 0.5rem 1rem 0.5rem 0.5rem; border-radius: 99px; color: #0f172a; font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 0.75rem; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 15px 35px rgba(0,0,0,0.1); z-index: 20;">
+                                <template x-if="userAvatar">
+                                    <img :src="userAvatar" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #22c55e; flex-shrink: 0;">
+                                </template>
+                                <template x-if="!userAvatar">
+                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #22c55e; flex-shrink: 0; display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 700; border: 2px solid #22c55e;">
+                                        <span x-text="userName.charAt(0).toUpperCase()"></span>
+                                    </div>
+                                </template>
+                                <span x-text="'Welcome, ' + userName"></span>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- Authorization Flow Overlay -->
@@ -411,13 +427,18 @@
 
                         <template x-if="authSuccess">
                             <div style="text-align: center; animation: zoom-in-up 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); padding-top: 4rem;">
-                                <div style="width: 160px; height: 160px; background: #22c55e; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 3rem; box-shadow: 0 20px 60px rgba(34, 197, 94, 0.3); border: 6px solid #fff;">
-                                    <i data-lucide="shield-check" style="width: 80px; height: 80px; color: #fff;"></i>
-                                </div>
-                                <h4 style="font-weight: 950; font-size: 4.5rem; margin: 0; letter-spacing: -0.04em; color: #0f172a; line-height: 1;">WELCOME</h4>
-                                <p style="font-size: 2.5rem; font-weight: 400; color: #16a34a; margin-top: 1rem; font-family: 'Instrument Serif', serif; letter-spacing: 0.02em;" x-text="userName"></p>
+                                <template x-if="userAvatar">
+                                    <img :src="userAvatar" alt="" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin: 0 auto 2rem; border: 5px solid #22c55e; box-shadow: 0 20px 60px rgba(34, 197, 94, 0.3);">
+                                </template>
+                                <template x-if="!userAvatar">
+                                    <div style="width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, #22c55e, #16a34a); margin: 0 auto 2rem; border: 5px solid #fff; box-shadow: 0 20px 60px rgba(34, 197, 94, 0.3); display: grid; place-items: center;">
+                                        <span style="font-size: 4rem; font-weight: 900; color: #fff; font-family: system-ui, sans-serif; line-height: 1;" x-text="userName.charAt(0).toUpperCase()"></span>
+                                    </div>
+                                </template>
+                                <h4 style="font-weight: 950; font-size: clamp(2.5rem, 10vw, 4.5rem); margin: 0; letter-spacing: -0.04em; color: #0f172a; line-height: 1;">WELCOME</h4>
+                                <p style="font-size: clamp(1.5rem, 6vw, 2.5rem); font-weight: 400; color: #16a34a; margin-top: 1rem; font-family: 'Instrument Serif', serif; letter-spacing: 0.02em;" x-text="userName"></p>
                                 
-                                <div style="margin-top: 3.5rem; width: 300px; height: 6px; background: #f1f5f9; border-radius: 3px; margin-left: auto; margin-right: auto; overflow: hidden; position: relative;">
+                                <div style="margin-top: 3.5rem; width: min(80vw, 300px); height: 6px; background: #f1f5f9; border-radius: 3px; margin-left: auto; margin-right: auto; overflow: hidden; position: relative;">
                                     <div class="success-progress-bar"></div>
                                 </div>
                                 <p style="margin-top: 1.25rem; font-size: 0.875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.3em; font-weight: 800; animation: pulse 1s infinite;">Synchronizing Workspace...</p>
@@ -426,6 +447,8 @@
                     </div>
 
                     <style>
+                        .scanner-card { padding: 2.5rem 3.5rem; }
+                        @media (max-width: 480px) { .scanner-card { padding: 1.25rem !important; } }
                         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                         @keyframes zoom-in-up {
                             0% { opacity: 0; transform: scale(0.5) translateY(40px); }
@@ -471,6 +494,7 @@
                 isLoadingModels: false,
                 authSuccess: false,
                 userName: '',
+                userAvatar: '',
                 video: null,
                 modelsLoaded: false,
 
@@ -492,7 +516,7 @@
 
                 async loadModels() {
                     if (this.modelsLoaded) return;
-                    const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+                    const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
                     await Promise.all([
                         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                         faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -502,17 +526,25 @@
                 },
 
                 async startCamera() {
-                    this.$nextTick(async () => {
+                    // Wait for Alpine to finish x-teleport + x-show DOM updates
+                    await this.$nextTick();
+                    await this.$nextTick();
+                    // Small extra delay for transition to start
+                    await new Promise(r => setTimeout(r, 100));
+
+                    this.video = document.getElementById('auth-video');
+                    if (!this.video) {
+                        // If teleport hasn't finished yet, retry after a longer delay
+                        await new Promise(r => setTimeout(r, 300));
                         this.video = document.getElementById('auth-video');
-                        if (!this.video) {
-                            setTimeout(() => {
-                                this.video = document.getElementById('auth-video');
-                                this.initStream();
-                            }, 100);
-                            return;
-                        }
-                        this.initStream();
-                    });
+                    }
+
+                    if (this.video) {
+                        await this.initStream();
+                    } else {
+                        Swal.fire('Camera Error', 'Could not find camera element. Please try again.', 'error');
+                        this.closeScanner();
+                    }
                 },
 
                 async initStream() {
@@ -520,6 +552,8 @@
                         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                         if (this.video) {
                             this.video.srcObject = stream;
+                            // Explicit play() required — autoplay is blocked after x-teleport
+                            await this.video.play();
                             this.startDetection();
                         }
                     } catch (err) {
@@ -530,24 +564,23 @@
 
                 startDetection() {
                     const canvas = document.getElementById('auth-canvas');
-                    
-                    // --- Stability Config ---
-                    let missCount    = 0;          // consecutive missed frames
-                    const MISS_GRACE = 12;          // frames before clearing canvas (≈1.8s at 150ms)
-                    let lastDescriptor = null;      // reuse last known descriptor for auth trigger
+                    if (!canvas) return;
+
+                    let missCount = 0;
+                    const MISS_GRACE = 12;
+                    let lastDescriptor = null;
 
                     const detectorOptions = new faceapi.TinyFaceDetectorOptions({
-                        inputSize: 320,            // Lower inputSize = much higher FPS = no motion blur
-                        scoreThreshold: 0.05       // Ultra-lenient to catch dark/distant faces
+                        inputSize: 320,
+                        scoreThreshold: 0.05
                     });
 
-                    // Use a recursive async loop instead of setInterval to prevent frame queueing/lag
                     const detectFrame = async () => {
                         if (!this.scannerOpen || this.isAuthenticating) {
-                            if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                             return;
                         }
-                        
+
                         if (!this.modelsLoaded || !this.video || this.video.readyState < 2) {
                             setTimeout(detectFrame, 100);
                             return;
@@ -558,7 +591,7 @@
                             setTimeout(detectFrame, 100);
                             return;
                         }
-                        
+
                         faceapi.matchDimensions(canvas, displaySize);
 
                         try {
@@ -586,7 +619,6 @@
                                     { pts: landmarks.getRightEyeBrow(), close: false, color: 'rgba(99,102,241,0.7)' },
                                 ];
 
-                                // ── Draw glowing contour lines ───────────────────
                                 parts.forEach(({ pts, close, color }) => {
                                     if (!pts || pts.length < 2) return;
                                     ctx.save();
@@ -602,7 +634,6 @@
                                     ctx.restore();
                                 });
 
-                                // ── Draw landmark nodes ──────────────────────────
                                 landmarks.positions.forEach(pt => {
                                     ctx.save();
                                     ctx.shadowColor = '#60A5FA';
@@ -619,7 +650,6 @@
                                     ctx.restore();
                                 });
 
-                                // ── Draw bounding bracket corners ────────────────
                                 const box = resized.detection.box;
                                 const cSize = 20;
                                 ctx.save();
@@ -651,17 +681,15 @@
                                     } else {
                                         this.isScanningFace = false;
                                     }
-                                }, 3000); 
+                                }, 3000);
                             }
                         } catch (e) {
                             console.error("Detection frame error:", e);
                         }
 
-                        // Recursively call next frame with a small delay
                         setTimeout(detectFrame, 100);
                     };
 
-                    // Start loop
                     detectFrame();
                 },
 
@@ -682,6 +710,7 @@
 
                         if (response.ok && result.success) {
                             this.userName = result.name;
+                            this.userAvatar = result.avatar_url || '';
                             this.authSuccess = true;
                             
                             // Animated success greeting delay
@@ -709,6 +738,8 @@
                     this.isAuthenticating = false;
                     this.isScanningFace = false;
                     this.authSuccess = false;
+                    this.userName = '';
+                    this.userAvatar = '';
                 }
             }));
         });

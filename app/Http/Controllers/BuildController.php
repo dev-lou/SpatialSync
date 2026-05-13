@@ -218,10 +218,9 @@ class BuildController extends Controller
             ];
         }
 
-        // 4. Fetch Chat History (Persistence)
+        // 4. Fetch Chat History (Persistence) — last 100 messages max
         $messages = $this->supabase->select('build_messages', ['*'], ['build_id' => $buildId]);
-        // Sort by time or take last 50
-        $messages = collect($messages)->sortBy('created_at')->values()->all();
+        $messages = collect($messages)->sortByDesc('created_at')->take(100)->sortBy('created_at')->values()->all();
 
         // 5. Fetch Issues for build
         $rawIssues = $this->supabase->select('build_issues', ['*'], ['build_id' => $buildId]);

@@ -117,7 +117,7 @@
         <a href="{{ route('admin.presets') }}"  class="os-btn os-btn-secondary os-btn-sm"><i data-lucide="package-plus"    style="width:13px;height:13px;"></i> Ingest Asset</a>
         <a href="{{ route('admin.builds') }}"   class="os-btn os-btn-secondary os-btn-sm"><i data-lucide="layers"          style="width:13px;height:13px;"></i> Browse Builds</a>
         <a href="{{ route('admin.security') }}" class="os-btn os-btn-secondary os-btn-sm"><i data-lucide="shield-check"    style="width:13px;height:13px;"></i> Security Config</a>
-        <button class="os-btn os-btn-secondary os-btn-sm" onclick="Swal.fire({title:'Reports',text:'PDF export coming soon.',icon:'info'})">
+        <button class="os-btn os-btn-secondary os-btn-sm" x-on:click="Swal.fire({title:'Reports',text:'PDF export coming soon.',icon:'info'})">
             <i data-lucide="file-bar-chart" style="width:13px;height:13px;"></i> Generate Report
         </button>
     </div>
