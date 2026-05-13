@@ -1125,6 +1125,11 @@ document.addEventListener('alpine:init', () => {
 
                     // Queue event if editor not ready yet
                     if (!window.editor) {
+                        // Cap pending queue at 100 to prevent unbounded growth
+                        if (this.pendingSyncEvents.length >= 100) {
+                            const dropped = this.pendingSyncEvents.shift();
+                            debugWarn('RT Sync queue capped, dropped oldest event:', dropped.action);
+                        }
                         debugLog('RT Sync: Editor not ready, queuing event:', data.action, 'Queue size:', this.pendingSyncEvents.length + 1);
                         this.pendingSyncEvents.push(data);
                         
@@ -1221,8 +1226,16 @@ document.addEventListener('alpine:init', () => {
             // Link channel and role to editor
             this.$nextTick(() => {
                 const self = this;
+                let checkAttempts = 0;
+                const maxCheckAttempts = 50; // 5 seconds max
                 debugLog('RT Starting editor check interval, editor exists:', !!window.editor);
                 const checkEditor = setInterval(() => {
+                    checkAttempts++;
+                    if (checkAttempts > maxCheckAttempts) {
+                        clearInterval(checkEditor);
+                        debugWarn('RT Editor check timed out after', maxCheckAttempts, 'attempts');
+                        return;
+                    }
                     if (window.editor) {
                         debugLog('RT Editor found! Linking channel and processing', self.pendingSyncEvents.length, 'queued events');
                         window.editor.rtChannel = self.rtChannel;
@@ -1291,20 +1304,34 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
+            // Throttled part-updated broadcast — collects changes for 200ms then sends the latest
+            this._partUpdateQueue = {};
+            this._partUpdateTimer = null;
             window.addEventListener('part-updated', async (e) => {
-                if (e.detail.isLocal) {
-                    debugLog('RT Sending Sync-Part (update)');
-                    const result = await this.sendBroadcast('sync-part', {
-                        action: 'update',
-                        id: e.detail.id,
-                        data: e.detail.data
-                    });
-                    if (result.success) {
-                        debugLog('RT Sync-Part (update) broadcast sent via', result.method);
-                    } else {
-                        debugError('RT Failed to send sync-part broadcast:', result.error);
+                if (!e.detail.isLocal) return;
+
+                const partId = e.detail.id;
+                this._partUpdateQueue[partId] = e.detail;
+
+                if (this._partUpdateTimer) return;
+
+                this._partUpdateTimer = setTimeout(async () => {
+                    this._partUpdateTimer = null;
+                    const queue = this._partUpdateQueue;
+                    this._partUpdateQueue = {};
+
+                    for (const [id, detail] of Object.entries(queue)) {
+                        debugLog('RT Sending Sync-Part (update) for', id);
+                        const result = await this.sendBroadcast('sync-part', {
+                            action: 'update',
+                            id: id,
+                            data: detail.data
+                        });
+                        if (!result.success) {
+                            debugError('RT Failed to send sync-part broadcast:', result.error);
+                        }
                     }
-                }
+                }, 200);
             });
 
             window.addEventListener('floor-changed', (e) => {
@@ -1406,6 +1433,9 @@ document.addEventListener('alpine:init', () => {
                 }
                 if (this.messagePollInterval) {
                     clearInterval(this.messagePollInterval);
+                }
+                if (this._partUpdateTimer) {
+                    clearTimeout(this._partUpdateTimer);
                 }
                 if (this.rtChannel) {
                     this.rtChannel.unsubscribe();

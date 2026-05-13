@@ -180,14 +180,31 @@ class BuildPartController extends Controller
             'shape_points' => 'nullable|array',
             'floor_number' => 'integer|min:1|max:10',
             'z_index' => 'integer|min:0',
+            'updated_at' => 'nullable|string', // optimistic locking
         ]);
 
-        $count = $this->supabase->update('build_parts', $validated, [
+        // Optimistic locking: if client provided updated_at, verify it matches
+        $filters = [
             'id' => $partId,
             'build_id' => $buildId,
-        ]);
+        ];
+
+        if (!empty($validated['updated_at'])) {
+            $filters['updated_at'] = $validated['updated_at'];
+        }
+
+        $count = $this->supabase->update('build_parts', $validated, $filters);
 
         if ($count === 0) {
+            // Check if part exists at all
+            $existing = $this->supabase->select('build_parts', ['id', 'updated_at'], ['id' => $partId]);
+            if (!empty($existing)) {
+                return response()->json([
+                    'error' => 'Part was modified by another user. Please refresh.',
+                    'conflict' => true,
+                    'current_updated_at' => $existing[0]['updated_at'] ?? null,
+                ], 409);
+            }
             return response()->json(['error' => 'Part not found'], 404);
         }
 

@@ -23,6 +23,7 @@
         height: 100%;
         border-radius: 24px;
         overflow: hidden;
+        touch-action: none;
         background: #000;
         box-shadow: 0 8px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
     }
@@ -531,20 +532,24 @@ function scrollytellingEngine() {
             };
 
             window.addEventListener('wheel', this._wheelHandler, { passive: false });
-            window.addEventListener('touchstart', this._touchStartHandler, { passive: true });
-            window.addEventListener('touchmove', this._touchMoveHandler, { passive: false });
+            document.addEventListener('touchstart', this._touchStartHandler, { passive: true });
+            document.addEventListener('touchmove', this._touchMoveHandler, { passive: false });
         },
 
         _lock() {
             this.finished = false;
             document.body.style.overflow = 'hidden';
-            window.scrollTo({ top: 0, behavior: 'instant' });
+            window.scrollTo({ top: 0 });
+            const frame = document.getElementById('scrolly-frame');
+            if (frame) frame.style.touchAction = 'none';
             this._accumulator = 0;
         },
 
         _unlock() {
             this.finished = true;
             document.body.style.overflow = '';
+            const frame = document.getElementById('scrolly-frame');
+            if (frame) frame.style.touchAction = 'auto';
         },
 
         _load(img) {

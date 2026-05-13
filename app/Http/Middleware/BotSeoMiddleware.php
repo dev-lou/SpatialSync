@@ -48,8 +48,8 @@ class BotSeoMiddleware
         }
 
         // Serve a clean, instant OG page to the bot — no sessions, no auth, no JS
-        $appUrl   = config('app.url', 'https://spatialsync.onrender.com');
-        $imageUrl = $appUrl . '/images/og-meta.png';
+        $appUrl   = config('app.url', 'https://spatialsync.isufstcict.com');
+        $imageUrl = rtrim($appUrl, '/') . '/images/og-meta.png';
         $pageUrl  = $request->url();
 
         $html = <<<HTML

@@ -157,6 +157,16 @@ class BuildEditor {
         const now = Date.now();
         if (now - this.lastPresenceSent < 50) return; // Throttling 20fps
         
+        // Delta check: only send if cursor moved more than 0.1 units
+        if (this._lastCursorPos) {
+            const dx = mousePos.x - this._lastCursorPos.x;
+            const dy = mousePos.y - this._lastCursorPos.y;
+            const dz = mousePos.z - this._lastCursorPos.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            if (dist < 0.1) return;
+        }
+        this._lastCursorPos = { x: mousePos.x, y: mousePos.y, z: mousePos.z };
+
         // Use the title from the page or a fallback
         const userName = document.querySelector('.editor-topbar__title')?.textContent.split(' - ')[1] || 'Collaborator';
         
@@ -4513,6 +4523,12 @@ class BuildEditor {
 
     async updatePartAPI_Real(partId, data) {
         try {
+            // Include optimistic locking via updated_at
+            const part = this.parts.get(partId);
+            if (part && part.data && part.data.updated_at) {
+                data.updated_at = part.data.updated_at;
+            }
+
             const response = await fetch(`${this.api.parts}/${partId}`, {
                 method: 'PUT',
                 credentials: 'same-origin',
@@ -4523,6 +4539,21 @@ class BuildEditor {
                 },
                 body: JSON.stringify(data),
             });
+
+            if (response.status === 409) {
+                const err = await response.json();
+                this.showToastEvent('Another user modified this part. Refresh to see latest.', 'error');
+                return false;
+            }
+
+            // Update stored updated_at after successful save
+            if (response.ok) {
+                const updated = await response.json();
+                if (updated && updated.updated_at && part) {
+                    part.data.updated_at = updated.updated_at;
+                }
+            }
+
             return response.ok;
         } catch (e) { return false; }
     }

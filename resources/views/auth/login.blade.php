@@ -15,14 +15,15 @@
         />
 
         <!-- Custom Password Field with Toggle -->
-        <div class="field field-password" id="field-password" style="position: relative; margin-top: var(--space-4); margin-bottom: var(--space-4);">
-            <label class="field__label" for="password" style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-2);">Password</label>
+        <div class="input-group">
+            <label class="input-label" for="password">Password</label>
             <div style="position: relative;">
-                <input class="field__input" type="password" id="password" name="password"
+                <input class="input" type="password" id="password" name="password"
                     placeholder="Enter your password" autocomplete="current-password" required
-                    style="width: 100%; border: 1.5px solid var(--border-default); padding: 10px 14px; border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); font-size: var(--text-base); transition: all 0.2s ease;">
-                <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password" aria-controls="password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; color: var(--text-tertiary); background: none; border: none; cursor: pointer; border-radius: var(--radius-sm);">
-                    <i data-lucide="eye" id="pw-icon" style="width: 16px; height: 16px;"></i>
+                    style="padding-right: 48px;">
+                <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password" aria-controls="password" 
+                    style="position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; color: var(--text-tertiary); background: none; border: none; cursor: pointer; border-radius: var(--radius-sm);">
+                    <i data-lucide="eye" id="pw-icon" style="width: 18px; height: 18px;"></i>
                 </button>
             </div>
         </div>
