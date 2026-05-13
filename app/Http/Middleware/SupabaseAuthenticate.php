@@ -25,6 +25,7 @@ class SupabaseAuthenticate
             'auth_user_name' => $request->session()->get('supabase_user_name'),
             'auth_user_plan' => $request->session()->get('supabase_user_plan', 'free'),
             'auth_user_admin' => $request->session()->get('supabase_user_admin', false),
+            'auth_user_avatar' => $request->session()->get('supabase_user_avatar'),
         ]);
 
         return $next($request);

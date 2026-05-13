@@ -44,6 +44,14 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Profile & Settings (Overriding Jetstream's Inertia routes)
+    Route::get('/user/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/user/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/user/profile/avatar', [\App\Http\Controllers\ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
+    Route::put('/user/profile/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/user/profile/biometrics', [\App\Http\Controllers\ProfileController::class, 'saveBiometrics'])->name('profile.biometrics.save');
+    Route::delete('/user/profile/biometrics', [\App\Http\Controllers\ProfileController::class, 'deleteBiometrics'])->name('profile.biometrics.delete');
+
     // Checkout Simulation
     Route::get('/checkout/{plan}', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout/process', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');

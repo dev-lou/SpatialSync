@@ -61,7 +61,7 @@ class BuildController extends Controller
         $allMemberships = $this->supabase->select('build_members', ['build_id', 'user_id', 'role'], []);
         
         // Then get all users
-        $allUsers = $this->supabase->select('users', ['id', 'name', 'email'], []);
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'email', 'avatar_url'], []);
         $userMap = collect($allUsers)->keyBy('id');
 
         foreach ($combined as $b) {
@@ -73,7 +73,8 @@ class BuildController extends Controller
                 $membersData->push((object)[
                     'id' => $b->created_by,
                     'name' => $ownerUser['name'],
-                    'role' => 'owner'
+                    'role' => 'owner',
+                    'avatar_url' => $ownerUser['avatar_url'] ?? null
                 ]);
             }
             
@@ -85,7 +86,8 @@ class BuildController extends Controller
                         $membersData->push((object)[
                             'id' => $u['id'],
                             'name' => $u['name'],
-                            'role' => $m['role']
+                            'role' => $m['role'],
+                            'avatar_url' => $u['avatar_url'] ?? null
                         ]);
                     }
                 }
@@ -183,7 +185,7 @@ class BuildController extends Controller
         $rawMembers = $this->supabase->select('build_members', ['*'], ['build_id' => $buildId]);
         
         // We need player names, so let's get all users who are members
-        $allUsers = $this->supabase->select('users', ['id', 'name'], []); // Ideally use a join or IN query if supported
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'avatar_url'], []); // Ideally use a join or IN query if supported
         $userMap = collect($allUsers)->keyBy('id');
 
         $membersData = [];
@@ -195,6 +197,7 @@ class BuildController extends Controller
             'name' => ($ownerUser['name'] ?? 'Owner') . ($userId === $build->created_by ? ' (You)' : ''),
             'role' => 'owner',
             'isOnline' => true, // Default for now
+            'avatar_url' => $ownerUser['avatar_url'] ?? null,
             'color' => '#0066FF',
             'color2' => '#818CF8'
         ];
@@ -209,6 +212,7 @@ class BuildController extends Controller
                 'name' => ($u['name'] ?? 'Guest') . ($userId === $m['user_id'] ? ' (You)' : ''),
                 'role' => $m['role'],
                 'isOnline' => false,
+                'avatar_url' => $u['avatar_url'] ?? null,
                 'color' => '#6B7280',
                 'color2' => '#9CA3AF'
             ];

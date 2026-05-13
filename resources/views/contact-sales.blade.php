@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@section('title', 'Contact Sales')
+@section('description', 'Get in touch with SpatialSync for enterprise plans and custom integrations.')
 
 @section('content')
 <div class="container" style="padding-top: calc(var(--header-height) + var(--space-12)); padding-bottom: var(--space-20);">
@@ -36,12 +38,12 @@
                 </div>
 
                 <div style="margin-bottom: var(--space-8);">
-                    <label class="input-label" style="display: block; margin-bottom: var(--space-2);">Estimated Team Size</label>
-                    <select class="input" style="appearance: auto;">
-                        <option>10-50 employees</option>
-                        <option>51-200 employees</option>
-                        <option>201-500 employees</option>
-                        <option>501+ employees</option>
+                    <label class="input-label" style="display: block; margin-bottom: var(--space-2); font-size: var(--text-sm); font-weight: 500; color: var(--text-primary);">Estimated Team Size</label>
+                    <select name="team_size" class="input" style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); font-size: var(--text-base); font-family: var(--font-body); cursor: pointer; appearance: none; background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\"); background-repeat: no-repeat; background-position: right 14px center;">
+                        <option value="10-50">10-50 employees</option>
+                        <option value="51-200">51-200 employees</option>
+                        <option value="201-500">201-500 employees</option>
+                        <option value="501+">501+ employees</option>
                     </select>
                 </div>
 

@@ -224,55 +224,7 @@
             <form action="{{ route('builds.store') }}" method="POST" @submit="handleSubmit($event)">
                 @csrf
                 <div class="modal__body">
-                    <!-- Template Picker -->
-                    <label class="form-label mb-3">Choose a template</label>
-                    <div class="template-picker">
-                        <div class="template-option" :class="{ 'selected': template === 'blank' }" @click="template = 'blank'">
-                            <div class="template-option__check">
-                                <i data-lucide="check" class="w-3 h-3"></i>
-                            </div>
-                            <div class="template-option__icon">
-                                <i data-lucide="square" class="w-6 h-6"></i>
-                            </div>
-                            <div class="template-option__label">Blank Canvas</div>
-                            <div class="template-option__description">Start from scratch</div>
-                        </div>
-                        
-                        <div class="template-option" :class="{ 'selected': template === 'floor' }" @click="template = 'floor'">
-                            <div class="template-option__check">
-                                <i data-lucide="check" class="w-3 h-3"></i>
-                            </div>
-                            <div class="template-option__icon">
-                                <i data-lucide="layout" class="w-6 h-6"></i>
-                            </div>
-                            <div class="template-option__label">Floor Plan</div>
-                            <div class="template-option__description">Basic room layout</div>
-                        </div>
-                        
-                        <div class="template-option" :class="{ 'selected': template === 'office' }" @click="template = 'office'">
-                            <div class="template-option__check">
-                                <i data-lucide="check" class="w-3 h-3"></i>
-                            </div>
-                            <div class="template-option__icon">
-                                <i data-lucide="building-2" class="w-6 h-6"></i>
-                            </div>
-                            <div class="template-option__label">Office Space</div>
-                            <div class="template-option__description">Workspace layout</div>
-                        </div>
-                        
-                        <div class="template-option" :class="{ 'selected': template === 'house' }" @click="template = 'house'">
-                            <div class="template-option__check">
-                                <i data-lucide="check" class="w-3 h-3"></i>
-                            </div>
-                            <div class="template-option__icon">
-                                <i data-lucide="home" class="w-6 h-6"></i>
-                            </div>
-                            <div class="template-option__label">House Plan</div>
-                            <div class="template-option__description">Residential layout</div>
-                        </div>
-                    </div>
-                    
-                    <input type="hidden" name="template" :value="template">
+                    <input type="hidden" name="template" value="blank">
                     
                     <!-- Build Name -->
                     <div class="form-group">
@@ -308,15 +260,19 @@
                 
                 <div class="modal__footer">
                     <button type="button" class="btn btn--secondary" @click="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn--primary btn-glow" :disabled="!name.trim() || isSubmitting">
-                        <span x-show="!isSubmitting">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            Create Build
-                        </span>
-                        <span x-show="isSubmitting">
-                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
-                            Creating...
-                        </span>
+                    <button type="submit" class="btn btn--primary btn-glow" :disabled="!name.trim() || isSubmitting" style="display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 140px;">
+                        <template x-if="!isSubmitting">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Create Build</span>
+                            </div>
+                        </template>
+                        <template x-if="isSubmitting">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                                <span>Creating...</span>
+                            </div>
+                        </template>
                     </button>
                 </div>
             </form>

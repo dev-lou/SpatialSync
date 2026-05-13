@@ -226,6 +226,12 @@
     background: var(--bg);
 }
 
+.tech-section__header {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto var(--space-12);
+}
+
 .tech-grid {
     display: flex;
     flex-wrap: wrap;

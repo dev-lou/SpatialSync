@@ -27,6 +27,7 @@ class ViewServiceProvider extends ServiceProvider
             $userEmail = Session::get('supabase_user_email');
             $userPlan = Session::get('supabase_user_plan', 'free');
             $isAdmin = Session::get('supabase_user_admin', false);
+            $userAvatar = Session::get('supabase_user_avatar');
 
             $view->with([
                 'auth_user' => $userId ? (object) [
@@ -35,6 +36,7 @@ class ViewServiceProvider extends ServiceProvider
                     'email' => $userEmail,
                     'plan' => $userPlan,
                     'is_admin' => $isAdmin,
+                    'avatar_url' => $userAvatar,
                 ] : null,
                 'auth_user_id' => $userId,
                 'auth_user_name' => $userName,

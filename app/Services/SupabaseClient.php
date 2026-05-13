@@ -126,9 +126,11 @@ class SupabaseClient
 
             if (!$response->successful()) {
                 Log::error("Supabase update failed [{$response->status()}]: {$response->body()}");
+                return 0;
             }
 
-            return $response->successful() ? count($response->json() ?? []) : 0;
+            $json = $response->json();
+            return is_array($json) && count($json) > 0 ? count($json) : 1;
         } catch (\Exception $e) {
             Log::error("Supabase update error: {$e->getMessage()}");
 
@@ -178,5 +180,47 @@ class SupabaseClient
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Upload a file to Supabase Storage
+     */
+    public function uploadFile(string $bucket, string $path, $fileContents, string $mimeType): ?string
+    {
+        $url = "{$this->url}/storage/v1/object/{$bucket}/{$path}";
+
+        $headers = [
+            'apikey' => $this->serviceKey,
+            'Authorization' => "Bearer {$this->serviceKey}",
+            'Content-Type' => $mimeType,
+            'x-upsert' => 'true'
+        ];
+
+        try {
+            $response = Http::withHeaders($headers)
+                ->timeout(60)
+                ->send('POST', $url, [
+                    'body' => $fileContents
+                ]);
+
+            if ($response->successful()) {
+                // Return the path so we can construct public URL
+                return $path;
+            }
+            
+            Log::error("Supabase file upload failed [{$response->status()}]: {$response->body()}");
+            return null;
+        } catch (\Exception $e) {
+            Log::error("Supabase file upload error: {$e->getMessage()}");
+            return null;
+        }
+    }
+
+    /**
+     * Get the public URL for a storage object
+     */
+    public function getPublicUrl(string $bucket, string $path): string
+    {
+        return "{$this->url}/storage/v1/object/public/{$bucket}/{$path}";
     }
 }

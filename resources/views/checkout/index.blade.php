@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@section('title', 'Checkout')
+@section('description', 'Complete your SpatialSync plan upgrade.')
 
 @section('content')
 <div class="container" style="padding-top: calc(var(--header-height) + var(--space-12)); padding-bottom: var(--space-20);">
@@ -8,7 +10,7 @@
                 Complete your <span>upgrade</span>
             </h1>
             <p style="font-size: 1.25rem; color: var(--text-secondary); max-width: 600px;">
-                You're one step away from unlocking the full power of ConstructHub.
+                You're one step away from unlocking the full power of SpatialSync.
             </p>
         </div>
 

@@ -9,7 +9,7 @@
             <!-- Explicit Back Button -->
             <a href="{{ route('builds.index') }}" class="btn btn--ghost btn--sm" style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none;" title="Back to Builds">
                 <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-                <span style="font-size: 13px; font-weight: 600;">Back</span>
+                <span class="hidden-md" style="font-size: 13px; font-weight: 600;">Back</span>
             </a>
             <div class="editor-topbar__divider"></div>
             
@@ -21,9 +21,9 @@
             <span class="editor-topbar__title">{{ $build->name }}</span>
             
             <!-- Real-time Connection Indicator -->
-            <div class="rt-indicator" :title="'Connection: ' + rtStatus + (isReconnecting ? ' (Reconnecting...)' : '')">
-                <div class="rt-indicator__dot" :class="rtStatus" :class="{ 'reconnecting': isReconnecting }"></div>
-                <span class="rt-indicator__label" x-text="isReconnecting ? 'Reconnecting...' : (rtStatus === 'connected' ? 'Live' : (rtStatus === 'connecting' ? 'Syncing...' : 'Offline'))"></span>
+            <div class="rt-indicator" :title="'Connection: ' + displayStatus">
+                <div class="rt-indicator__dot" :class="displayStatus"></div>
+                <span class="rt-indicator__label" x-text="displayStatus === 'connected' ? 'Live' : (displayStatus === 'connecting' ? 'Syncing...' : (displayStatus === 'reconnecting' ? 'Reconnecting...' : 'Offline'))"></span>
             </div>
 
             <!-- View Only Badge for Viewers -->
@@ -70,12 +70,12 @@
 
             <!-- Horizontal Keybind Guide -->
             <div class="navbar-shortcuts">
-                <div class="nb-shortcut"><kbd>WASD / ↑↓←→</kbd> Move</div>
-                <div class="nb-shortcut"><kbd>R</kbd> Rotate</div>
-                <div class="nb-shortcut"><kbd>G</kbd> Delete</div>
-                <div class="nb-shortcut"><kbd>T</kbd> Transform</div>
-                <div class="nb-shortcut"><kbd>SPACE</kbd> View</div>
-                <div class="nb-shortcut"><kbd>Q</kbd> Cancel</div>
+                <div class="nb-shortcut"><kbd>WASD</kbd> <span>Move</span></div>
+                <div class="nb-shortcut"><kbd>R</kbd> <span>Rotate</span></div>
+                <div class="nb-shortcut"><kbd>G</kbd> <span>Delete</span></div>
+                <div class="nb-shortcut"><kbd>T</kbd> <span>Transform</span></div>
+                <div class="nb-shortcut"><kbd>SPACE</kbd> <span>View</span></div>
+                <div class="nb-shortcut"><kbd>Q</kbd> <span>Cancel</span></div>
             </div>
         </div>
 
@@ -192,13 +192,31 @@
                 <!-- Share Link - Admin/Editor Only -->
                 <div class="sidebar-section" x-show="userRole !== 'viewer'">
                     <div class="sidebar-section__title">
-                        <i data-lucide="share-2"></i> Share Link
+                        <i data-lucide="link"></i> Share Invite Link
                     </div>
-                    <div class="flex gap-2">
-                        <input type="text" readonly x-model="shareUrl" class="chat-input" placeholder="Generate a link...">
-                        <button class="btn btn--secondary btn--sm" @click="getShareUrl()">
-                            <i data-lucide="copy" class="w-4 h-4"></i>
+                    
+                    <div x-show="!shareUrl">
+                        <button class="btn btn--primary btn--sm w-full" @click="getShareUrl()" style="justify-content: center; gap: 8px;">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            Generate Invite Link
                         </button>
+                        <p class="text-[10px] text-slate-400 mt-2 text-center">Anyone with this link can view and participate.</p>
+                    </div>
+
+                    <div x-show="shareUrl" x-cloak class="space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" readonly :value="shareUrl" class="chat-input text-xs" @click="$el.select()">
+                            <button class="btn btn--secondary btn--sm" @click="copyShareUrl()" title="Copy Link">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center px-1">
+                            <div class="flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-sm">
+                                <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                <span class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Active</span>
+                            </div>
+                            <span @click="shareUrl = ''" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">Hide</span>
+                        </div>
                     </div>
                 </div>
 
@@ -223,7 +241,14 @@
                         <template x-for="member in members" :key="member.id">
                             <div class="member-item group" x-data="{ isOpen: false }" @click.away="isOpen = false">
                                 <div class="member-info">
-                                    <div class="avatar avatar--sm" style="background: linear-gradient(135deg, var(--accent) 0%, #818CF8 100%); width: 32px; height: 32px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; text-transform: uppercase;" x-text="member.name.substring(0, 1)"></div>
+                                    <div class="avatar avatar--sm" style="width: 32px; height: 32px; border-radius: 12px; overflow: hidden; background: linear-gradient(135deg, var(--accent) 0%, #818CF8 100%); display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                                        <template x-if="member.avatar_url">
+                                            <img :src="member.avatar_url" class="w-full h-full object-cover">
+                                        </template>
+                                        <template x-if="!member.avatar_url">
+                                            <span class="text-white font-bold text-xs uppercase" x-text="member.name.substring(0, 1)"></span>
+                                        </template>
+                                    </div>
                                     <div class="flex-1 min-w-0">
                                         <div class="member-name truncate font-semibold text-sm" x-text="member.name"></div>
                                         <div class="member-role text-[10px] uppercase tracking-wider font-bold text-slate-400 group-hover:text-accent transition-colors" x-text="member.role"></div>
@@ -925,16 +950,21 @@ document.addEventListener('alpine:init', () => {
         supabase: null,
         rtChannel: null,
         rtStatus: 'connecting', // connecting, connected, error, closed
+        displayStatus: 'connecting', // debounced status for UI display
         tabId: Math.random().toString(36).substr(2, 9),
         pendingSyncEvents: [], // Queue for sync events before editor ready
         
-        // Connection resilience
+        // Connection resilience — tuned for stability
         reconnectAttempts: 0,
-        maxReconnectAttempts: 10,
-        reconnectDelay: 1000,
+        maxReconnectAttempts: 5,
+        reconnectDelay: 2000,
         reconnectTimer: null,
         isReconnecting: false,
         activeChannelId: null, // Track which channel is currently active
+        _statusDebounceTimer: null, // Debounce UI flicker
+        _lastConnectedAt: 0, // Timestamp of last successful connection
+        _graceUntil: 0, // Grace period after initial connect (no false alarms)
+        _hasShownReconnectToast: false, // Only show reconnect toast once per cycle
         
         toolIcons: { select: 'mouse-pointer', delete: 'trash-2', move: 'move', clone: 'copy' },
         toolLabels: { select: 'Select Tool', delete: 'Delete Tool — Click to remove', move: 'Move Tool — Click to pick up', clone: 'Clone Tool — Click to duplicate' },
@@ -1087,9 +1117,15 @@ document.addEventListener('alpine:init', () => {
                     this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : (status === 'CLOSED' ? 'closed' : 'error');
                     
                     if (status === 'SUBSCRIBED') {
-                        // Reset reconnection attempts on successful connection
+                        // Reset reconnection state
                         this.reconnectAttempts = 0;
                         this.isReconnecting = false;
+                        this._lastConnectedAt = Date.now();
+                        this._hasShownReconnectToast = false;
+                        // Grace period: don't trigger false disconnects for 8s after connect
+                        this._graceUntil = Date.now() + 8000;
+                        // Immediately update display
+                        this._setDisplayStatus('connected');
                         
                         // Immediately track presence
                         try {
@@ -1105,15 +1141,23 @@ document.addEventListener('alpine:init', () => {
                         }
                         
                         // Sync any parts that may have been added while page was loading
-                        // Small delay to let editor finish initializing
                         setTimeout(() => this.syncMissedParts(), 500);
                     } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                        console.warn('RT Connection lost (status: ' + status + ')');
+                        console.warn('RT Connection event (status: ' + status + ')');
+                        
+                        // Skip if within grace period
+                        if (Date.now() < this._graceUntil) {
+                            console.log('RT Within grace period, ignoring transient disconnect');
+                            return;
+                        }
+                        
+                        // Debounce: only update display after 3s of continuous disconnect
+                        this._setDisplayStatus('reconnecting');
+                        
                         // Only trigger reconnection if not already reconnecting
                         if (!this.isReconnecting && this.reconnectAttempts < this.maxReconnectAttempts) {
                             console.log('RT Scheduling reconnection...');
-                            // Add delay before reconnection on localhost to prevent rapid reconnection loops
-                            const delay = this.reconnectAttempts === 0 ? 2000 : 1000;
+                            const delay = this.reconnectAttempts === 0 ? 5000 : 3000;
                             setTimeout(() => this.handleReconnection(), delay);
                         } else if (this.isReconnecting) {
                             console.log('RT Reconnection already in progress, skipping...');
@@ -1400,11 +1444,17 @@ document.addEventListener('alpine:init', () => {
                 });
                 const data = await res.json();
                 this.shareUrl = data.url;
-                navigator.clipboard.writeText(data.url);
-                this.showToast('Share link copied to clipboard!');
+                this.copyShareUrl();
             } catch (err) {
                 this.showToast('Failed to generate share link', 'error');
             }
+        },
+
+        copyShareUrl() {
+            if (!this.shareUrl) return;
+            navigator.clipboard.writeText(this.shareUrl);
+            this.showToast('Invite link copied to clipboard!', 'success');
+            this.$nextTick(() => { if(window.lucide) lucide.createIcons(); });
         },
 
         async fetchMessages() {
@@ -1595,10 +1645,29 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // Debounced display status update — prevents UI flicker
+        _setDisplayStatus(status) {
+            // Connected always updates instantly (good news travels fast)
+            if (status === 'connected') {
+                clearTimeout(this._statusDebounceTimer);
+                this.displayStatus = 'connected';
+                return;
+            }
+            // Non-connected states are debounced by 3 seconds
+            clearTimeout(this._statusDebounceTimer);
+            this._statusDebounceTimer = setTimeout(() => {
+                // Only downgrade if still not connected
+                if (this.rtStatus !== 'connected') {
+                    this.displayStatus = status;
+                }
+            }, 3000);
+        },
+
         handleReconnection() {
             if (this.isReconnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
                 if (this.reconnectAttempts >= this.maxReconnectAttempts) {
                     console.error('RT Max reconnection attempts reached. Please refresh the page.');
+                    this._setDisplayStatus('error');
                     this.showToast('Connection lost. Please refresh the page.', 'error');
                 }
                 return;
@@ -1607,11 +1676,15 @@ document.addEventListener('alpine:init', () => {
             this.isReconnecting = true;
             this.reconnectAttempts++;
             
-            // Exponential backoff: 3s, 6s, 12s, 24s, ... up to 60s max (slower for localhost stability)
+            // Exponential backoff: 6s, 12s, 24s, ... up to 60s max (tuned for localhost)
             const delay = Math.min(this.reconnectDelay * 3 * Math.pow(2, this.reconnectAttempts - 1), 60000);
             
             console.log(`RT Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
-            this.showToast(`Reconnecting... (attempt ${this.reconnectAttempts})`, 'warning');
+            // Only show toast on first attempt to reduce spam
+            if (!this._hasShownReconnectToast) {
+                this._hasShownReconnectToast = true;
+                this.showToast('Connection unstable, reconnecting...', 'warning');
+            }
 
             this.reconnectTimer = setTimeout(() => {
                 console.log('RT Attempting to recreate channel...');
@@ -1696,6 +1769,10 @@ document.addEventListener('alpine:init', () => {
                         if (status === 'SUBSCRIBED') {
                             this.reconnectAttempts = 0;
                             this.isReconnecting = false;
+                            this._lastConnectedAt = Date.now();
+                            this._hasShownReconnectToast = false;
+                            this._graceUntil = Date.now() + 8000;
+                            this._setDisplayStatus('connected');
                             this.showToast('Reconnected successfully!', 'success');
                             
                             await this.rtChannel.track({
@@ -1716,8 +1793,11 @@ document.addEventListener('alpine:init', () => {
                             await this.syncMissedParts();
                         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
                             this.isReconnecting = false;
+                            // Skip if within grace period
+                            if (Date.now() < this._graceUntil) return;
                             // Only trigger reconnection if this is still the active channel
                             if (reconnectionChannelId === this.activeChannelId && !this.isReconnecting) {
+                                this._setDisplayStatus('reconnecting');
                                 this.handleReconnection();
                             }
                         }
@@ -2312,6 +2392,58 @@ document.addEventListener('alpine:init', () => {
         border-bottom-right-radius: 4px;
     }
     
+    /* Navbar Shortcuts Adaptive */
+    .navbar-shortcuts {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .nb-shortcut {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-tertiary);
+        white-space: nowrap;
+    }
+
+    .nb-shortcut kbd {
+        display: inline-block;
+        padding: 2px 6px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-default);
+        border-radius: 4px;
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        box-shadow: 0 2px 0 var(--border-default);
+    }
+
+    /* Collapse labels when sidebar is open or screen is small */
+    .sidebar-open .nb-shortcut span,
+    @media (max-width: 1400px) {
+        .nb-shortcut span {
+            display: none;
+        }
+        .nav-shortcut-divider {
+            display: none;
+        }
+        .navbar-shortcuts {
+            gap: 8px;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .navbar-shortcuts {
+            display: none;
+        }
+    }
+
     .message--other {
         margin-right: auto;
         background: var(--bg-secondary);

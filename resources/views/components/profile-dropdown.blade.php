@@ -9,10 +9,14 @@
         aria-label="User menu"
     >
         <div class="profile-dropdown__avatar">
-            @if($auth_user && $auth_user->name)
-                <span class="profile-dropdown__initials">
-                    {{ strtoupper(substr($auth_user->name ?? '', 0, 1)) }}{{ strtoupper(substr(explode(' ', $auth_user->name ?? '')[1] ?? '', 0, 1)) }}
-                </span>
+            @if($auth_user)
+                @if(isset($auth_user->avatar_url) && $auth_user->avatar_url)
+                    <img src="{{ $auth_user->avatar_url }}" alt="Profile Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                @elseif($auth_user->name)
+                    <span class="profile-dropdown__initials">
+                        {{ strtoupper(substr($auth_user->name ?? '', 0, 1)) }}{{ strtoupper(substr(explode(' ', $auth_user->name ?? '')[1] ?? '', 0, 1)) }}
+                    </span>
+                @endif
             @endif
         </div>
         <i data-lucide="chevron-down" class="profile-dropdown__chevron" :class="{ 'rotate-180': open }"></i>
@@ -42,11 +46,6 @@
         <a href="{{ route('home') }}" class="profile-dropdown__item" @click="open = false">
             <i data-lucide="home" class="profile-dropdown__icon"></i>
             <span>Home</span>
-        </a>
-
-        <a href="{{ route('dashboard') }}" class="profile-dropdown__item" @click="open = false">
-            <i data-lucide="layout-dashboard" class="profile-dropdown__icon"></i>
-            <span>Dashboard</span>
         </a>
 
         <a href="{{ route('profile.show') }}" class="profile-dropdown__item" @click="open = false">

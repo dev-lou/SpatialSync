@@ -326,7 +326,7 @@
 
                 @foreach($members as $member)
                     <div class="build-card__avatar-item">
-                        <x-avatar :name="$member->name" size="sm" style="width: 24px; height: 24px;" />
+                        <x-avatar :name="$member->name" :src="$member->avatar_url ?? null" size="sm" style="width: 24px; height: 24px;" />
                     </div>
                 @endforeach
             </div>

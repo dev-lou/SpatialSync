@@ -32,7 +32,7 @@ class DashboardController extends Controller
         });
 
         $allMemberships = $this->supabase->select('build_members', ['build_id', 'user_id', 'role'], []);
-        $allUsers = $this->supabase->select('users', ['id', 'name', 'email', 'plan'], []); 
+        $allUsers = $this->supabase->select('users', ['id', 'name', 'email', 'plan', 'avatar_url'], []); 
         $userMap = collect($allUsers)->keyBy('id');
 
         // Identify shared builds (user is in members, but not created_by)
@@ -61,7 +61,8 @@ class DashboardController extends Controller
                 $membersData->push((object)[
                     'id' => $obj->created_by,
                     'name' => $ownerUser['name'],
-                    'role' => 'owner'
+                    'role' => 'owner',
+                    'avatar_url' => $ownerUser['avatar_url'] ?? null
                 ]);
             }
             
@@ -73,7 +74,8 @@ class DashboardController extends Controller
                         $membersData->push((object)[
                             'id' => $u['id'],
                             'name' => $u['name'],
-                            'role' => $m['role']
+                            'role' => $m['role'],
+                            'avatar_url' => $u['avatar_url'] ?? null
                         ]);
                     }
                 }

@@ -1,9 +1,7 @@
 @extends('layouts.app')
+@section('title', 'Payment Successful')
 
 @section('content')
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <div class="container" style="padding-top: calc(var(--header-height) + var(--space-20)); padding-bottom: var(--space-20); text-align: center;">
     <div style="max-width: 600px; margin: 0 auto;" class="reveal">
         <div style="width: 80px; height: 80px; background: var(--success-light); color: var(--success); border-radius: 50%; display: grid; place-items: center; margin: 0 auto var(--space-8);">
@@ -35,15 +33,8 @@
             title: 'Payment Successful!',
             text: 'Your account has been upgraded to PRO.',
             icon: 'success',
-            background: 'var(--surface)',
-            color: 'var(--text-primary)',
-            confirmButtonColor: 'var(--accent)',
             confirmButtonText: 'Great!',
-            backdrop: `
-                rgba(0,0,123,0.1)
-                left top
-                no-repeat
-            `
+            backdrop: 'rgba(0,0,123,0.1)'
         });
     });
 </script>

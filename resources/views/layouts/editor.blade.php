@@ -25,6 +25,32 @@
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const _SwalBase = Swal;
+        window.Swal = _SwalBase.mixin({
+            background: '#ffffff',
+            color: '#1a1a2e',
+            confirmButtonColor: '#0066FF',
+            cancelButtonColor: '#64748b',
+            iconColor: '#0066FF',
+            customClass: {
+                popup: 'swal-global-popup',
+                title: 'swal-global-title',
+                htmlContainer: 'swal-global-body'
+            }
+        });
+    </script>
+    <style>
+        .swal-global-popup {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            border-radius: 24px !important;
+            padding: 2rem !important;
+            border: 1px solid rgba(0,0,0,0.06) !important;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.12) !important;
+        }
+        .swal-global-title { font-weight: 800 !important; letter-spacing: -0.02em !important; }
+        .swal-global-body { font-size: 1rem !important; line-height: 1.6 !important; }
+    </style>
 
     <!-- jsPDF for Blueprint Export -->
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -56,10 +82,11 @@
 
         /* Top Bar - Minimal */
         .editor-topbar {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(200px, 1fr) auto minmax(200px, 1fr);
             align-items: center;
-            justify-content: space-between;
-            padding: 8px 16px;
+            gap: 16px;
+            padding: 0 16px;
             background: color-mix(in srgb, var(--surface) 85%, transparent);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
@@ -68,52 +95,47 @@
             flex-shrink: 0;
             position: relative;
             z-index: 1010;
-            overflow: visible;
         }
 
         .editor-topbar__left {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .editor-topbar__logo {
-            display: flex;
-            align-items: center;
             gap: 8px;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-decoration: none;
-        }
-
-        .editor-topbar__logo svg {
-            width: 24px;
-            height: 24px;
-            color: var(--accent);
-        }
-
-        .editor-topbar__divider {
-            width: 1px;
-            height: 24px;
-            background: var(--border-default);
+            min-width: 0;
         }
 
         .editor-topbar__title {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .editor-topbar__center {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 12px;
+            min-width: 0;
         }
 
         .editor-topbar__right {
             display: flex;
             align-items: center;
+            justify-content: flex-end;
             gap: 8px;
+            min-width: 0;
+        }
+
+        @media (max-width: 1400px) {
+            .editor-topbar__title {
+                display: none;
+            }
+            .hidden-md {
+                display: none !important;
+            }
         }
 
         /* Canvas Area */

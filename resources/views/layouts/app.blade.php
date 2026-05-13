@@ -62,6 +62,39 @@
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Global SweetAlert2 light-mode defaults for consistency
+        const _SwalBase = Swal;
+        window.Swal = _SwalBase.mixin({
+            background: '#ffffff',
+            color: '#1a1a2e',
+            confirmButtonColor: '#0066FF',
+            cancelButtonColor: '#64748b',
+            iconColor: '#0066FF',
+            customClass: {
+                popup: 'swal-global-popup',
+                title: 'swal-global-title',
+                htmlContainer: 'swal-global-body'
+            }
+        });
+    </script>
+    <style>
+        .swal-global-popup {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            border-radius: 24px !important;
+            padding: 2rem !important;
+            border: 1px solid rgba(0,0,0,0.06) !important;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.12) !important;
+        }
+        .swal-global-title {
+            font-weight: 800 !important;
+            letter-spacing: -0.02em !important;
+        }
+        .swal-global-body {
+            font-size: 1rem !important;
+            line-height: 1.6 !important;
+        }
+    </style>
 
     <!-- Styles -->
     @stack('styles')
