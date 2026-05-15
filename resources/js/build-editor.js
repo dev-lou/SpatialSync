@@ -44,6 +44,16 @@ class BuildEditor {
         this.previewMesh = null;
         this.previewMarker = null;
         
+        // Mobile / Touch Detection
+        this.isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        this.longPressTimer = null;
+        this.longPressTriggered = false;
+        this.longPressDuration = 500; // ms
+        this.tapFeedbackEl = null;
+        this.lastTapTime = 0;
+        this.doubleTapThreshold = 300; // ms
+        
         // UI State
         this.isPlacing = false;
         this.previewRotation = 0;
@@ -73,6 +83,11 @@ class BuildEditor {
         this.deletedIds = new Set();
         this.dirtyPartIds = new Set();
         this.isSaving = false;
+        
+        // Auto-Save State
+        this.autoSaveTimer = null;
+        this.autoSaveDelay = 2000; // 2 seconds debounce
+        this.lastAutoSave = 0;
         
         // Camera movement
         this.cameraSpeed = 0.5;
@@ -139,6 +154,12 @@ class BuildEditor {
         if (DEBUG_MODE) console.log('[Editor] Loading parts...');
         await this.loadParts();
         
+        // Show mobile action bar on touch devices
+        if (this.isTouchDevice) {
+            const actionBar = document.getElementById('mobile-action-bar');
+            if (actionBar) actionBar.style.display = 'flex';
+        }
+        
         // Minimap disabled per user request
         // this.createMinimap();
         
@@ -155,34 +176,31 @@ class BuildEditor {
         if (!this.rtChannel) return;
         
         const now = Date.now();
-        if (now - this.lastPresenceSent < 50) return; // Throttling 20fps
+        if (now - this.lastPresenceSent < 500) return;
         
-        // Delta check: only send if cursor moved more than 0.1 units
         if (this._lastCursorPos) {
             const dx = mousePos.x - this._lastCursorPos.x;
             const dy = mousePos.y - this._lastCursorPos.y;
             const dz = mousePos.z - this._lastCursorPos.z;
             const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-            if (dist < 0.1) return;
+            if (dist < 0.5) return;
         }
         this._lastCursorPos = { x: mousePos.x, y: mousePos.y, z: mousePos.z };
 
-        // Use the title from the page or a fallback
         const userName = document.querySelector('.editor-topbar__title')?.textContent.split(' - ')[1] || 'Collaborator';
         
-        if (DEBUG_MODE) console.log('[RT] Tracking presence:', userName, mousePos);
-
         this.rtChannel.track({
             cursor: { x: mousePos.x, y: mousePos.y, z: mousePos.z },
             name: userName,
-            role: this.userRole
+            role: this.userRole,
+            ts: now
         });
         
         this.lastPresenceSent = now;
     }
 
     updateRemoteCursors(presenceState) {
-        if (DEBUG_MODE) console.log('[RT] Presence Sync Received:', presenceState);
+        if (DEBUG_MODE && Object.keys(presenceState).length > 0) console.log('[RT] Presence Sync:', Object.keys(presenceState).length, 'user(s)');
         // Clear old ones not in state
         const currentIds = new Set(Object.keys(presenceState));
         for (const [userId, cursor] of this.remoteCursors.entries()) {
@@ -564,6 +582,14 @@ class BuildEditor {
                 MIDDLE: THREE.MOUSE.DOLLY,
                 RIGHT: THREE.MOUSE.PAN
             };
+            
+            // Mobile touch configuration — free up one-finger for editor raycasting
+            if (this.isTouchDevice) {
+                this.controls.touches = {
+                    ONE: THREE.TOUCH.ROTATE,    // One finger rotate (only when NOT placing)
+                    TWO: THREE.TOUCH.DOLLY_PAN  // Two fingers zoom + pan
+                };
+            }
         }
         
         window.addEventListener('resize', () => this.onWindowResize());
@@ -1848,6 +1874,9 @@ class BuildEditor {
             this.hasUnsavedChanges = true;
             this.showToastEvent('Draft Updated', 'info');
             console.log('[Editor] Local part placed and broadcast:', tempId);
+            
+            // Trigger auto-save
+            this.triggerAutoSave();
         } else {
             console.log('[Editor] RT Rendered Remote Part:', tempId, partData);
         }
@@ -1917,6 +1946,9 @@ class BuildEditor {
         }
         this.hasUnsavedChanges = true;
         this.updateDebugInfo('Changes ready to save');
+        
+        // Trigger auto-save
+        this.triggerAutoSave();
     }
     
     async deletePartAPI(partId) {
@@ -1954,6 +1986,9 @@ class BuildEditor {
                 isLocal: true
             } 
         }));
+        
+        // Trigger auto-save
+        this.triggerAutoSave();
 
         return true;
     }
@@ -1999,6 +2034,14 @@ class BuildEditor {
         
         this.container.style.cursor = 'crosshair';
         this.updateDebugInfo(`Placing: ${preset.name} - Click to place, R rotate, Q cancel`);
+        
+        // Show mobile placement controls, hide action bar
+        if (this.isTouchDevice) {
+            const placePanel = document.getElementById('mobile-placement-controls');
+            if (placePanel) placePanel.classList.add('show');
+            const actionBar = document.getElementById('mobile-action-bar');
+            if (actionBar) actionBar.style.display = 'none';
+        }
         
         window.dispatchEvent(new CustomEvent('preset-selected', { detail: { preset } }));
     }
@@ -2502,6 +2545,9 @@ class BuildEditor {
         
         // Dispatch for Realtime broadcast
         window.dispatchEvent(new CustomEvent('part-deleted', { detail: { id: partId } }));
+        
+        // Trigger auto-save
+        this.triggerAutoSave();
 
         this.deselectPart();
         this.hasUnsavedChanges = true;
@@ -3307,8 +3353,15 @@ class BuildEditor {
         
         canvas.addEventListener('pointermove', (e) => this.onMouseMove(e));
         canvas.addEventListener('pointerdown', (e) => this.onMouseDown(e));
-        canvas.addEventListener('pointerup', () => { /* no-op mouse up blocker */ });
+        canvas.addEventListener('pointerup', (e) => this.onMouseUp(e));
         canvas.addEventListener('contextmenu', (e) => this.onContextMenu(e));
+        
+        // Mobile touch events
+        if (this.isTouchDevice) {
+            canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+            canvas.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
+            canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+        }
         
         document.addEventListener('keydown', (e) => this.onKeyDown(e));
         document.addEventListener('keyup', (e) => this.onKeyUp(e));
@@ -3630,6 +3683,15 @@ class BuildEditor {
         
         console.log('[PointerDown] Click detected. Placing:', this.isPlacing, 'Preset:', !!this.currentPreset);
         
+        // Disable OrbitControls during placement on mobile to prevent camera rotation
+        if (this.isTouchDevice && this.isPlacing && this.controls) {
+            this.controls.enabled = false;
+            // Re-enable after a short delay
+            setTimeout(() => {
+                if (this.controls) this.controls.enabled = true;
+            }, 100);
+        }
+        
         // CUSTOM DRAW TOOL
         if (this.isDrawingPoly) {
             this.handleDrawClick();
@@ -3743,6 +3805,149 @@ class BuildEditor {
                     partType: hitPart.userData.type
                 } 
             }));
+        }
+    }
+    
+    // ============ MOBILE TOUCH HANDLERS ============
+    
+    onTouchStart(event) {
+        if (event.touches.length === 1) {
+            const touch = event.touches[0];
+            this.longPressTriggered = false;
+            
+            // Start long-press timer
+            this.longPressTimer = setTimeout(() => {
+                this.longPressTriggered = true;
+                this.handleLongPress(touch);
+            }, this.longPressDuration);
+        }
+    }
+    
+    onTouchMove(event) {
+        // Cancel long-press if finger moves (user is panning/rotating)
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+    }
+    
+    onTouchEnd(event) {
+        // Cancel long-press timer
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+        
+        // If long-press was triggered, don't process as tap
+        if (this.longPressTriggered) {
+            this.longPressTriggered = false;
+            event.preventDefault();
+            return;
+        }
+        
+        // Handle tap
+        if (event.changedTouches.length === 1) {
+            const touch = event.changedTouches[0];
+            this.handleTap(touch);
+        }
+    }
+    
+    onMouseUp(event) {
+        // Mouse up handler (replaces no-op)
+    }
+    
+    handleTap(touch) {
+        // Double-tap detection
+        const now = Date.now();
+        const timeSinceLastTap = now - this.lastTapTime;
+        this.lastTapTime = now;
+        
+        const isDoubleTap = timeSinceLastTap < this.doubleTapThreshold;
+        
+        // Show tap feedback
+        this.showTapFeedback(touch.clientX, touch.clientY);
+        
+        // Convert touch coords to mouse coords for raycasting
+        const fakeEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        };
+        this.updateMouseCoords(fakeEvent);
+        
+        if (isDoubleTap && this.currentTool === 'select') {
+            // Double-tap = select part
+            const hitPart = this.raycastParts();
+            if (hitPart) {
+                this.selectPart(hitPart.userData.id);
+            }
+        } else if (!this.isPlacing && this.currentTool === 'select') {
+            // Single tap in select mode = select part
+            const hitPart = this.raycastParts();
+            if (hitPart) {
+                this.selectPart(hitPart.userData.id);
+            }
+        }
+        // If in placement mode, let onMouseDown handle it (it checks pointer events which include touch)
+    }
+    
+    handleLongPress(touch) {
+        // Long-press = create issue (same as right-click on desktop)
+        const fakeEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            preventDefault: () => {}
+        };
+        this.updateMouseCoords(fakeEvent);
+        const hitPart = this.raycastParts();
+        if (hitPart) {
+            this.selectPart(hitPart.userData.id);
+            
+            window.dispatchEvent(new CustomEvent('open-issue-modal', { 
+                detail: { 
+                    partId: hitPart.userData.id,
+                    partType: hitPart.userData.type
+                } 
+            }));
+        }
+    }
+    
+    showTapFeedback(x, y) {
+        // Remove existing feedback
+        this.hideTapFeedback();
+        
+        // Create tap indicator
+        const el = document.createElement('div');
+        el.style.position = 'fixed';
+        el.style.left = (x - 20) + 'px';
+        el.style.top = (y - 20) + 'px';
+        el.style.width = '40px';
+        el.style.height = '40px';
+        el.style.borderRadius = '50%';
+        el.style.border = '2px solid rgba(59, 130, 246, 0.6)';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '9998';
+        el.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        el.style.transform = 'scale(0.5)';
+        el.style.opacity = '1';
+        document.body.appendChild(el);
+        this.tapFeedbackEl = el;
+        
+        // Animate
+        requestAnimationFrame(() => {
+            el.style.transform = 'scale(1)';
+            el.style.opacity = '0';
+        });
+        
+        // Remove after animation
+        setTimeout(() => {
+            this.hideTapFeedback();
+        }, 250);
+    }
+    
+    hideTapFeedback() {
+        if (this.tapFeedbackEl) {
+            this.tapFeedbackEl.remove();
+            this.tapFeedbackEl = null;
         }
     }
     
@@ -4348,6 +4553,9 @@ class BuildEditor {
                         this.deletedIds.add(partId);
                     }
                     this.hasUnsavedChanges = true;
+                    
+                    // Trigger auto-save
+                    this.triggerAutoSave();
                 }
                 break;
             }
@@ -4410,36 +4618,97 @@ class BuildEditor {
         console.log(`[History] Migrated ID ${oldId} -> ${newId} in stacks`);
     }
     
+    // ============ AUTO-SAVE ============
+    
+    triggerAutoSave() {
+        // Don't auto-save if manual save is in progress
+        if (this.isSaving) return;
+        
+        // Clear existing timer
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+        }
+        
+        // Set new debounce timer
+        this.autoSaveTimer = setTimeout(async () => {
+            if (this.hasUnsavedChanges || this.deletedIds.size > 0 || this.dirtyPartIds.size > 0) {
+                const timeSinceLastSave = Date.now() - this.lastAutoSave;
+                // Only auto-save if at least 5 seconds since last auto-save (prevent spam)
+                if (timeSinceLastSave >= 5000 || this.lastAutoSave === 0) {
+                    if (DEBUG_MODE) console.log('[Auto-Save] Triggering auto-save...');
+                    await this.saveBuild(true); // true = isAutoSave
+                    this.lastAutoSave = Date.now();
+                }
+            }
+        }, this.autoSaveDelay);
+    }
+    
     // ============ SAVE (Draft to Server Commit) ============
     
-    async saveBuild() {
+    async saveBuild(isAutoSave = false) {
         if (!this.hasUnsavedChanges && this.deletedIds.size === 0 && this.dirtyPartIds.size === 0) {
-            this.showToastEvent('Nothing to save', 'info');
+            if (!isAutoSave) this.showToastEvent('Nothing to save', 'info');
             return;
         }
 
         if (this.isSaving) return;
         this.isSaving = true;
+        
+        // Clear auto-save timer to prevent double-saves
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+            this.autoSaveTimer = null;
+        }
 
-        // Use custom DOM overlay instead of Swal so it isn't destroyed by connection toasts!
-        const overlay = document.createElement('div');
-        overlay.id = 'build-editor-saving-overlay';
-        overlay.style.position = 'fixed';
-        overlay.style.inset = '0';
-        overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.75)';
-        overlay.style.backdropFilter = 'blur(8px)';
-        overlay.style.zIndex = '9999';
-        overlay.style.display = 'flex';
-        overlay.style.flexDirection = 'column';
-        overlay.style.alignItems = 'center';
-        overlay.style.justifyContent = 'center';
-        overlay.innerHTML = `
-            <div style="width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
-            <div style="font-size: 20px; font-weight: 700; color: #1e293b;">Saving Build...</div>
-            <div style="font-size: 14px; font-weight: 500; color: #64748b; margin-top: 8px;">Uploading your masterwork to the server</div>
-            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
-        `;
-        document.body.appendChild(overlay);
+        // Use subtle indicator for auto-save, full overlay for manual save
+        if (isAutoSave) {
+            // Subtle auto-save indicator
+            const indicator = document.createElement('div');
+            indicator.id = 'build-editor-autosave-indicator';
+            indicator.style.position = 'fixed';
+            indicator.style.bottom = '16px';
+            indicator.style.left = '50%';
+            indicator.style.transform = 'translateX(-50%)';
+            indicator.style.padding = '8px 16px';
+            indicator.style.backgroundColor = 'rgba(59, 130, 246, 0.9)';
+            indicator.style.backdropFilter = 'blur(8px)';
+            indicator.style.color = '#fff';
+            indicator.style.fontSize = '13px';
+            indicator.style.fontWeight = '600';
+            indicator.style.borderRadius = '8px';
+            indicator.style.zIndex = '9999';
+            indicator.style.display = 'flex';
+            indicator.style.alignItems = 'center';
+            indicator.style.gap = '8px';
+            indicator.innerHTML = `
+                <svg style="width: 14px; height: 14px; animation: spin 1s linear infinite;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Auto-saving...
+                <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+            `;
+            document.body.appendChild(indicator);
+        } else {
+            // Full overlay for manual save
+            const overlay = document.createElement('div');
+            overlay.id = 'build-editor-saving-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.75)';
+            overlay.style.backdropFilter = 'blur(8px)';
+            overlay.style.zIndex = '9999';
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.innerHTML = `
+                <div style="width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+                <div style="font-size: 20px; font-weight: 700; color: #1e293b;">Saving Build...</div>
+                <div style="font-size: 14px; font-weight: 500; color: #64748b; margin-top: 8px;">Uploading your masterwork to the server</div>
+                <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+            `;
+            document.body.appendChild(overlay);
+        }
 
         try {
             let successCount = 0;
@@ -4489,35 +4758,48 @@ class BuildEditor {
             this.undoStack = [];
             this.redoStack = [];
             
-            Swal.fire({
-                icon: failCount === 0 ? 'success' : 'warning',
-                title: failCount === 0 ? 'Build Saved!' : 'Saved with Errors',
-                html: failCount === 0 
-                    ? 'All your changes have been successfully committed.' 
-                    : `Sync complete. ${successCount} succeeded, ${failCount} failed.`,
-                customClass: {
-                    popup: 'swal-premium',
-                    confirmButton: 'swal-confirm-btn'
-                },
-                buttonsStyling: false
-            });
+            if (isAutoSave) {
+                // Subtle success for auto-save
+                if (DEBUG_MODE) console.log(`[Auto-Save] Complete: ${successCount} saved, ${failCount} failed`);
+            } else {
+                // Full dialog for manual save
+                Swal.fire({
+                    icon: failCount === 0 ? 'success' : 'warning',
+                    title: failCount === 0 ? 'Build Saved!' : 'Saved with Errors',
+                    html: failCount === 0 
+                        ? 'All your changes have been successfully committed.' 
+                        : `Sync complete. ${successCount} succeeded, ${failCount} failed.`,
+                    customClass: {
+                        popup: 'swal-premium',
+                        confirmButton: 'swal-confirm-btn'
+                    },
+                    buttonsStyling: false
+                });
+            }
 
         } catch (error) {
             console.error('[Editor] Fatal error during save:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Save Failed',
-                html: 'A critical error occurred while syncing.<br>Please check your connection.',
-                customClass: {
-                    popup: 'swal-premium',
-                    confirmButton: 'swal-confirm-btn'
-                },
-                buttonsStyling: false
-            });
+            if (isAutoSave) {
+                if (DEBUG_MODE) console.error('[Auto-Save] Failed:', error);
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Save Failed',
+                    html: 'A critical error occurred while syncing.<br>Please check your connection.',
+                    customClass: {
+                        popup: 'swal-premium',
+                        confirmButton: 'swal-confirm-btn'
+                    },
+                    buttonsStyling: false
+                });
+            }
         } finally {
             this.isSaving = false;
+            // Remove whichever indicator was shown
             const overlay = document.getElementById('build-editor-saving-overlay');
             if (overlay) overlay.remove();
+            const indicator = document.getElementById('build-editor-autosave-indicator');
+            if (indicator) indicator.remove();
         }
     }
 
@@ -4877,6 +5159,88 @@ class BuildEditor {
         });
         
         console.log('[Editor] Loaded', issues.length, 'issue pins');
+    }
+    
+    // ============ MOBILE CONTROL PANEL ============
+    
+    toggleMobileControlPanel() {
+        const panel = document.getElementById('mobile-control-panel');
+        if (panel) {
+            const isOpen = panel.classList.contains('open');
+            panel.classList.toggle('open');
+            
+            // Update chevron icon
+            const chevron = panel.querySelector('.mobile-panel-chevron');
+            if (chevron) {
+                chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+        }
+    }
+    
+    mobileRotate() {
+        if (this.isPlacing) {
+            this.previewRotation = (this.previewRotation + 90) % 360;
+            this.showToastEvent('Rotated 90°', 'info');
+        } else if (this.selectedPart) {
+            const part = this.parts.get(this.selectedPart);
+            if (part) {
+                part.mesh.rotation.y += Math.PI / 2;
+                this.updatePartAPI(this.selectedPart, {
+                    rotation_y: Math.round(part.mesh.rotation.y * 180 / Math.PI)
+                });
+                this.showToastEvent('Part rotated', 'info');
+            }
+        }
+    }
+    
+    mobileDelete() {
+        if (this.selectedPart) {
+            this.deletePart(this.selectedPart);
+            this.showToastEvent('Part deleted', 'success');
+        } else if (this.isPlacing) {
+            this.cancelPlacement();
+        }
+    }
+    
+    mobileToggleTransform() {
+        if (this.isPlacing) {
+            this.cancelPlacement();
+        } else {
+            this.setTool(this.currentTool === 'move' ? 'select' : 'move');
+            this.showToastEvent(this.currentTool === 'move' ? 'Move mode' : 'Select mode', 'info');
+        }
+    }
+    
+    mobileToggleDayNight() {
+        this.toggleDayNight();
+    }
+    
+    mobileCycleGrid() {
+        this.cycleGridSize();
+    }
+    
+    cancelPlacement() {
+        this.isPlacing = false;
+        this.currentPreset = null;
+        this.container.style.cursor = 'default';
+        if (this.previewMesh) {
+            this.scene.remove(this.previewMesh);
+            this.previewMesh = null;
+        }
+        if (this.previewMarker) {
+            this.scene.remove(this.previewMarker);
+            this.previewMarker = null;
+        }
+        this.updateDebugInfo('Placement cancelled');
+        this.showToastEvent('Placement cancelled', 'info');
+        
+        // Hide mobile placement controls, show action bar
+        if (this.isTouchDevice) {
+            const placePanel = document.getElementById('mobile-placement-controls');
+            if (placePanel) placePanel.classList.remove('show');
+            const actionBar = document.getElementById('mobile-action-bar');
+            if (actionBar) actionBar.style.display = 'flex';
+        }
     }
 }
 

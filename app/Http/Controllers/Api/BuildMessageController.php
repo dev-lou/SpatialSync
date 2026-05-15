@@ -55,11 +55,15 @@ class BuildMessageController extends Controller
 
         $messages = array_slice(array_reverse($messages), 0, 100);
 
-        // Enrich with user names
         $userIds = array_unique(array_filter(array_column($messages, 'user_id')));
         if (!empty($userIds)) {
-            $users = $this->supabase->select('users', ['id', 'name'], []);
-            $userMap = collect($users)->keyBy('id')->toArray();
+            $allUsers = $this->supabase->select('users', ['id', 'name'], []);
+            $userMap = [];
+            foreach ($allUsers as $u) {
+                if (in_array($u['id'], $userIds)) {
+                    $userMap[$u['id']] = $u;
+                }
+            }
             foreach ($messages as &$msg) {
                 $uid = $msg['user_id'] ?? null;
                 $msg['user'] = ['name' => $userMap[$uid]['name'] ?? 'Collaborator'];

@@ -375,6 +375,8 @@ function scrollytellingEngine() {
         _wheelHandler: null,
         _touchHandler: null,
         _accumulator: 0,
+        _rafId: null,
+        _pendingFrame: null,
         narrativeMessages: [
             "Initializing 3D geometry engine",
             "Syncing with architectural grid",
@@ -417,7 +419,6 @@ function scrollytellingEngine() {
             for (let i = 0; i < 160; i += step) {
                 const img = new Image();
                 img.src = `/img/sequence/frame_${i.toString().padStart(3,'0')}_delay-0.05s.webp`;
-                if (i > 20) img.loading = 'lazy';
                 loads.push(this._load(img).then(updateProgress));
                 this.images[i] = img;
             }
@@ -425,7 +426,6 @@ function scrollytellingEngine() {
             for (let i = 0; i < 180; i += step) {
                 const img = new Image();
                 img.src = `/img/sequence/part2/frame_${i.toString().padStart(3,'0')}_delay-0.05s.webp`;
-                img.loading = 'lazy';
                 loads.push(this._load(img).then(updateProgress));
                 this.images[160 + i] = img;
             }
@@ -483,12 +483,13 @@ function scrollytellingEngine() {
                 }
 
                 this._accumulator += e.deltaY;
-                const step = Math.sign(this._accumulator) * Math.floor(Math.abs(this._accumulator) / 40);
+                const sensitivity = 15;
+                const step = Math.sign(this._accumulator) * Math.floor(Math.abs(this._accumulator) / sensitivity);
 
                 if (step !== 0) {
-                    this._accumulator -= step * 40;
+                    this._accumulator -= step * sensitivity;
                     this.currentFrame = Math.max(0, Math.min(this.frameCount - 1, this.currentFrame + step));
-                    this._draw(this.currentFrame);
+                    this._scheduleDraw(this.currentFrame);
                     this.frameProgress = (this.currentFrame / (this.frameCount - 1)) * 100;
                     this._updateChapters(this.currentFrame / (this.frameCount - 1));
 
@@ -516,12 +517,13 @@ function scrollytellingEngine() {
                 }
                 
                 lastTouchY = e.touches[0].clientY;
-                this._accumulator += dy * 3;
-                const step = Math.sign(this._accumulator) * Math.floor(Math.abs(this._accumulator) / 40);
+                this._accumulator += dy * 2;
+                const sensitivity = 15;
+                const step = Math.sign(this._accumulator) * Math.floor(Math.abs(this._accumulator) / sensitivity);
                 if (step !== 0) {
-                    this._accumulator -= step * 40;
+                    this._accumulator -= step * sensitivity;
                     this.currentFrame = Math.max(0, Math.min(this.frameCount - 1, this.currentFrame + step));
-                    this._draw(this.currentFrame);
+                    this._scheduleDraw(this.currentFrame);
                     this.frameProgress = (this.currentFrame / (this.frameCount - 1)) * 100;
                     this._updateChapters(this.currentFrame / (this.frameCount - 1));
                     
@@ -565,6 +567,16 @@ function scrollytellingEngine() {
             this.canvas.width = f.clientWidth * devicePixelRatio;
             this.canvas.height = f.clientHeight * devicePixelRatio;
             this._draw(this.currentFrame);
+        },
+
+        _scheduleDraw(idx) {
+            if (this._rafId) return;
+            this._pendingFrame = idx;
+            this._rafId = requestAnimationFrame(() => {
+                this._draw(this._pendingFrame);
+                this._rafId = null;
+                this._pendingFrame = null;
+            });
         },
 
         _draw(idx) {

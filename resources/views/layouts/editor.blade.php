@@ -974,24 +974,55 @@
             margin-left: 350px;
         }
 
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .sidebar {
+                width: 280px;
+            }
+            .editor-layout.sidebar-open {
+                margin-left: 280px;
+            }
+        }
+
         @media (max-width: 768px) {
             .editor-layout.sidebar-open {
                 margin-left: 0;
             }
             .sidebar {
                 width: 100%;
-                left: -100%;
+                left: 0;
+                top: auto;
+                bottom: 0;
+                height: 70vh;
+                max-height: 70vh;
+                border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+                transform: translateY(100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .sidebar-open .sidebar {
+                transform: translateY(0);
             }
             .editor-topbar {
                 grid-template-columns: 1fr auto auto !important;
                 gap: 6px !important;
-                padding: 0 8px !important;
+                padding: 8px 12px !important;
+                padding-top: calc(8px + env(safe-area-inset-top));
+                flex-wrap: wrap;
             }
             .editor-topbar__left {
                 min-width: 0 !important;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
             }
             .editor-topbar__title {
                 display: none !important;
+            }
+            .editor-topbar__center {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+                padding-top: 4px;
             }
             .editor-topbar__center .navbar-shortcuts,
             .editor-topbar__center .nav-shortcut-divider,
@@ -1027,10 +1058,22 @@
             }
             .editor-bottom {
                 min-height: auto !important;
+                padding-bottom: calc(8px + env(safe-area-inset-bottom));
             }
             .editor-parts {
                 padding: 8px !important;
                 min-height: 64px !important;
+            }
+        }
+
+        @media (max-width: 390px) {
+            .editor-topbar {
+                padding: 6px 8px !important;
+                gap: 6px !important;
+            }
+            .sidebar {
+                height: 80vh;
+                max-height: 80vh;
             }
         }
 

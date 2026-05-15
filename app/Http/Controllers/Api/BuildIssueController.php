@@ -103,51 +103,75 @@ class BuildIssueController extends Controller
      */
     public function store(Request $request, $buildId)
     {
-        if (!$this->checkBuildAccess($request, $buildId)) {
-            return response()->json(['error' => 'Access denied'], 403);
+        try {
+            if (!$this->checkBuildAccess($request, $buildId)) {
+                \Log::warning('Issue creation denied: access check failed', [
+                    'build_id' => $buildId,
+                    'user_id' => $request->session()->get('supabase_user_id'),
+                ]);
+                return response()->json(['error' => 'Access denied'], 403);
+            }
+
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'priority' => 'required|in:low,medium,high,critical',
+                'part_id' => 'nullable|string|max:255',
+                'position_x' => 'nullable|numeric',
+                'position_y' => 'nullable|numeric',
+                'position_z' => 'nullable|numeric',
+            ]);
+
+            $userId = $request->session()->get('supabase_user_id');
+
+            $data = [
+                'id' => Str::uuid()->toString(),
+                'build_id' => $buildId,
+                'created_by' => $userId,
+                'title' => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'priority' => $validated['priority'],
+                'status' => 'open',
+                'part_id' => $validated['part_id'] ?? null,
+                'position_x' => $validated['position_x'] ?? null,
+                'position_y' => $validated['position_y'] ?? null,
+                'position_z' => $validated['position_z'] ?? null,
+            ];
+
+            $issue = $this->supabase->insert('build_issues', $data);
+
+            if (!$issue) {
+                \Log::error('Issue creation failed: Supabase insert returned null', [
+                    'build_id' => $buildId,
+                    'user_id' => $userId,
+                    'data' => $data,
+                ]);
+                return response()->json(['error' => 'Failed to create issue in database'], 500);
+            }
+
+            // Get creator name
+            $users = $this->supabase->select('users', ['name'], ['id' => $userId]);
+            $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
+            $issue['status_color'] = $this->getStatusColor($issue['status']);
+            $issue['priority_color'] = $this->getPriorityColor($issue['priority']);
+            $issue['status_label'] = $this->getStatusLabel($issue['status']);
+            $issue['priority_label'] = $this->getPriorityLabel($issue['priority']);
+
+            \Log::info('Issue created successfully', [
+                'issue_id' => $issue['id'],
+                'build_id' => $buildId,
+                'user_id' => $userId,
+            ]);
+
+            return response()->json($issue, 201);
+        } catch (\Exception $e) {
+            \Log::error('Issue creation exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'build_id' => $buildId,
+            ]);
+            return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
         }
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'priority' => 'required|in:low,medium,high,critical',
-            'part_id' => 'nullable|string|uuid',
-            'position_x' => 'nullable|numeric',
-            'position_y' => 'nullable|numeric',
-            'position_z' => 'nullable|numeric',
-        ]);
-
-        $userId = $request->session()->get('supabase_user_id');
-
-        $data = [
-            'id' => Str::uuid()->toString(),
-            'build_id' => $buildId,
-            'created_by' => $userId,
-            'title' => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'priority' => $validated['priority'],
-            'status' => 'open',
-            'part_id' => $validated['part_id'] ?? null,
-            'position_x' => $validated['position_x'] ?? null,
-            'position_y' => $validated['position_y'] ?? null,
-            'position_z' => $validated['position_z'] ?? null,
-        ];
-
-        $issue = $this->supabase->insert('build_issues', $data);
-
-        if (!$issue) {
-            return response()->json(['error' => 'Failed to create issue'], 500);
-        }
-
-        // Get creator name
-        $users = $this->supabase->select('users', ['name'], ['id' => $userId]);
-        $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
-        $issue['status_color'] = $this->getStatusColor($issue['status']);
-        $issue['priority_color'] = $this->getPriorityColor($issue['priority']);
-        $issue['status_label'] = $this->getStatusLabel($issue['status']);
-        $issue['priority_label'] = $this->getPriorityLabel($issue['priority']);
-
-        return response()->json($issue, 201);
     }
 
     /**

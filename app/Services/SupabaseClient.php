@@ -55,8 +55,12 @@ class SupabaseClient
 
         foreach ($filters as $key => $value) {
             if (is_array($value)) {
-                $vals = implode(',', array_map('urlencode', $value));
-                $url .= '&'.urlencode($key).'=in.('.$vals.')';
+                if (isset($value['op'])) {
+                    $url .= '&'.urlencode($key).'='.$value['op'].'.'.urlencode((string)$value['value']);
+                } else {
+                    $vals = implode(',', array_map('urlencode', $value));
+                    $url .= '&'.urlencode($key).'=in.('.$vals.')';
+                }
             } else {
                 $url .= '&'.urlencode($key).'=eq.'.urlencode((string)$value);
             }
@@ -68,6 +72,26 @@ class SupabaseClient
             return $response->successful() ? $response->json() : [];
         } catch (\Exception $e) {
             Log::error("Supabase select error: {$e->getMessage()}");
+
+            return [];
+        }
+    }
+
+    /**
+     * Select with ilike filter for text search
+     */
+    public function selectLike(string $table, array $columns = ['*'], string $column, string $query, int $limit = 5): array
+    {
+        $url = "{$this->url}/rest/v1/{$table}?select=".implode(',', $columns);
+        $url .= '&'.urlencode($column).'=ilike.'.'*'.urlencode($query).'*';
+        $url .= '&limit='.$limit;
+
+        try {
+            $response = Http::withHeaders($this->serviceHeaders())->timeout(30)->get($url);
+
+            return $response->successful() ? $response->json() : [];
+        } catch (\Exception $e) {
+            Log::error("Supabase selectLike error: {$e->getMessage()}");
 
             return [];
         }

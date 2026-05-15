@@ -437,19 +437,13 @@ class BuildController extends Controller
             return response()->json([]);
         }
 
-        $allUsers = $this->supabase->select('users', ['id', 'name', 'email'], []);
+        $users = $this->supabase->selectLike('users', ['id', 'name', 'email'], 'name', $query, 5);
 
-        $filtered = array_filter($allUsers, function ($user) use ($query) {
-            $name = strtolower($user['name'] ?? '');
-            $email = strtolower($user['email'] ?? '');
-            $q = strtolower($query);
+        if (empty($users)) {
+            $users = $this->supabase->selectLike('users', ['id', 'name', 'email'], 'email', $query, 5);
+        }
 
-            return str_contains($name, $q) || str_contains($email, $q);
-        });
-
-        $users = array_slice(array_values($filtered), 0, 5);
-
-        return response()->json($users);
+        return response()->json(array_slice($users, 0, 5));
     }
 
     public function createShare($buildId)

@@ -3,6 +3,19 @@
 
 @section('content')
 <div class="editor-layout" :class="{ 'sidebar-open': sidebarOpen }" x-data="editorApp()">
+    <!-- Mobile Overlay Backdrop -->
+    <div class="mobile-sidebar-overlay" 
+         x-show="sidebarOpen" 
+         @click="sidebarOpen = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         style="display: none;">
+    </div>
+    
     <!-- Top Bar -->
     <header class="editor-topbar">
         <div class="editor-topbar__left">
@@ -297,16 +310,16 @@
             <div x-show="sidebarTab === 'chat'" class="h-full flex flex-col">
                 <div class="sidebar-section__title mb-4">
                     <i data-lucide="message-square"></i> Project Chat
-                    <span x-show="rtStatus !== 'connected'" class="ml-2 text-xs text-yellow-500" title="Realtime offline - messages will still save but won't be live">
-                        <i data-lucide="wifi-off" class="w-3 h-3 inline"></i> Offline
+                    <span x-show="rtStatus !== 'connected'" class="ml-2 text-xs text-blue-500" title="Messages save to server and sync when connection is restored">
+                        <i data-lucide="wifi-off" class="w-3 h-3 inline"></i> <span x-text="rtStatus === 'error' ? 'Syncing...' : 'Offline'"></span>
                     </span>
                 </div>
                 
-                <!-- Offline Notice -->
+                <!-- Offline Notice - Updated messaging -->
                 <div x-show="rtStatus !== 'connected' && rtStatus !== 'connecting'" 
                      class="chat-offline-notice">
                     <i data-lucide="wifi-off"></i>
-                    <span>Working offline - messages will save locally</span>
+                    <span x-text="rtStatus === 'error' ? 'Saving messages - will sync when reconnected' : 'Working offline - messages save to server'"></span>
                 </div>
                 
                 <div class="chat-messages" id="chat-messages">
@@ -668,7 +681,7 @@
                     'door' => ['icon' => 'door-open', 'label' => 'Doors'],
                     'window' => ['icon' => 'app-window', 'label' => 'Windows'],
                     'stairs' => ['icon' => 'trending-up', 'label' => 'Stairs'],
-                    'structural' => ['icon' => 'pillar', 'label' => 'Structure'],
+                    'structural' => ['icon' => 'building-2', 'label' => 'Structure'],
                     'furniture' => ['icon' => 'armchair', 'label' => 'Furniture'],
                     'fixture' => ['icon' => 'bath', 'label' => 'Fixtures'],
                     'landscape' => ['icon' => 'tree-pine', 'label' => 'Landscape'],
@@ -871,10 +884,21 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn--secondary" @click="showIssueModal = false">Cancel</button>
-                <button class="btn btn--primary" @click="createIssue()" :disabled="!newIssue.title.trim()">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    Create Issue
+                <button class="btn btn--secondary" @click="showIssueModal = false" :disabled="creatingIssue">Cancel</button>
+                <button class="btn btn--primary" @click="createIssue()" :disabled="!newIssue.title.trim() || creatingIssue">
+                    <template x-if="creatingIssue">
+                        <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Creating...</span>
+                    </template>
+                    <template x-if="!creatingIssue">
+                        <span>
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            Create Issue
+                        </span>
+                    </template>
                 </button>
             </div>
         </div>
@@ -885,16 +909,120 @@
 <button class="mobile-sidebar-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Toggle sidebar">
     <i data-lucide="users" class="w-5 h-5"></i>
 </button>
+
+<!-- Mobile Action Bar (replaces floating Tools panel) -->
+<div class="mobile-action-bar" id="mobile-action-bar" style="display: none;">
+    <button class="mobile-action-btn" onclick="if(window.editor) window.editor.mobileRotate()" title="Rotate">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    </button>
+    <button class="mobile-action-btn" onclick="if(window.editor) window.editor.mobileDelete()" title="Delete">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+    </button>
+    <button class="mobile-action-btn" onclick="if(window.editor) window.editor.mobileToggleTransform()" title="Move">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+    </button>
+    <button class="mobile-action-btn" onclick="if(window.editor) window.editor.mobileToggleDayNight()" title="Day/Night">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+    <button class="mobile-action-btn" onclick="if(window.editor) window.editor.mobileCycleGrid()" title="Grid">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+    </button>
+</div>
+
+<!-- Mobile Placement Controls (shown when placing parts) -->
+<div class="mobile-placement-controls" id="mobile-placement-controls" style="display: none;">
+    <button class="mobile-place-btn" onclick="if(window.editor) window.editor.mobileRotate()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        Rotate
+    </button>
+    <button class="mobile-place-btn mobile-place-cancel" onclick="if(window.editor) window.editor.cancelPlacement()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Cancel
+    </button>
+</div>
+
 <style>
     .mobile-sidebar-toggle { display: none; }
+    .mobile-action-bar { display: none; }
+    .mobile-placement-controls { display: none; }
+    
     @media (max-width: 768px) {
         .mobile-sidebar-toggle {
             display: flex !important;
-            position: fixed; bottom: 80px; right: 16px;
+            position: fixed; bottom: 16px; right: 16px;
             z-index: 1002; width: 48px; height: 48px;
             border-radius: 50%; background: var(--accent); color: #fff;
             border: none; box-shadow: 0 4px 16px rgba(0,102,255,0.3);
             cursor: pointer; align-items: center; justify-content: center;
+        }
+        
+        /* Mobile Action Bar - compact row above floating toolbar */
+        .mobile-action-bar {
+            display: flex !important;
+            position: fixed;
+            bottom: calc(76px + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 998;
+            gap: 4px;
+            padding: 6px 8px;
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .mobile-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(51, 65, 85, 0.6);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .mobile-action-btn:active {
+            background: rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Mobile Placement Controls */
+        .mobile-placement-controls {
+            display: none !important;
+            position: fixed;
+            bottom: calc(76px + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            gap: 8px;
+        }
+        .mobile-placement-controls.show {
+            display: flex !important;
+        }
+        .mobile-place-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(12px);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .mobile-place-btn:active {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        .mobile-place-cancel {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        .mobile-place-cancel:active {
+            background: rgba(239, 68, 68, 0.4);
         }
     }
 </style>
@@ -978,6 +1106,7 @@ document.addEventListener('alpine:init', () => {
         selectedIssue: null,
         issueFilter: 'all', // all, open, resolved
         showIssueModal: false,
+        creatingIssue: false,
         newIssue: {
             title: '',
             description: '',
@@ -991,7 +1120,9 @@ document.addEventListener('alpine:init', () => {
         rtStatus: 'connecting', // connecting, connected, error, closed
         displayStatus: 'connecting', // debounced status for UI display
         tabId: Math.random().toString(36).substr(2, 9),
-        pendingSyncEvents: [], // Queue for sync events before editor ready
+        pendingSyncEvents: [],
+        offlinePartSyncQueue: [],
+        offlineChatQueue: [], // Queue for sync events before editor ready
         
         // Connection resilience — tuned for stability
         reconnectAttempts: 0,
@@ -1003,7 +1134,8 @@ document.addEventListener('alpine:init', () => {
         _statusDebounceTimer: null, // Debounce UI flicker
         _lastConnectedAt: 0, // Timestamp of last successful connection
         _graceUntil: 0, // Grace period after initial connect (no false alarms)
-        _hasShownReconnectToast: false, // Only show reconnect toast once per cycle
+        _hasShownReconnectToast: false,
+        _realtimeEnabled: true, // Only show reconnect toast once per cycle
         
         toolIcons: { select: 'mouse-pointer', delete: 'trash-2', move: 'move', clone: 'copy' },
         toolLabels: { select: 'Select Tool', delete: 'Delete Tool — Click to remove', move: 'Move Tool — Click to pick up', clone: 'Clone Tool — Click to duplicate' },
@@ -1020,7 +1152,7 @@ document.addEventListener('alpine:init', () => {
                 '{{ config('supabase.anon_key') }}',
                 {
                     realtime: {
-                        timeout: 30000,
+                        timeout: 60000,
                         logger: (kind, msg, data) => {
                             if (kind === 'error' || msg?.includes('close') || msg?.includes('error')) {
                                 debugWarn('[RT Logger]', kind, msg, data);
@@ -1037,10 +1169,16 @@ document.addEventListener('alpine:init', () => {
             
             // Realtime keepalive — sends tiny heartbeat every 5s to prevent Render idle timeout
             this._rtKeepalive = setInterval(() => {
-                if (this.rtStatus === 'connected') {
-                    this.rtChannel?.track({ ts: Date.now() });
+                if (this.rtStatus === 'connected' && this.rtChannel) {
+                    try {
+                        this.rtChannel.send({
+                            type: 'broadcast',
+                            event: 'heartbeat',
+                            payload: { ts: Date.now() }
+                        }).catch(() => {});
+                    } catch (e) {}
                 }
-            }, 5000);
+            }, 10000);
             
             // Test REST API connectivity first
             try {
@@ -1065,7 +1203,7 @@ document.addEventListener('alpine:init', () => {
             
             this.rtChannel = this.supabase.channel('build:{{ $build->id }}', {
                 config: {
-                    broadcast: { self: false, ack: true },
+                    broadcast: { self: false, ack: false },
                     presence: { key: '{{ $auth_user_id }}' + '_' + this.tabId }
                 }
             });
@@ -1080,24 +1218,25 @@ document.addEventListener('alpine:init', () => {
                 .on('broadcast', { event: 'chat' }, (payload) => {
                     debugLog('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
 
-                    // Supabase sends: payload.payload = { data: { message, user, user_id, ... } }
-                    // Try multiple possible payload structures
                     let msg = payload.payload?.data || payload.payload || payload.data || payload;
+                    
+                    if (msg && msg.ts && !msg.message && !msg.content && !msg.text) return;
                     
                     debugLog('RT Extracted chat message:', msg);
                     
                     if (msg && (msg.message || msg.content || msg.text)) {
-                        // Ensure message has a unique key for Alpine
                         const messageWithId = {
                             ...msg,
                             temp_id: msg.id || msg.temp_id || `rt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                             created_at: msg.created_at || new Date().toISOString()
                         };
                         
-                        // Avoid duplicates
                         const exists = this.chatMessages.some(m => 
                             (m.id && m.id === messageWithId.id) || 
-                            (m.temp_id && m.temp_id === messageWithId.temp_id)
+                            (m.temp_id && m.temp_id === messageWithId.temp_id) ||
+                            (m.user_id === messageWithId.user_id &&
+                             m.message === messageWithId.message &&
+                             Math.abs(new Date(m.created_at || 0).getTime() - new Date(messageWithId.created_at || 0).getTime()) < 5000)
                         );
                         
                         if (!exists) {
@@ -1148,7 +1287,6 @@ document.addEventListener('alpine:init', () => {
                     this.processSyncEvent(data);
                 })
                 .subscribe(async (status, err) => {
-                    // Check if this channel is still the active one
                     if (channelId !== this.activeChannelId) {
                         debugLog(`RT Ignoring event from old channel ${channelId}, current is ${this.activeChannelId}`);
                         return;
@@ -1159,7 +1297,6 @@ document.addEventListener('alpine:init', () => {
                     if (err) {
                         debugError('RT Subscription Error:', err);
                         
-                        // Specific diagnostic for common errors
                         if (err.message && err.message.includes('UnableToConnectToProject')) {
                             debugError('%c[DIAGNOSTIC] Supabase Realtime cannot connect to your project database.', 'color: #ff6b6b; font-weight: bold;');
                             debugError('%c[DIAGNOSTIC] Solutions to try:', 'color: #ff6b6b;');
@@ -1174,17 +1311,14 @@ document.addEventListener('alpine:init', () => {
                     this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : (status === 'CLOSED' ? 'closed' : 'error');
                     
                     if (status === 'SUBSCRIBED') {
-                        // Reset reconnection state
                         this.reconnectAttempts = 0;
                         this.isReconnecting = false;
                         this._lastConnectedAt = Date.now();
                         this._hasShownReconnectToast = false;
-                        // Grace period: don't trigger false disconnects for 8s after connect
                         this._graceUntil = Date.now() + 8000;
-                        // Immediately update display
+                        this._realtimeEnabled = true;
                         this._setDisplayStatus('connected');
                         
-                        // Immediately track presence
                         try {
                             await this.rtChannel.track({
                                 online_at: new Date().toISOString(),
@@ -1197,28 +1331,38 @@ document.addEventListener('alpine:init', () => {
                             debugError('RT Presence tracking failed:', trackErr);
                         }
                         
-                        // Sync any parts that may have been added while page was loading
                         setTimeout(() => this.syncMissedParts(), 500);
                     } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                         debugWarn('RT Connection event (status: ' + status + ')');
                         
-                        // Skip if within grace period
                         if (Date.now() < this._graceUntil) {
                             debugLog('RT Within grace period, ignoring transient disconnect');
                             return;
                         }
                         
-                        // Mark as reconnecting immediately so UI shows "Reconnecting" not "Offline"
+                        if (status === 'CLOSED' && !this._realtimeEnabled && this.reconnectAttempts === 0) {
+                            debugError('%c[REALTIME DISABLED] Supabase Realtime may not be enabled for this project.', 'color: #ff6b6b; font-weight: bold;');
+                            debugError('%c[REQUIRED SETUP]', 'color: #ffaa00; font-weight: bold;');
+                            debugError('  1. Go to https://mpxdhzazdzkygercrniz.supabase.co/project/default/editor');
+                            debugError('  2. Navigate to Database → Replication');
+                            debugError('  3. Enable Realtime for these tables: build_messages, build_parts');
+                            debugError('  4. Toggle: turn OFF then ON if already enabled');
+                            debugError('  Chat and collaboration will still work via database polling (30s interval).');
+                        }
+                        
                         this.rtStatus = 'reconnecting';
                         this._setDisplayStatus('reconnecting');
                         
-                        // Only trigger reconnection if not already reconnecting
                         if (!this.isReconnecting && this.reconnectAttempts < this.maxReconnectAttempts) {
                             debugLog('RT Scheduling reconnection...');
-                            const delay = this.reconnectAttempts === 0 ? 5000 : 3000;
+                            const delay = this.reconnectAttempts === 0 ? 2000 : 3000;
                             setTimeout(() => this.handleReconnection(), delay);
                         } else if (this.isReconnecting) {
                             debugLog('RT Reconnection already in progress, skipping...');
+                        } else {
+                            debugError('RT Max reconnection attempts reached. Using polling fallback only.');
+                            this._setDisplayStatus('error');
+                            this._realtimeEnabled = false;
                         }
                     }
                 });
@@ -1273,7 +1417,6 @@ document.addEventListener('alpine:init', () => {
             });
 
             window.addEventListener('part-placed', async (e) => {
-                // Broadcast to others if we placed it locally
                 if (e.detail.isLocal) {
                     debugLog('RT Sending Sync-Part (add)');
                     const result = await this.sendBroadcast('sync-part', {
@@ -1283,10 +1426,15 @@ document.addEventListener('alpine:init', () => {
                     if (result.success) {
                         debugLog('RT Sync-Part (add) broadcast sent via', result.method);
                     } else {
-                        debugError('RT Failed to send sync-part broadcast:', result.error);
+                        debugError('RT Failed to send sync-part broadcast, queuing for retry:', result.error);
+                        this.offlinePartSyncQueue.push({
+                            action: 'add',
+                            data: e.detail.partData,
+                            timestamp: Date.now()
+                        });
                     }
+                    document.getElementById('parts-count').textContent = e.detail.count;
                 }
-                document.getElementById('parts-count').textContent = e.detail.count;
             });
 
             window.addEventListener('part-deleted', async (e) => {
@@ -1299,7 +1447,12 @@ document.addEventListener('alpine:init', () => {
                     if (result.success) {
                         debugLog('RT Sync-Part (delete) broadcast sent via', result.method);
                     } else {
-                        debugError('RT Failed to send sync-part broadcast:', result.error);
+                        debugError('RT Failed to send sync-part delete broadcast, queuing for retry:', result.error);
+                        this.offlinePartSyncQueue.push({
+                            action: 'delete',
+                            id: e.detail.id,
+                            timestamp: Date.now()
+                        });
                     }
                 }
             });
@@ -1328,7 +1481,13 @@ document.addEventListener('alpine:init', () => {
                             data: detail.data
                         });
                         if (!result.success) {
-                            debugError('RT Failed to send sync-part broadcast:', result.error);
+                            debugError('RT Failed to send sync-part update broadcast, queuing for retry:', result.error);
+                            this.offlinePartSyncQueue.push({
+                                action: 'update',
+                                id: id,
+                                data: detail.data,
+                                timestamp: Date.now()
+                            });
                         }
                     }
                 }, 200);
@@ -1346,7 +1505,10 @@ document.addEventListener('alpine:init', () => {
             // Poll for new messages every 30 seconds (fallback when realtime misses messages)
             this.messagePollInterval = setInterval(() => {
                 this.fetchMessages();
-            }, 30000);
+                if (!this._realtimeEnabled) {
+                    this.syncMissedParts();
+                }
+            }, this._realtimeEnabled ? 30000 : 10000);
             
             // Also fetch when user returns to the tab
             document.addEventListener('visibilitychange', () => {
@@ -1438,7 +1600,14 @@ document.addEventListener('alpine:init', () => {
                     clearTimeout(this._partUpdateTimer);
                 }
                 if (this.rtChannel) {
-                    this.rtChannel.unsubscribe();
+                    try {
+                        this.rtChannel.unsubscribe();
+                    } catch (e) {}
+                }
+                if (this.supabase) {
+                    try {
+                        this.supabase.removeAllChannels();
+                    } catch (e) {}
                 }
             });
         },
@@ -1560,25 +1729,47 @@ document.addEventListener('alpine:init', () => {
                 }
                 const messages = await res.json();
                 
-                // Ensure messages have required fields
                 const processedMessages = messages.map(msg => ({
                     ...msg,
                     message: msg.message || msg.content || '',
                     user: msg.user || { name: msg.user_name || 'Unknown' }
                 }));
                 
-                // Merge with existing messages, avoiding duplicates by server id first
-                const existingServerIds = new Set(this.chatMessages.filter(m => m.id).map(m => m.id));
-                const newMessages = processedMessages.filter(m => !existingServerIds.has(m.id));
+                const existingIds = new Set();
+                const existingTempIds = new Set();
+                this.chatMessages.forEach(m => {
+                    if (m.id) existingIds.add(m.id);
+                    if (m.temp_id) existingTempIds.add(m.temp_id);
+                });
                 
-                debugLog(`Fetched ${messages.length} messages from server, ${newMessages.length} new, ${existingServerIds.size} existing`);
+                const serverIds = new Set(processedMessages.map(m => m.id).filter(Boolean));
+                
+                const newMessages = processedMessages.filter(m => {
+                    if (m.id && existingIds.has(m.id)) return false;
+                    if (m.temp_id && existingTempIds.has(m.temp_id)) return false;
+                    const matchByContent = this.chatMessages.some(existing =>
+                        existing.user_id === m.user_id &&
+                        existing.message === m.message &&
+                        Math.abs(new Date(existing.created_at || 0).getTime() - new Date(m.created_at || 0).getTime()) < 5000
+                    );
+                    return !matchByContent;
+                });
+                
+                debugLog(`Fetched ${messages.length} messages from server, ${newMessages.length} new, ${existingIds.size} existing`);
                 
                 if (newMessages.length > 0) {
-                    var merged = [...this.chatMessages, ...newMessages].sort((a, b) => 
+                    const merged = [...this.chatMessages, ...newMessages].sort((a, b) => 
                         new Date(a.created_at || 0) - new Date(b.created_at || 0)
                     );
                     if (merged.length > 500) merged = merged.slice(merged.length - 500);
                     this.chatMessages = merged;
+                    
+                    this.chatMessages.forEach(m => {
+                        if (m.id && serverIds.has(m.id) && m.temp_id && m.temp_id.startsWith('temp_')) {
+                            delete m.temp_id;
+                        }
+                    });
+                    
                     this.scrollToBottom();
                 }
             } catch (err) {
@@ -1591,6 +1782,20 @@ document.addEventListener('alpine:init', () => {
             const messageText = this.newMessage;
             this.newMessage = '';
 
+            const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            const messageData = {
+                temp_id: tempId,
+                message: messageText,
+                user_id: '{{ $auth_user_id }}',
+                user: { name: '{{ $auth_user_name }}' },
+                created_at: new Date().toISOString()
+            };
+
+            this.chatMessages.push(messageData);
+            if (this.chatMessages.length > 500) this.chatMessages.shift();
+            this.scrollToBottom();
+
             try {
                 const res = await fetch(`/editor/builds/{{ $build->id }}/messages`, {
                     method: 'POST',
@@ -1602,53 +1807,41 @@ document.addEventListener('alpine:init', () => {
                 });
                 
                 if (!res.ok) {
-                    const errorData = await res.json();
+                    const errorData = await res.json().catch(() => ({}));
+                    const errorMsg = errorData.error || errorData.message || `Server error (${res.status})`;
                     debugError('Server error saving message:', res.status, errorData);
-                    this.newMessage = messageText; // Restore for retry
-                    this.showToast('Failed to save message: ' + (errorData.error || 'Server error'), 'error');
+                    this.chatMessages = this.chatMessages.filter(m => m.temp_id !== tempId);
+                    this.newMessage = messageText;
+                    this.showToast('Failed to save message: ' + errorMsg, 'error');
                     return;
                 }
                 
                 const data = await res.json();
                 debugLog('Message saved successfully:', data);
-                
-                if (!data.id) {
-                    debugError('CRITICAL: Message saved but no ID returned! Data:', data);
-                    this.showToast('Message may not have saved properly', 'warning');
+
+                const idx = this.chatMessages.findIndex(m => m.temp_id === tempId);
+                if (idx !== -1) {
+                    this.chatMessages[idx] = {
+                        ...this.chatMessages[idx],
+                        id: data.id,
+                        created_at: data.created_at || this.chatMessages[idx].created_at
+                    };
                 }
 
-                // Ensure message text and user_id are included (server might not return them)
-                const messageData = {
-                    ...data,
-                    message: data.message || data.content || messageText,
-                    user_id: data.user_id || '{{ $auth_user_id }}',
-                    user: data.user || { name: '{{ $auth_user_name }}' },
-                    temp_id: data.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    created_at: data.created_at || new Date().toISOString()
-                };
-
-                // Broadcast instantly using payload key
                 debugLog('RT Sending Chat broadcast:', messageData);
-                const result = await this.sendBroadcast('chat', { data: messageData });
+                const result = await this.sendBroadcast('chat', { data: { ...messageData, id: data.id } });
                 debugLog('RT Chat broadcast result:', result);
-                if (result && result.success) {
-                    debugLog('RT Chat broadcast sent via', result.method);
-                } else {
-                    debugError('RT Failed to send chat broadcast:', result?.error || 'No result returned');
-                }
-
-                // Only add if not already in list (prevent duplicates from realtime)
-                const exists = this.chatMessages.some(m => m.id === messageData.id);
-                if (!exists) {
-                    this.chatMessages.push(messageData);
-                    if (this.chatMessages.length > 500) this.chatMessages.shift();
-                    this.scrollToBottom();
-                } else {
-                    debugLog('Message already exists, skipping duplicate');
+                if (!result.success) {
+                    debugWarn('RT Chat broadcast failed, queuing for retry');
+                    this.offlineChatQueue.push({
+                        event: 'chat',
+                        payload: { data: { ...messageData, id: data.id } },
+                        timestamp: Date.now()
+                    });
                 }
             } catch (err) {
                 debugError('Failed to send message:', err);
-                // Restore message so user can retry
+                this.chatMessages = this.chatMessages.filter(m => m.temp_id !== tempId);
                 this.newMessage = messageText;
                 this.showToast('Failed to send message. Check connection and try again.', 'error');
             }
@@ -1657,8 +1850,7 @@ document.addEventListener('alpine:init', () => {
         scrollToBottom() {
             this.$nextTick(() => {
                 const el = document.getElementById('chat-messages');
-                // With column-reverse, newest messages are at visual bottom (scrollTop: 0)
-                if (el) el.scrollTop = 0;
+                if (el) el.scrollTop = el.scrollHeight;
             });
         },
 
@@ -1718,8 +1910,7 @@ document.addEventListener('alpine:init', () => {
                 const existingIds = Array.from(window.editor.parts?.keys() || []);
                 
                 parts.forEach(partData => {
-                    // Check if part already exists (by UUID from database)
-                    const exists = existingIds.some(id => id.includes(partData.id) || id === partData.id);
+                    const exists = existingIds.some(id => id === partData.id);
                     
                     if (!exists) {
                         debugLog('RT Adding missed part:', partData.id);
@@ -1739,6 +1930,58 @@ document.addEventListener('alpine:init', () => {
             } catch (error) {
                 debugError('RT Error syncing missed parts:', error);
                 this.showToast('Could not sync missed parts', 'warning');
+            }
+        },
+
+        async flushOfflinePartSyncQueue() {
+            if (this.offlinePartSyncQueue.length === 0 && this.offlineChatQueue.length === 0) {
+                return;
+            }
+
+            const partQueue = [...this.offlinePartSyncQueue];
+            this.offlinePartSyncQueue = [];
+
+            const chatQueue = [...this.offlineChatQueue];
+            this.offlineChatQueue = [];
+
+            const maxAge = 5 * 60 * 1000;
+            const now = Date.now();
+            let flushedCount = 0;
+
+            for (const item of chatQueue) {
+                if (now - item.timestamp > maxAge) {
+                    debugLog('RT Discarding stale offline chat message, age:', Math.round((now - item.timestamp) / 1000) + 's');
+                    continue;
+                }
+
+                debugLog('RT Flushing offline chat message');
+                const result = await this.sendBroadcast(item.event, item.payload);
+                if (result.success) {
+                    flushedCount++;
+                } else {
+                    debugWarn('RT Failed to flush offline chat message, re-queuing');
+                    this.offlineChatQueue.push(item);
+                }
+            }
+
+            for (const item of partQueue) {
+                if (now - item.timestamp > maxAge) {
+                    debugLog('RT Discarding stale offline sync event:', item.action, 'age:', Math.round((now - item.timestamp) / 1000) + 's');
+                    continue;
+                }
+
+                debugLog('RT Flushing offline sync event:', item.action);
+                const result = await this.sendBroadcast('sync-part', item);
+                if (result.success) {
+                    flushedCount++;
+                } else {
+                    debugWarn('RT Failed to flush offline sync event, re-queuing:', item.action);
+                    this.offlinePartSyncQueue.push(item);
+                }
+            }
+
+            if (flushedCount > 0) {
+                debugLog(`RT Flushed ${flushedCount} offline events`);
             }
         },
 
@@ -1794,13 +2037,17 @@ document.addEventListener('alpine:init', () => {
                 
                 // Unsubscribe from old channel if exists
                 if (this.rtChannel) {
-                    this.rtChannel.unsubscribe();
+                    try {
+                        this.rtChannel.unsubscribe();
+                    } catch (e) {
+                        debugWarn('RT Error unsubscribing from old channel:', e);
+                    }
                 }
                 
                 // Create new channel
                 this.rtChannel = this.supabase.channel('build:{{ $build->id }}', {
                     config: {
-                        broadcast: { self: false, ack: true },
+                        broadcast: { self: false, ack: false },
                         presence: { key: '{{ $auth_user_id }}' + '_' + this.tabId }
                     }
                 });
@@ -1813,7 +2060,6 @@ document.addEventListener('alpine:init', () => {
                     })
                     .on('broadcast', { event: 'chat' }, (payload) => {
                         debugLog('RT Received Chat Envelope:', JSON.stringify(payload, null, 2));
-                        // Try multiple possible payload structures
                         let msg = payload.payload?.data || payload.payload || payload.data || payload;
                         debugLog('RT Extracted chat message:', msg);
                         
@@ -1826,7 +2072,10 @@ document.addEventListener('alpine:init', () => {
                             
                             const exists = this.chatMessages.some(m => 
                                 (m.id && m.id === messageWithId.id) || 
-                                (m.temp_id && m.temp_id === messageWithId.temp_id)
+                                (m.temp_id && m.temp_id === messageWithId.temp_id) ||
+                                (m.user_id === messageWithId.user_id &&
+                                 m.message === messageWithId.message &&
+                                 Math.abs(new Date(m.created_at || 0).getTime() - new Date(messageWithId.created_at || 0).getTime()) < 5000)
                             );
                             
                             if (!exists) {
@@ -1863,47 +2112,50 @@ document.addEventListener('alpine:init', () => {
                         debugLog('RT Reconnection Status:', status);
                         this.rtStatus = status === 'SUBSCRIBED' ? 'connected' : 'reconnecting';
                         
-                        if (status === 'SUBSCRIBED') {
-                            this.reconnectAttempts = 0;
-                            this.isReconnecting = false;
-                            this._lastConnectedAt = Date.now();
-                            this._hasShownReconnectToast = false;
-                            this._graceUntil = Date.now() + 8000;
-                            this._setDisplayStatus('connected');
-                            this.showToast('Reconnected successfully!', 'success');
-                            
-                            await this.rtChannel.track({
-                                online_at: new Date().toISOString(),
-                                name: '{{ $auth_user_name }}',
-                                role: this.userRole,
-                                tabId: this.tabId
-                            });
-                            
-                            // Update editor reference
-                            if (window.editor) {
-                                window.editor.rtChannel = this.rtChannel;
-                            }
-                            
-                            debugLog('RT Reconnected and presence tracked');
-                            
-                            // Sync any parts that were added while we were offline
-                            await this.syncMissedParts();
-                        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                            this.isReconnecting = false;
-                            // Skip if within grace period
-                            if (Date.now() < this._graceUntil) return;
-                            // Only trigger reconnection if this is still the active channel
-                            if (reconnectionChannelId === this.activeChannelId && !this.isReconnecting) {
-                                this._setDisplayStatus('reconnecting');
-                                this.handleReconnection();
-                            }
+                    if (status === 'SUBSCRIBED') {
+                        this.reconnectAttempts = 0;
+                        this.isReconnecting = false;
+                        this._lastConnectedAt = Date.now();
+                        this._hasShownReconnectToast = false;
+                        this._graceUntil = Date.now() + 8000;
+                        this._setDisplayStatus('connected');
+                        this.showToast('Reconnected successfully!', 'success');
+                        
+                        await this.rtChannel.track({
+                            online_at: new Date().toISOString(),
+                            name: '{{ $auth_user_name }}',
+                            role: this.userRole,
+                            tabId: this.tabId
+                        });
+                        
+                        if (window.editor) {
+                            window.editor.rtChannel = this.rtChannel;
                         }
+                        
+                        debugLog('RT Reconnected and presence tracked');
+                        
+                        await this.flushOfflinePartSyncQueue();
+                        
+                        await this.syncMissedParts();
+                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                        this.isReconnecting = false;
+                        if (Date.now() < this._graceUntil) return;
+                        if (reconnectionChannelId === this.activeChannelId && !this.isReconnecting) {
+                            this._setDisplayStatus('reconnecting');
+                            this.handleReconnection();
+                        }
+                    } else if (status === 'TIMED_OUT') {
+                        debugWarn('RT Reconnection timed out');
+                        this.isReconnecting = false;
+                        if (reconnectionChannelId === this.activeChannelId) {
+                            this.handleReconnection();
+                        }
+                    }
                     });
             }, delay);
         },
 
         async sendBroadcast(event, payload) {
-            // Try WebSocket first if connected
             if (this.rtStatus === 'connected') {
                 try {
                     await this.rtChannel.send({
@@ -1913,29 +2165,16 @@ document.addEventListener('alpine:init', () => {
                     });
                     return { success: true, method: 'websocket' };
                 } catch (err) {
-                    debugWarn('RT WebSocket broadcast failed, falling back to REST:', err);
+                    debugWarn('RT WebSocket broadcast failed:', err);
+                    if (this.rtStatus === 'closed' || this.rtStatus === 'error') {
+                        this.handleReconnection();
+                    }
+                    return { success: false, error: err };
                 }
             }
             
-            // Fallback to REST API (works even when WebSocket is down)
-            try {
-                await this.rtChannel.send({
-                    type: 'broadcast',
-                    event: event,
-                    payload: payload
-                }, { httpSend: true });
-                debugLog('RT Broadcast sent via REST API');
-                return { success: true, method: 'rest' };
-            } catch (err) {
-                debugError('RT Both WebSocket and REST broadcast failed:', err);
-                
-                // If connection is down, trigger reconnection
-                if (this.rtStatus === 'closed' || this.rtStatus === 'error') {
-                    this.handleReconnection();
-                }
-                
-                return { success: false, error: err };
-            }
+            debugWarn('RT Not connected, broadcast queued for reconnection');
+            return { success: false, error: 'not_connected' };
         },
 
         setFloor(floor) {
@@ -2115,11 +2354,15 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            this.creatingIssue = true;
+
             try {
                 const buildId = '{{ $build->id }}';
                 
                 // Get part position if attached to part
                 let positionData = {};
+                let validPartId = null;
+                
                 if (this.newIssue.part_id && typeof editor !== 'undefined') {
                     const partData = editor.parts.get(this.newIssue.part_id);
                     if (partData) {
@@ -2128,6 +2371,11 @@ document.addEventListener('alpine:init', () => {
                             position_y: partData.mesh.position.y,
                             position_z: partData.mesh.position.z,
                         };
+                        // Only send part_id if it's a valid UUID (not a temp ID)
+                        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                        if (uuidRegex.test(this.newIssue.part_id)) {
+                            validPartId = this.newIssue.part_id;
+                        }
                     }
                 }
 
@@ -2138,13 +2386,19 @@ document.addEventListener('alpine:init', () => {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     },
                     body: JSON.stringify({
-                        ...this.newIssue,
+                        title: this.newIssue.title,
+                        description: this.newIssue.description,
+                        priority: this.newIssue.priority,
+                        part_id: validPartId,
                         ...positionData,
                     }),
                 });
 
                 if (!res.ok) {
-                    throw new Error('Failed to create issue');
+                    const errorData = await res.json().catch(() => ({}));
+                    const errorMsg = errorData.error || errorData.message || `Server error (${res.status})`;
+                    debugError('Issue creation failed:', res.status, errorData);
+                    throw new Error(errorMsg);
                 }
 
                 const issue = await res.json();
@@ -2160,7 +2414,9 @@ document.addEventListener('alpine:init', () => {
                 this.showToast('Issue created successfully!', 'success');
             } catch (err) {
                 debugError('Error creating issue:', err);
-                this.showToast('Failed to create issue', 'error');
+                this.showToast('Failed to create issue: ' + err.message, 'error');
+            } finally {
+                this.creatingIssue = false;
             }
         },
 
@@ -2465,7 +2721,7 @@ document.addEventListener('alpine:init', () => {
     /* Chat Tab Styles */
     .chat-messages {
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: column;
         flex: 1;
         overflow-y: auto;
         padding: 16px;
@@ -3705,6 +3961,15 @@ document.addEventListener('alpine:init', () => {
         font-size: 11px;
     }
 
+    /* Loading spinner animation */
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
     .btn--success {
         background: #22c55e;
         color: white;
@@ -3715,5 +3980,426 @@ document.addEventListener('alpine:init', () => {
     }
 
     /* ============ END ISSUE SYSTEM STYLES ============ */
+
+    /* ============ TABLET RESPONSIVE (769px - 1024px) ============ */
+    @media (max-width: 1024px) and (min-width: 769px) {
+        .sidebar {
+            width: 280px;
+        }
+        .editor-layout.sidebar-open {
+            margin-left: 280px;
+        }
+        .floating-toolbar {
+            right: 12px;
+            padding: 10px;
+        }
+        .floating-tool-btn {
+            width: 40px;
+            height: 40px;
+        }
+        .floating-tool-btn i {
+            width: 20px;
+            height: 20px;
+        }
+        .nb-shortcut span {
+            display: none;
+        }
+        .nav-shortcut-divider {
+            display: none !important;
+        }
+    }
+
+    /* Mobile sidebar overlay */
+    .mobile-sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1040;
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .mobile-sidebar-overlay {
+            display: block;
+        }
+    @media (max-width: 768px) {
+        /* Sidebar becomes full-screen overlay from bottom */
+        .sidebar {
+            width: 100% !important;
+            max-width: 100% !important;
+            left: 0 !important;
+            top: auto !important;
+            bottom: 0 !important;
+            height: 70vh !important;
+            max-height: 70vh !important;
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1050 !important;
+        }
+        .sidebar-open .sidebar {
+            transform: translateY(0);
+        }
+        .editor-layout.sidebar-open {
+            margin-left: 0 !important;
+        }
+
+        /* Topbar mobile layout */
+        .editor-topbar {
+            grid-template-columns: 1fr auto auto !important;
+            gap: 8px !important;
+            padding: 8px 12px !important;
+            flex-wrap: wrap;
+        }
+        .editor-topbar__left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-wrap: wrap;
+        }
+        .editor-topbar__title {
+            display: none !important;
+        }
+        .editor-topbar__center {
+            order: 3;
+            width: 100%;
+            justify-content: center;
+            padding-top: 4px;
+        }
+        .editor-topbar__right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Hide non-essential elements on mobile */
+        .editor-topbar__center .navbar-shortcuts,
+        .editor-topbar__center .nav-shortcut-divider,
+        .editor-topbar__right .export-dropdown,
+        .editor-topbar__right .editor-topbar__divider {
+            display: none !important;
+        }
+
+        /* Floor selector mobile */
+        .floor-selector {
+            padding: 4px 6px;
+            gap: 4px;
+        }
+        .floor-btn {
+            width: 28px;
+            height: 28px;
+        }
+        .floor-display {
+            font-size: 12px;
+            min-width: 50px;
+        }
+
+        /* RT indicator mobile */
+        .rt-indicator {
+            padding: 3px 6px;
+        }
+        .rt-indicator__label {
+            font-size: 9px;
+        }
+        .rt-indicator__dot {
+            width: 6px;
+            height: 6px;
+        }
+        .view-only-badge {
+            padding: 3px 6px;
+            font-size: 9px;
+        }
+
+        /* Sidebar mobile optimizations */
+        .sidebar-section__title {
+            font-size: 14px;
+            padding: 12px 16px;
+        }
+        .sidebar__footer {
+            padding: 12px;
+        }
+
+        /* Chat mobile */
+        .chat-messages {
+            padding: 12px;
+        }
+        .message {
+            max-width: 90%;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        .chat-input-wrapper {
+            gap: 6px;
+        }
+        .chat-input {
+            padding: 8px 12px;
+            font-size: 13px;
+            min-height: 36px;
+        }
+        .chat-send-btn {
+            width: 36px;
+            height: 36px;
+        }
+        .chat-offline-notice {
+            margin: 0 12px 8px;
+            padding: 8px 12px;
+            font-size: 11px;
+        }
+
+        /* Issues mobile */
+        .filter-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        .issue-card {
+            padding: 12px;
+        }
+        .issue-card-header {
+            gap: 6px;
+        }
+        .issue-title {
+            font-size: 13px;
+        }
+        .issue-priority-badge {
+            padding: 3px 8px;
+            font-size: 11px;
+        }
+        .issue-card-actions {
+            gap: 4px;
+        }
+        .btn--xs {
+            padding: 4px 8px;
+            font-size: 10px;
+        }
+
+        /* Floating toolbar mobile - move to bottom for thumb reach */
+        .floating-toolbar {
+            position: fixed !important;
+            right: 50% !important;
+            top: auto !important;
+            bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+            transform: translateX(50%) !important;
+            flex-direction: row !important;
+            padding: 10px 16px;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .floating-toolbar__group {
+            flex-direction: row !important;
+            gap: 6px;
+        }
+        .floating-toolbar__divider {
+            width: 1px;
+            height: 24px;
+        }
+        .floating-tool-btn {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+        }
+        .floating-tool-btn i {
+            width: 22px;
+            height: 22px;
+        }
+        .floating-tool-btn .tooltip {
+            display: none !important;
+        }
+
+        /* Mobile sidebar toggle - larger and more visible */
+        .mobile-sidebar-toggle {
+            display: flex !important;
+            position: fixed;
+            bottom: calc(16px + env(safe-area-inset-bottom));
+            right: 16px;
+            z-index: 1060;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            box-shadow: 0 6px 20px rgba(0,102,255,0.4);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        .mobile-sidebar-toggle:active {
+            transform: scale(0.95);
+        }
+        .mobile-sidebar-toggle i {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Issue modal mobile */
+        .modal-content {
+            width: 95% !important;
+            max-width: 95% !important;
+            max-height: 85vh !important;
+            margin: 16px;
+        }
+        .modal-header {
+            padding: 16px;
+        }
+        .modal-body {
+            padding: 16px;
+        }
+        .modal-footer {
+            padding: 12px 16px;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .modal-footer .btn {
+            width: 100%;
+        }
+        .priority-selector {
+            gap: 6px;
+        }
+        .priority-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            flex: 1;
+            justify-content: center;
+        }
+        .form-group label {
+            font-size: 12px;
+        }
+        .form-input,
+        .form-textarea {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        /* Story dots mobile */
+        .story-progress {
+            right: 8px !important;
+        }
+        .story-dot {
+            width: 6px;
+            height: 6px;
+        }
+
+        /* Properties panel mobile */
+        .properties-panel {
+            width: 100% !important;
+            right: 0 !important;
+            left: 0 !important;
+            top: auto !important;
+            bottom: 0 !important;
+            max-height: 50vh !important;
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+            z-index: 1100 !important;
+        }
+        .keyboard-hint {
+            display: none !important;
+        }
+        .editor-tab span {
+            display: none !important;
+        }
+        .editor-tab {
+            padding: 8px !important;
+        }
+        .editor-bottom {
+            min-height: auto !important;
+        }
+        .editor-parts {
+            padding: 8px !important;
+            min-height: 64px !important;
+        }
+
+        /* Safe area insets for notched phones */
+        .editor-topbar {
+            padding-top: calc(8px + env(safe-area-inset-top));
+        }
+        .editor-bottom {
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+    }
+    /* End @media (max-width: 768px) */
+
+    /* ============ SMALL MOBILE (≤390px) ============ */
+    @media (max-width: 390px) {
+        .editor-topbar {
+            padding: 6px 8px !important;
+            gap: 6px !important;
+        }
+        .btn--ghost.btn--sm {
+            padding: 6px 8px;
+        }
+        .btn--ghost.btn--sm i {
+            width: 18px;
+            height: 18px;
+        }
+        .floor-selector {
+            padding: 3px 4px;
+            gap: 3px;
+        }
+        .floor-btn {
+            width: 26px;
+            height: 26px;
+        }
+        .floor-display {
+            font-size: 11px;
+            min-width: 45px;
+        }
+        .floating-toolbar {
+            padding: 8px 12px;
+        }
+        .floating-tool-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+        }
+        .floating-tool-btn i {
+            width: 20px;
+            height: 20px;
+        }
+        .mobile-sidebar-toggle {
+            width: 48px;
+            height: 48px;
+            bottom: calc(12px + env(safe-area-inset-bottom));
+            right: 12px;
+        }
+        .mobile-sidebar-toggle i {
+            width: 20px;
+            height: 20px;
+        }
+        .sidebar {
+            height: 60vh !important;
+            max-height: 60vh !important;
+        }
+        .message {
+            max-width: 95%;
+            font-size: 12px;
+        }
+        .chat-input {
+            font-size: 12px;
+        }
+        
+        /* Small screen adjustments */
+        .floating-toolbar {
+            bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+            padding: 8px 12px;
+        }
+        .mobile-action-bar {
+            bottom: calc(68px + env(safe-area-inset-bottom));
+            padding: 4px 6px;
+            gap: 2px;
+        }
+        .mobile-action-btn {
+            width: 36px;
+            height: 36px;
+        }
+        .mobile-placement-controls {
+            bottom: calc(68px + env(safe-area-inset-bottom));
+        }
+        .mobile-place-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+    }
 </style>
 @endpush
