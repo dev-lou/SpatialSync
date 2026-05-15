@@ -79,6 +79,7 @@ class RegisteredUserController extends Controller
             $request->session()->put('supabase_user_email', $user['email']);
             $request->session()->put('supabase_user_name', $user['name']);
             $request->session()->put('supabase_user_admin', $user['is_admin'] ?? false);
+            $request->session()->put('supabase_user_avatar', $user['avatar_url'] ?? null);
         }
 
         return redirect()->route('builds.index');

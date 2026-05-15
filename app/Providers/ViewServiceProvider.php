@@ -40,6 +40,7 @@ class ViewServiceProvider extends ServiceProvider
                 ] : null,
                 'auth_user_id' => $userId,
                 'auth_user_name' => $userName,
+                'auth_user_avatar' => $userAvatar,
             ]);
         });
     }

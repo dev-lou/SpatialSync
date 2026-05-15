@@ -42,6 +42,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->put('supabase_user_name', $supabaseUser['name']);
         $request->session()->put('supabase_user_plan', $supabaseUser['plan'] ?? 'free');
         $request->session()->put('supabase_user_admin', $supabaseUser['is_admin'] ?? false);
+        $request->session()->put('supabase_user_avatar', $supabaseUser['avatar_url'] ?? null);
         $request->session()->regenerate();
 
         return redirect()->intended(route('builds.index'));
