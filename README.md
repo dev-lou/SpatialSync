@@ -1,308 +1,122 @@
-# ConstructHub
+<div align="center">
+  <img src="https://raw.githubusercontent.com/dev-lou/SpatialSync/main/public/images/logo.png" alt="SpatialSync Logo" width="200" height="200" style="border-radius: 20px; fallback: 'https://via.placeholder.com/200?text=SpatialSync';">
+  
+  <h1>SpatialSync</h1>
+  <p><strong>Next-Generation Collaborative 3D Architectural Engine</strong></p>
+  
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#tech-stack">Tech Stack</a> •
+    <a href="#installation">Installation</a> •
+    <a href="#architecture">Architecture</a> •
+    <a href="#contributing">Contributing</a>
+  </p>
 
-**Build Houses & Buildings Together in Real-Time**
+  <p>
+    <img src="https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel">
+    <img src="https://img.shields.io/badge/Three.js-0.183-000000?style=for-the-badge&logo=three.js&logoColor=white" alt="Three.js">
+    <img src="https://img.shields.io/badge/Supabase-Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
+    <img src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+  </p>
+</div>
 
-A collaborative 3D house construction platform inspired by Bloxburg and Sims Build Mode. Create houses, multi-story buildings, and architectural designs with friends in real-time.
+---
 
-## Features
+> **SpatialSync** is a highly interactive, real-time 3D construction and spatial planning platform. Built for architects, engineers, and collaborative teams, it brings desktop-grade 3D modeling into the browser with sub-second synchronization, premium UI/UX, and enterprise-grade security.
 
-### 🏠 House Building
-- **16+ Building Parts**: Walls, floors, roofs, doors, windows, stairs
-- **Multi-Story Support**: Build up to 10 floors
-- **Auto-Height System**: Parts automatically position correctly
-- **Grid Snapping**: Precise placement with 1-meter grid
-- **Auto-Roof Positioning**: Roofs automatically position above walls
+## 🚀 Features
 
-### 🎮 Intuitive Controls
-- **Orbit Camera**: Rotate around your house like Bloxburg
-- **Click-to-Place**: Simple click to add parts
-- **Drag-to-Move**: Move parts by dragging
-- **Real-time Preview**: See where parts will be placed
-- **Minimap**: Bird's eye view navigation
+### 🏢 Advanced 3D Engine
+- **Three.js Core:** High-performance rendering engine with custom shaders, dynamic lighting, and real-time shadows.
+- **Parametric Building:** 16+ smart building parts (walls, floors, roofs, doors) that auto-height and auto-snap.
+- **Custom Polygon Drawing:** Freeform geometry creation and advanced texture mapping.
+- **Physics & Collisions:** Accurate bounding box calculations for realistic part placement and intersection handling.
 
-### 🔄 Undo/Redo System
-- **50-step History**: Undo and redo all actions
-- **Keyboard Shortcuts**: Ctrl+Z, Ctrl+Y
-- **Action Tracking**: Add, delete, move tracked
+### ⚡ Real-Time Collaboration
+- **Supabase Sync:** Sub-second state synchronization across multiple connected clients.
+- **Live Cursors & Presence:** See where your team members are looking and what they are selecting.
+- **Timestamped Mutations:** Conflict-free state resolution using precise timestamps.
+- **In-App Chat:** Persistent, secure workspace communication.
 
-### 💾 Save & Export
-- **Auto-Save**: Automatic save every 30 seconds
-- **Manual Save**: Save anytime with Ctrl+S
-- **Export PNG**: High-quality screenshots
-- **Export JPEG**: Compressed images
-- **Export JSON**: Full build data backup
-- **Share Links**: Copy build URL to clipboard
+### 🛡️ Enterprise Security & IAM
+- **Biometric Authentication:** Passwordless WebAuthn and facial/fingerprint recognition (Biometric HUD).
+- **Role-Based Access Control (RBAC):** Granular permissions separating Admins, Architects, and Viewers.
+- **Middleware Protected:** Complete API route and component-level security using Laravel Sanctum and custom middleware.
 
-### ⌨️ Keyboard Shortcuts
-- `Ctrl + S` - Save build
-- `Ctrl + D` - Duplicate selected part
-- `Ctrl + Z` - Undo
-- `Ctrl + Y` - Redo
-- `Delete` - Delete selected part
-- `Escape` - Deselect / Exit placement
-- `G` - Toggle grid
-- `Ctrl + ?` - Show shortcuts
+### 💎 UI/UX 2026 Standards
+- **Premium Interface:** Glassmorphism, tailored tokens, and smooth micro-animations.
+- **10-State Components:** Fully accessible interactive components (default, hover, focus, active, loading, disabled, error, success, empty, busy).
+- **Dark/Light Mode:** Seamless theme switching with fluid typography.
+- **Dynamic Pricing Engine:** Simulated cost estimations updated in real-time as you build.
 
-### 🎨 3D Visualization
-- **Three.js Rendering**: Professional 3D graphics
-- **Real-time Shadows**: Dynamic lighting and shadows
-- **OrbitControls**: Smooth camera rotation
-- **Floor Indicators**: Visual floor level markers
+## 🏗️ Tech Stack
 
-## Tech Stack
+### Frontend
+* **Core:** JavaScript (ES2024), Alpine.js for lightweight reactivity.
+* **3D & Graphics:** Three.js, Fabric.js (Canvas 2D overlays).
+* **Styling:** Tailwind CSS v3, PostCSS, Custom 2026 UI/UX Tokens.
+* **Build Tool:** Vite 5.
 
-- **Backend**: Laravel 11
-- **Frontend**: Alpine.js, Vanilla JS
-- **3D Engine**: Three.js with OrbitControls
-- **Database**: SQLite (dev) / PostgreSQL (prod)
-- **Real-time**: Laravel Echo (preparation ready)
-- **Styling**: Custom CSS with design tokens
+### Backend
+* **Framework:** Laravel 11.
+* **Language:** PHP 8.2+.
+* **Real-time & DB:** Supabase (PostgreSQL, Realtime WebSockets, Storage).
+* **Authentication:** Laravel Sanctum, Biometric WebAuthn.
 
-## Requirements
+## ⚙️ Installation & Setup
 
-- PHP 8.2+
-- Node.js 18+
-- Composer
-- SQLite (included) or PostgreSQL/MySQL
+### Requirements
+* PHP 8.2 or higher
+* Node.js 18+ and npm
+* Composer
+* A Supabase project
 
-## Installation
-
-### 1. Clone the Repository
-
+### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/yourusername/constructhub.git
-cd constructhub
-```
+git clone https://github.com/your-org/spatialsync.git
+cd spatialsync
 
-### 2. Install Dependencies
-
-```bash
+# Install PHP dependencies
 composer install
+
+# Install NPM dependencies
 npm install
 ```
 
-### 3. Environment Setup
-
+### 2. Environment Configuration
 ```bash
 cp .env.example .env
-```
-
-Edit `.env`:
-
-```env
-APP_NAME="ConstructHub"
-APP_ENV=local
-APP_KEY=
-APP_URL=http://localhost:8000
-
-# Use SQLite for development
-DB_CONNECTION=sqlite
-# Or use MySQL/PostgreSQL
-# DB_CONNECTION=mysql
-# DB_HOST=127.0.0.1
-# DB_PORT=3306
-# DB_DATABASE=constructhub
-# DB_USERNAME=root
-# DB_PASSWORD=
-```
-
-### 4. Generate Application Key
-
-```bash
 php artisan key:generate
 ```
+Update your `.env` with your Supabase credentials and Render/production URLs.
 
-### 5. Run Migrations & Seed
-
+### 3. Database Migration
 ```bash
 php artisan migrate:fresh --seed
 ```
 
-This creates demo users:
-- **Admin**: admin@constructhub.com / password
-- **User**: demo@example.com / password
-
-### 6. Start Development Server
-
+### 4. Build Assets & Start
 ```bash
+npm run build
 php artisan serve
 ```
+Your local environment is now running at `http://localhost:8000`.
 
-Visit: http://localhost:8000
+## 📐 Architecture Overview
 
-## Getting Started
-
-1. Login with `demo@example.com` / `password`
-2. Go to Dashboard
-3. Click "New Build"
-4. Enter a name (e.g., "My First House")
-5. Start building!
-
-## Building Parts
-
-### Walls (6 types)
-- Exterior Wall Large (4m × 3m)
-- Exterior Wall Medium (2m × 3m)
-- Interior Wall Large (4m × 2.8m)
-- Interior Wall Small (2m × 2.8m)
-- Glass Wall (2m × 2m)
-- Foundation (4m × 0.5m)
-
-### Floors (3 types)
-- Tile Floor (1m × 1m)
-- Hardwood Floor (1m × 1m)
-- Carpet Floor (1m × 1m)
-
-### Roofs (2 types)
-- Flat Roof (4m × 4m)
-- Peaked Roof (4m × 4m)
-
-### Doors & Windows
-- Single Door (0.9m × 2.1m)
-- Double Door (1.8m × 2.1m)
-- Single Window (1m × 1m)
-- Double Window (2m × 1m)
-
-### Special
-- Stairs (1m × 2m)
-
-## Build a House
-
-### Step 1: Foundation
-1. Select "Foundation" from Walls
-2. Place on grid
-
-### Step 2: Exterior Walls
-1. Select "Floor 1" tab
-2. Choose "Exterior Wall Large"
-3. Click to place walls around foundation
-4. Create rooms by placing interior walls
-
-### Step 3: Floors
-1. Select "Tile Floor" from Floors
-2. Cover the floor area
-
-### Step 4: Doors & Windows
-1. Place doors in walls
-2. Place windows above walls
-
-### Step 5: Add Second Floor
-1. Click "+" to add Floor 2
-2. Place walls, floors, doors, windows
-
-### Step 6: Add Roof
-1. Select "Flat Roof"
-2. Click above walls to auto-position
-3. Toggle "Hide Roof" to see inside
-
-### Step 7: Save & Export
-1. Click "Save" (or Ctrl+S)
-2. Click "PNG" to export image
-3. Click "JSON" to backup build
-4. Click "Share" to copy link
-
-```bash
-php artisan serve
-npm run dev
+```mermaid
+graph TD
+    A[Browser Client] -->|WebSockets/HTTPS| B[Next-Gen Frontend]
+    B -->|Three.js Canvas| C[3D Rendering Engine]
+    B -->|Alpine.js + Tailwind| D[UI Layer]
+    B <-->|Realtime Sync| E[Supabase Realtime Channel]
+    B -->|REST API| F[Laravel 11 Backend]
+    F -->|RBAC / Auth| G[(PostgreSQL DB)]
+    E --> G
+    
+    style A fill:var(--surface),stroke:var(--border)
+    style G fill:var(--surface-up),stroke:var(--accent)
 ```
 
-## Supabase Setup
-
-### 1. Create a Supabase Project
-
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Copy the connection details from Settings > Database
-
-### 2. Enable Realtime
-
-1. Go to Database > Replication
-2. Enable replication for the tables you'll use
-
-### 3. Get API Keys
-
-1. Go to Settings > API
-2. Copy the `anon` public key and `service_role` secret key
-
-## Database Schema
-
-The application uses the following tables:
-
-- `users` - User accounts
-- `teams` - Team/workspace grouping
-- `team_user` - Team membership
-- `blueprints` - Blueprint projects with JSON canvas data
-- `blueprint_members` - Blueprint access control
-- `chat_messages` - In-room chat messages
-
-## Deployment to Render
-
-### 1. Create Render Account
-
-Sign up at [render.com](https://render.com)
-
-### 2. Create a Web Service
-
-1. New > Web Service
-2. Connect your GitHub repository
-3. Configure:
-   - **Root Directory**: (leave empty)
-   - **Build Command**: `composer install && npm install && npm run build`
-   - **Start Command**: `php artisan serve`
-
-### 3. Add Environment Variables
-
-Add all variables from your `.env` file in Render's dashboard.
-
-### 4. Configure Supabase
-
-Make sure your Supabase project allows connections from Render's IPs, or enable SSL connections.
-
-## Architecture
-
-```
-┌─────────────────────┐     ┌─────────────────────┐
-│  Browser A          │     │  Browser B          │
-│  ┌───────────────┐  │     │  ┌───────────────┐  │
-│  │ fabric.js     │  │     │  │ fabric.js     │  │
-│  │ Canvas        │  │     │  │ Canvas        │  │
-│  └───────┬───────┘  │     │  └───────┬───────┘  │
-│          │          │     │          │          │
-│  ┌───────▼───────┐  │     │  ┌───────▼───────┐  │
-│  │ Supabase JS   │  │     │  │ Supabase JS   │  │
-│  │ Client        │  │     │  │ Client        │  │
-│  └───────┬───────┘  │     │  └───────┬───────┘  │
-└──────────┼──────────┘     └──────────┼──────────┘
-           │                           │
-           │  Broadcast Events         │
-           └──────────┬────────────────┘
-                      │
-           ┌──────────▼────────────────┐
-           │  Supabase Realtime        │
-           │  Channel: blueprint:{id}   │
-           └──────────┬────────────────┘
-                      │
-           ┌──────────▼────────────────┐
-           │  Laravel Backend (AJAX)   │
-           │  POST /api/canvas/save    │
-           └──────────┬────────────────┘
-                      │
-           ┌──────────▼────────────────┐
-           │  Supabase PostgreSQL      │
-           │  blueprints.canvas_json   │
-           └───────────────────────────┘
-```
-
-## License
-
-MIT License - See LICENSE file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## Support
-
-For issues and feature requests, please use GitHub Issues.
+## 🛡️ License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
