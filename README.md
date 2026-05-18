@@ -74,20 +74,6 @@ No desktop software. No plugins. Just open a browser.
 
 ---
 
-## 💡 Suggested Repo Names
-
-| Name | Why |
-|---|---|
-| **`SpatialSync`** ✅ *(current)* | Clean, professional, memorable |
-| `spatial-sync-3d` | More discoverable via search |
-| `collab-architect-3d` | Describes the core use-case |
-| `blueprintflow` | Matches the internal codebase branding |
-| `build-together` | Simple, emphasises collaboration |
-
-**Recommendation:** Keep `SpatialSync` — it's the strongest brand name of the group.
-
----
-
 ## ✨ Features
 
 ### 🏗️ 3D Build Editor
