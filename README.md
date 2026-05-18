@@ -548,18 +548,6 @@ All API routes are prefixed with `/api` and protected by **Laravel Sanctum**.
 
 ---
 
-## 👥 Team
-
-| Member | Role | Key Contributions |
-|---|---|---|
-| 👑 **Lou Vincent Baroro** | Project Lead & Core Engineer | Laravel architecture, 3D engine (Three.js), Supabase realtime, biometric auth, UI/UX 2026 system, production deployment |
-| 🛡️ **Sean** | Security Engineer | RBAC permission system, Laravel middleware, API security, DB migrations |
-| 🎨 **Linterna** | UX Designer | Dashboard UX, instant creation workflow, 10-state interactive components |
-| 💎 **Allysandra** | Feature Engineer | Dynamic pricing engine, dashboard animations, build editor optimisation |
-| 🛠️ **Jayr** | 3D Specialist | 3D part geometry fixes, snapping logic, profile management UI |
-
----
-
 ## 📄 License
 
 This project is licensed under the **MIT License**.  
