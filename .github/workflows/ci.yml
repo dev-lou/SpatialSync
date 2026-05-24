@@ -62,9 +62,6 @@ jobs:
       - name: Generate app key
         run: php -r "file_put_contents('.env', preg_replace('/^APP_KEY=.*/m', 'APP_KEY=base64:' . base64_encode(random_bytes(32)), file_get_contents('.env')));"
 
-      - name: Run post-install scripts
-        run: composer run-script post-autoload-dump --ansi --no-interaction
-
       - name: Run Laravel Pint (Code Style)
         run: vendor/bin/pint --test --ansi
 
@@ -136,9 +133,6 @@ jobs:
 
       - name: Generate app key
         run: php -r "file_put_contents('.env', preg_replace('/^APP_KEY=.*/m', 'APP_KEY=base64:' . base64_encode(random_bytes(32)), file_get_contents('.env')));"
-
-      - name: Run post-install scripts
-        run: composer run-script post-autoload-dump --ansi --no-interaction
 
       - name: Build frontend assets
         run: npm run build
