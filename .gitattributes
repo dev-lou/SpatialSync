@@ -1,0 +1,42 @@
+# Auto-detect text files and normalize to LF
+* text=auto
+
+# PHP — always LF
+*.php text eol=lf
+
+# JavaScript / TypeScript — always LF
+*.js text eol=lf
+*.ts text eol=lf
+*.vue text eol=lf
+
+# Config files — always LF
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.xml text eol=lf
+*.env text eol=lf
+*.env.example text eol=lf
+
+# CSS / Sass — always LF
+*.css text eol=lf
+*.scss text eol=lf
+
+# Blade templates — always LF
+*.blade.php text eol=lf
+
+# Markdown / docs — always LF
+*.md text eol=lf
+
+# Binary files — not text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.zip binary
+*.gz binary
