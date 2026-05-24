@@ -38,16 +38,19 @@
       "changelogFile": "CHANGELOG.md",
       "changelogTitle": "# SpatialSync Changelog\n\nAll notable changes to SpatialSync will be documented in this file.\n\n---"
     }],
+    ["@semantic-release/npm", {
+      "npmPublish": false
+    }],
     ["@semantic-release/github", {
       "assets": [
-        { "path": "public/build/**", "label": "Production Assets" },
-        { "path": "sbom.json", "label": "SBOM (Software Bill of Materials)" }
+        { "path": "CHANGELOG.md", "label": "Changelog" }
       ]
     }],
     ["@semantic-release/git", {
       "assets": [
         "CHANGELOG.md",
-        "package.json"
+        "package.json",
+        "package-lock.json"
       ],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }]
