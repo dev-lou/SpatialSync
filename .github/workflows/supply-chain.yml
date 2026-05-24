@@ -131,6 +131,9 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      - name: Create .env for CI
+        run: cp .env.example .env
+
       - name: Fresh PHP install from lockfile
         run: |
           rm -rf vendor

@@ -71,6 +71,9 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      - name: Create .env for CI
+        run: cp .env.example .env
+
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
