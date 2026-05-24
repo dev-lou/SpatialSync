@@ -51,13 +51,12 @@ jobs:
           npm ls 2>/dev/null || echo "⚠️ npm dependency tree has issues"
 
   # ---------------------------------------------------------------------------
-  # 2. Dependency Review (PRs only)
+  # 2. Dependency Review
   # ---------------------------------------------------------------------------
   dependency-review:
     name: 📦 Dependency Review
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: github.event_name == 'pull_request'
     permissions:
       pull-requests: write
       contents: read
@@ -72,6 +71,8 @@ jobs:
           comment-summary-in-pr: true
           deny-licenses: GPL-3.0, AGPL-3.0, AGPL-1.0
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Unlicense, CC0-1.0
+          base-ref: ${{ github.event.before }}
+          head-ref: ${{ github.sha }}
 
   # ---------------------------------------------------------------------------
   # 3. SBOM Generation
