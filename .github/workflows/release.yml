@@ -3,6 +3,12 @@
 # Uses semantic-release to automate version bumps, changelog, and tags
 # 2026 Industry Standard: Trunk-based releases with Conventional Commits
 # =============================================================================
+#
+# ⚠️  semantic-release v25+ requires Node.js >= 22.14.
+#     If you bump the major version of semantic-release, verify the minimum
+#     Node.js version it supports — this workflow sets NODE_VERSION below.
+#     (See: https://github.com/semantic-release/semantic-release/releases)
+#
 
 name: Release
 

@@ -264,6 +264,7 @@ SpatialSync is built on the **OpenCode UI/UX 2026** design system.
 | **Husky + lint-staged** | Pre-commit hooks for code quality gates |
 | **Commitlint** | Conventional Commits enforcement |
 | **Semantic Release** | Automated versioning, changelog & GitHub releases |
+| <sup>⚠️ v25+ requires Node.js ≥ 22.14</sup> | <sup>Update `NODE_VERSION` in `release.yml` when upgrading</sup> |
 | **PHPStan (max level)** | Static analysis for PHP |
 | **Laravel Pint** | Opinionated PHP code style |
 | **ESLint + Prettier** | JavaScript linting & formatting |
