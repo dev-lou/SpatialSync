@@ -1,15 +1,17 @@
 <?php
 
+use App\Services\SupabaseClient;
+
 require 'vendor/autoload.php';
 $app = require 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-$supabase = app(\App\Services\SupabaseClient::class);
+$supabase = app(SupabaseClient::class);
 
 echo "--- Deduping part_presets ---\n";
 
 $presets = $supabase->select('part_presets', ['*']);
-echo "Found " . count($presets) . " total presets.\n";
+echo 'Found '.count($presets)." total presets.\n";
 
 $seen = [];
 $toDelete = [];
@@ -17,8 +19,8 @@ $kept = 0;
 
 foreach ($presets as $p) {
     // We dedupe by type and variant
-    $key = $p['type'] . '|' . $p['variant'];
-    
+    $key = $p['type'].'|'.$p['variant'];
+
     if (isset($seen[$key])) {
         $toDelete[] = $p['id'];
     } else {
@@ -27,12 +29,12 @@ foreach ($presets as $p) {
     }
 }
 
-echo "Will keep $kept unique presets and delete " . count($toDelete) . " duplicates.\n";
+echo "Will keep $kept unique presets and delete ".count($toDelete)." duplicates.\n";
 
 foreach ($toDelete as $id) {
     echo "Deleting duplicate: $id\n";
     $success = $supabase->delete('part_presets', ['id' => $id]);
-    if (!$success) {
+    if (! $success) {
         echo "FAILED to delete $id\n";
     }
 }

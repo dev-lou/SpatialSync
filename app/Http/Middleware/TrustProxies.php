@@ -22,7 +22,7 @@ class TrustProxies extends Middleware
      */
     // Some Symfony versions don't expose HEADER_X_FORWARDED_ALL. Use a combination
     // of the forwarded headers so we accept all the typical proxy headers.
-    protected $headers = 
+    protected $headers =
         Request::HEADER_FORWARDED
         | Request::HEADER_X_FORWARDED_FOR
         | Request::HEADER_X_FORWARDED_HOST

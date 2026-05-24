@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Model
+ * @extends Model
  *
- * @property-read \App\Models\Build|null $build
- * @property-read \App\Models\User|null $user
+ * @property-read Build|null $build
+ * @property-read User|null $user
  *
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildShare> build()
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\BuildShare> user()
@@ -29,7 +29,7 @@ class BuildShare extends Model
     ];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildShare>
+     * @return BelongsTo<Build, BuildShare>
      */
     public function build(): BelongsTo
     {
@@ -37,7 +37,7 @@ class BuildShare extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\BuildShare>
+     * @return BelongsTo<User, BuildShare>
      */
     public function user(): BelongsTo
     {

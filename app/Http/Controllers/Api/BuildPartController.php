@@ -36,7 +36,7 @@ class BuildPartController extends Controller
         // Check if user is a member
         $members = $this->supabase->select('build_members', ['role'], [
             'build_id' => $buildId,
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
 
         return $members !== [];
@@ -63,7 +63,7 @@ class BuildPartController extends Controller
         // Check if user is an editor
         $members = $this->supabase->select('build_members', ['role'], [
             'build_id' => $buildId,
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
 
         return $members !== [] && $members[0]['role'] === 'editor';
@@ -72,7 +72,7 @@ class BuildPartController extends Controller
     public function index(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
-        if (!$this->checkBuildAccess($request, $buildId)) {
+        if (! $this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
@@ -96,7 +96,7 @@ class BuildPartController extends Controller
     public function allParts(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
-        if (!$this->checkBuildAccess($request, $buildId)) {
+        if (! $this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
@@ -118,7 +118,7 @@ class BuildPartController extends Controller
     public function store(AuthenticatedRequest $request, string $buildId)
     {
         // Check modify permission
-        if (!$this->canModifyBuild($request, $buildId)) {
+        if (! $this->canModifyBuild($request, $buildId)) {
             return response()->json(['error' => 'Access denied - editor role required'], 403);
         }
 
@@ -152,7 +152,7 @@ class BuildPartController extends Controller
 
         // Touch build updated_at
         $this->supabase->update('builds', [
-            'updated_at' => now()->toIso8601String()
+            'updated_at' => now()->toIso8601String(),
         ], ['id' => $buildId]);
 
         return response()->json($part, 201);
@@ -161,7 +161,7 @@ class BuildPartController extends Controller
     public function update(AuthenticatedRequest $request, string $buildId, string $partId)
     {
         // Check modify permission
-        if (!$this->canModifyBuild($request, $buildId)) {
+        if (! $this->canModifyBuild($request, $buildId)) {
             return response()->json(['error' => 'Access denied - editor role required'], 403);
         }
 
@@ -205,6 +205,7 @@ class BuildPartController extends Controller
                     'current_updated_at' => $existing[0]['updated_at'] ?? null,
                 ], 409);
             }
+
             return response()->json(['error' => 'Part not found'], 404);
         }
 
@@ -213,7 +214,7 @@ class BuildPartController extends Controller
 
         // Touch build updated_at
         $this->supabase->update('builds', [
-            'updated_at' => now()->toIso8601String()
+            'updated_at' => now()->toIso8601String(),
         ], ['id' => $buildId]);
 
         return response()->json($parts[0] ?? []);
@@ -222,7 +223,7 @@ class BuildPartController extends Controller
     public function destroy(AuthenticatedRequest $request, string $buildId, string $partId)
     {
         // Check modify permission
-        if (!$this->canModifyBuild($request, $buildId)) {
+        if (! $this->canModifyBuild($request, $buildId)) {
             return response()->json(['error' => 'Access denied - editor role required'], 403);
         }
 
@@ -237,7 +238,7 @@ class BuildPartController extends Controller
 
         // Touch build updated_at
         $this->supabase->update('builds', [
-            'updated_at' => now()->toIso8601String()
+            'updated_at' => now()->toIso8601String(),
         ], ['id' => $buildId]);
 
         return response()->json(['message' => 'Part deleted successfully']);

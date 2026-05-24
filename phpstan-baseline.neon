@@ -1159,7 +1159,7 @@ parameters:
 			path: app/Models/Build.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 21 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/Build.php
@@ -1285,7 +1285,7 @@ parameters:
 			path: app/Models/BuildIssue.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\r\\n \*", expected ''\<'' at offset 52 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 21 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/BuildIssue.php
@@ -1321,7 +1321,7 @@ parameters:
 			path: app/Models/BuildMessage.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 21 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/BuildMessage.php
@@ -1369,7 +1369,7 @@ parameters:
 			path: app/Models/BuildPart.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 21 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/BuildPart.php
@@ -1405,7 +1405,7 @@ parameters:
 			path: app/Models/BuildShare.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 21 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/BuildShare.php
@@ -1435,7 +1435,7 @@ parameters:
 			path: app/Models/PartPreset.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n ", expected ''\<'' at offset 51 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Model\)\: Unexpected token "\\n ", expected ''\<'' at offset 21 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/PartPreset.php
@@ -1477,7 +1477,7 @@ parameters:
 			path: app/Models/Team.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 21 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/Team.php
@@ -1573,7 +1573,7 @@ parameters:
 			path: app/Models/User.php
 
 		-
-			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Foundation\\Auth\\User\)\: Unexpected token "\\r\\n \*", expected ''\<'' at offset 49 on line 2$#'
+			message: '#^PHPDoc tag @extends has invalid value \(Authenticatable\)\: Unexpected token "\\n \*", expected ''\<'' at offset 31 on line 2$#'
 			identifier: phpDoc.parseError
 			count: 1
 			path: app/Models/User.php
@@ -1684,18 +1684,6 @@ parameters:
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
 			count: 3
-			path: app/Services/SupabaseClient.php
-
-		-
-			message: '#^Deprecated in PHP 8\.0\: Required parameter \$column follows optional parameter \$columns\.$#'
-			identifier: parameter.requiredAfterOptional
-			count: 1
-			path: app/Services/SupabaseClient.php
-
-		-
-			message: '#^Deprecated in PHP 8\.0\: Required parameter \$query follows optional parameter \$columns\.$#'
-			identifier: parameter.requiredAfterOptional
-			count: 1
 			path: app/Services/SupabaseClient.php
 
 		-

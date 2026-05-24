@@ -16,6 +16,7 @@ class RedirectIfSupabaseAuthenticated
 
         /** @var Response $response */
         $response = $next($request);
+
         return $response;
     }
 }

@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Model
+ * @extends Model
  *
- * @property-read \App\Models\Build|null $build
+ * @property-read Build|null $build
  *
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildPart> build()
  */
@@ -48,16 +48,13 @@ class BuildPart extends Model
     ];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildPart>
+     * @return BelongsTo<Build, BuildPart>
      */
     public function build(): BelongsTo
     {
         return $this->belongsTo(Build::class);
     }
 
-    /**
-     * @return \App\Models\PartPreset|null
-     */
     public function preset(): ?PartPreset
     {
         return PartPreset::where('type', $this->type)

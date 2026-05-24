@@ -3,9 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Http\AuthenticatedRequest;
+use App\Services\SupabaseClient;
 use Closure;
 use Symfony\Component\HttpFoundation\Response;
-use App\Services\SupabaseClient;
 
 class CheckBuildPermission
 {
@@ -19,14 +19,14 @@ class CheckBuildPermission
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\App\Http\AuthenticatedRequest): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(AuthenticatedRequest): (Response)  $next
      */
     public function handle(AuthenticatedRequest $request, Closure $next, string $permission): Response
     {
         $buildId = $request->route('buildId') ?? $request->route('build');
         $userId = $request->auth_user_id;
 
-        if (!$buildId || !$userId) {
+        if (! $buildId || ! $userId) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -45,14 +45,14 @@ class CheckBuildPermission
         } else {
             $members = $this->supabase->select('build_members', ['role'], [
                 'build_id' => $buildId,
-                'user_id' => $userId
+                'user_id' => $userId,
             ]);
             $role = $members !== [] ? $members[0]['role'] : null;
         }
 
         // Check if user has the required permission
-        if (!$this->hasPermission($role, $permission)) {
-            return response()->json(['error' => 'Permission denied: ' . $permission], 403);
+        if (! $this->hasPermission($role, $permission)) {
+            return response()->json(['error' => 'Permission denied: '.$permission], 403);
         }
 
         return $next($request);
@@ -88,7 +88,7 @@ class CheckBuildPermission
             ],
         ];
 
-        if (!$role || !isset($permissions[$role])) {
+        if (! $role || ! isset($permissions[$role])) {
             return false;
         }
 

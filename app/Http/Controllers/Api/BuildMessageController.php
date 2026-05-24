@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\AuthenticatedRequest;
 use App\Http\Controllers\Controller;
 use App\Services\SupabaseClient;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class BuildMessageController extends Controller
 {
@@ -38,7 +38,7 @@ class BuildMessageController extends Controller
         // Check if user is a member
         $members = $this->supabase->select('build_members', ['role'], [
             'build_id' => $buildId,
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
 
         return $members !== [];
@@ -47,7 +47,7 @@ class BuildMessageController extends Controller
     public function index(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
-        if (!$this->checkBuildAccess($request, $buildId)) {
+        if (! $this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
@@ -55,7 +55,7 @@ class BuildMessageController extends Controller
 
         $messages = array_slice(array_reverse($messages), 0, 100);
 
-        $userIds = array_unique(array_filter(array_column($messages, 'user_id'), fn($v) => $v !== null && $v !== ''));
+        $userIds = array_unique(array_filter(array_column($messages, 'user_id'), fn ($v) => $v !== null && $v !== ''));
         if ($userIds !== []) {
             $allUsers = $this->supabase->select('users', ['id', 'name'], []);
             $userMap = [];
@@ -76,7 +76,7 @@ class BuildMessageController extends Controller
     public function store(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
-        if (!$this->checkBuildAccess($request, $buildId)) {
+        if (! $this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
@@ -96,12 +96,13 @@ class BuildMessageController extends Controller
         ];
 
         $message = $this->supabase->insert('build_messages', $messageData);
-        
-        if (!$message) {
+
+        if (! $message) {
             Log::error('Failed to insert message to Supabase', ['data' => $messageData]);
+
             return response()->json(['error' => 'Failed to save message'], 500);
         }
-        
+
         // Add virtual user object for UI compatibility
         $message['user'] = ['name' => $userName];
 

@@ -1,10 +1,12 @@
 <?php
 
+use App\Services\SupabaseClient;
+
 require 'vendor/autoload.php';
 $app = require 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-$supabase = app(\App\Services\SupabaseClient::class);
+$supabase = app(SupabaseClient::class);
 
 echo "--- Testing Supabase Connection ---\n";
 if ($supabase->ping()) {
@@ -16,8 +18,8 @@ if ($supabase->ping()) {
 
 echo "\n--- Fetching One Build ---\n";
 $builds = $supabase->select('builds', ['*']);
-if (!empty($builds)) {
-    echo "Found " . count($builds) . " builds.\n";
+if (! empty($builds)) {
+    echo 'Found '.count($builds)." builds.\n";
     print_r($builds[0]);
 } else {
     echo "No builds found in the 'builds' table.\n";
@@ -25,8 +27,8 @@ if (!empty($builds)) {
 
 echo "\n--- Fetching One Part Preset ---\n";
 $presets = $supabase->select('part_presets', ['*']);
-if (!empty($presets)) {
-    echo "Found " . count($presets) . " presets.\n";
+if (! empty($presets)) {
+    echo 'Found '.count($presets)." presets.\n";
     print_r($presets[0]);
 } else {
     echo "No presets found in 'part_presets'.\n";

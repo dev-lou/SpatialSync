@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Model
+ * @extends Model
  *
- * @property-read \App\Models\User|null $owner
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $members
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Build> $builds
+ * @property-read User|null $owner
+ * @property-read Collection<int, User> $members
+ * @property-read Collection<int, Build> $builds
  *
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\Team> owner()
  * @method \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Models\User> members()
@@ -26,7 +27,7 @@ class Team extends Model
     ];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\Team>
+     * @return BelongsTo<User, Team>
      */
     public function owner(): BelongsTo
     {
@@ -34,7 +35,7 @@ class Team extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Models\User>
+     * @return BelongsToMany<User>
      */
     public function members(): BelongsToMany
     {
@@ -44,7 +45,7 @@ class Team extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\Build, \App\Models\Team>
+     * @return HasMany<Build, Team>
      */
     public function builds(): HasMany
     {

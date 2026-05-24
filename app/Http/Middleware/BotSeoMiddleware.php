@@ -43,14 +43,14 @@ class BotSeoMiddleware
             }
         }
 
-        if (!$isBot) {
+        if (! $isBot) {
             return $next($request);
         }
 
         // Serve a clean, instant OG page to the bot — no sessions, no auth, no JS
-        $appUrl   = config('app.url', 'https://spatialsync.isufstcict.com');
-        $imageUrl = rtrim((string) $appUrl, '/') . '/images/og-meta.png';
-        $pageUrl  = $request->url();
+        $appUrl = config('app.url', 'https://spatialsync.isufstcict.com');
+        $imageUrl = rtrim((string) $appUrl, '/').'/images/og-meta.png';
+        $pageUrl = $request->url();
 
         $html = <<<HTML
 <!DOCTYPE html>

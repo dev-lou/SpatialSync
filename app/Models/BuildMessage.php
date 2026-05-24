@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Model
+ * @extends Model
  *
- * @property-read \App\Models\Build|null $build
- * @property-read \App\Models\User|null $user
+ * @property-read Build|null $build
+ * @property-read User|null $user
  *
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildMessage> build()
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\BuildMessage> user()
@@ -23,7 +23,7 @@ class BuildMessage extends Model
     ];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildMessage>
+     * @return BelongsTo<Build, BuildMessage>
      */
     public function build(): BelongsTo
     {
@@ -31,7 +31,7 @@ class BuildMessage extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\BuildMessage>
+     * @return BelongsTo<User, BuildMessage>
      */
     public function user(): BelongsTo
     {

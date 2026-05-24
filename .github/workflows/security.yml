@@ -41,9 +41,8 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript, typescript, python
+          languages: javascript
           queries: security-extended, security-and-quality
-          source-root: resources/js
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
@@ -81,12 +80,10 @@ jobs:
 
       - name: Check for abandoned packages
         run: |
-          ABANDONED=$(composer show --abandoned 2>/dev/null | grep -i "abandoned" || true)
-          if [ -n "$ABANDONED" ]; then
-            echo "::warning::Abandoned packages found:"
-            echo "$ABANDONED"
+          if composer audit --ansi 2>&1 | grep -i "abandoned"; then
+            echo "::warning::Abandoned packages found — see output above"
           else
-            echo "✅ No abandoned packages"
+            echo "✅ No abandoned packages detected via audit"
           fi
 
   # ---------------------------------------------------------------------------

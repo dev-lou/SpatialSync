@@ -2676,8 +2676,8 @@ class BuildEditor {
     this.previewMesh.renderOrder = 100; // Render after all opaque geometry
 
     // Position the ghost
+    const py = pos.y;
     let px = pos.x,
-      py = pos.y,
       pz = pos.z;
 
     // For doors/windows: push ghost slightly OUT from the wall face so it's
@@ -2975,12 +2975,12 @@ class BuildEditor {
       openings.length > 0
         ? this.createWallSegmentedMesh(wallData, openings)
         : this.createWallMesh(
-          wallData.width,
-          wallData.height,
-          wallData.depth,
-          wallData.color_front || wallData.color,
-          wallData.variant,
-        );
+            wallData.width,
+            wallData.height,
+            wallData.depth,
+            wallData.color_front || wallData.color,
+            wallData.variant,
+          );
 
     // Copy transform
     newMesh.position.copy(wallEntry.mesh.position);
@@ -3772,7 +3772,7 @@ class BuildEditor {
 
     const applyProps = (mat) => {
       if (mat && mat.isMeshStandardMaterial) {
-        // If they explicitly picked glass, let it be transparent. Otherwise, if it was glass and they picked something else, make it solid again.
+        // Glass handling: transparent when picked, solid when changed
         mat.transparent = transparent;
         mat.opacity = opacity;
 

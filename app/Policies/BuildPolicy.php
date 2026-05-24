@@ -45,11 +45,11 @@ class BuildPolicy
     /**
      * Granular Permissions
      */
-
     public function editGeometry(User $user, Build $build): bool
     {
         // Only admin and editor can edit geometry (place, move, delete parts)
         $role = $build->userRole($user);
+
         return in_array($role, ['admin', 'editor'], true);
     }
 
@@ -69,6 +69,7 @@ class BuildPolicy
     {
         // All roles can add comments
         $role = $build->userRole($user);
+
         return in_array($role, ['admin', 'editor', 'viewer'], true);
     }
 
@@ -76,6 +77,7 @@ class BuildPolicy
     {
         // Admin and editor can export
         $role = $build->userRole($user);
+
         return in_array($role, ['admin', 'editor'], true);
     }
 
@@ -89,6 +91,7 @@ class BuildPolicy
     {
         // All roles can view
         $role = $build->userRole($user);
+
         return in_array($role, ['admin', 'editor', 'viewer'], true);
     }
 

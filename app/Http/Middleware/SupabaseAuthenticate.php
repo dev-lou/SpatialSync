@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
 use App\Http\AuthenticatedRequest;
+use Closure;
 use Symfony\Component\HttpFoundation\Response;
 
 class SupabaseAuthenticate
@@ -30,6 +30,7 @@ class SupabaseAuthenticate
 
         /** @var Response $response */
         $response = $next($request);
+
         return $response;
     }
 }

@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Model
+ * @extends Model
  *
- * @property-read \App\Models\Build|null $build
- * @property-read \App\Models\BuildPart|null $part
- * @property-read \App\Models\User|null $creator
+ * @property-read Build|null $build
+ * @property-read BuildPart|null $part
+ * @property-read User|null $creator
  *
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildIssue> build()
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\BuildPart, \App\Models\BuildIssue> part()
@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
 class BuildIssue extends Model
 {
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -52,7 +53,7 @@ class BuildIssue extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildIssue>
+     * @return BelongsTo<Build, BuildIssue>
      */
     public function build(): BelongsTo
     {
@@ -60,7 +61,7 @@ class BuildIssue extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\BuildPart, \App\Models\BuildIssue>
+     * @return BelongsTo<BuildPart, BuildIssue>
      */
     public function part(): BelongsTo
     {
@@ -68,7 +69,7 @@ class BuildIssue extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\BuildIssue>
+     * @return BelongsTo<User, BuildIssue>
      */
     public function creator(): BelongsTo
     {
@@ -112,7 +113,7 @@ class BuildIssue extends Model
      */
     public function getStatusColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'open' => '#ef4444', // red
             'in_progress' => '#eab308', // yellow
             'resolved' => '#22c55e', // green
@@ -126,7 +127,7 @@ class BuildIssue extends Model
      */
     public function getPriorityColorAttribute(): string
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             'critical' => '#dc2626', // red-600
             'high' => '#f97316', // orange-500
             'medium' => '#eab308', // yellow-500
@@ -140,7 +141,7 @@ class BuildIssue extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'open' => 'Open',
             'in_progress' => 'In Progress',
             'resolved' => 'Resolved',
@@ -154,7 +155,7 @@ class BuildIssue extends Model
      */
     public function getPriorityLabelAttribute(): string
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             'critical' => 'Critical',
             'high' => 'High',
             'medium' => 'Medium',

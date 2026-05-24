@@ -111,7 +111,7 @@ class AdminController extends Controller
         ]);
 
         $userId = (string) session('supabase_user_id', '');
-        
+
         // Save to Supabase using biometric_data column (AES-256 encrypted at rest)
         $success = $this->supabase->update('users', ['biometric_data' => Crypt::encryptString(json_encode($request->descriptor))], ['id' => $userId]);
 

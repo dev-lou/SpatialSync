@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\SupabaseUserService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,14 +12,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * @extends \Illuminate\Foundation\Auth\User
+ * @extends Authenticatable
  *
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $ownedTeams
- * @property-read \App\Models\Team|null $currentTeam
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $teams
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Build> $builds
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Build> $buildMemberships
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildShare> $buildShares
+ * @property-read Collection<int, Team> $ownedTeams
+ * @property-read Team|null $currentTeam
+ * @property-read Collection<int, Team> $teams
+ * @property-read Collection<int, Build> $builds
+ * @property-read Collection<int, Build> $buildMemberships
+ * @property-read Collection<int, BuildShare> $buildShares
  */
 class User extends Authenticatable
 {
@@ -50,7 +51,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\Team, \App\Models\User>
+     * @return HasMany<Team, User>
      */
     public function ownedTeams(): HasMany
     {
@@ -58,7 +59,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Team, \App\Models\User>
+     * @return BelongsTo<Team, User>
      */
     public function currentTeam(): BelongsTo
     {
@@ -66,7 +67,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Models\Team>
+     * @return BelongsToMany<Team>
      */
     public function teams(): BelongsToMany
     {
@@ -76,7 +77,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\Build, \App\Models\User>
+     * @return HasMany<Build, User>
      */
     public function builds(): HasMany
     {
@@ -84,7 +85,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Models\Build>
+     * @return BelongsToMany<Build>
      */
     public function buildMemberships(): BelongsToMany
     {
@@ -94,7 +95,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildShare, \App\Models\User>
+     * @return HasMany<BuildShare, User>
      */
     public function buildShares(): HasMany
     {

@@ -42,7 +42,7 @@ class PermissionController extends Controller
         } else {
             $members = $this->supabase->select('build_members', ['role'], [
                 'build_id' => $buildId,
-                'user_id' => $userId
+                'user_id' => $userId,
             ]);
             if ($members !== []) {
                 $role = $members[0]['role'];
@@ -88,7 +88,7 @@ class PermissionController extends Controller
         } else {
             $members = $this->supabase->select('build_members', ['role'], [
                 'build_id' => $buildId,
-                'user_id' => $userId
+                'user_id' => $userId,
             ]);
             if ($members !== []) {
                 $role = $members[0]['role'];

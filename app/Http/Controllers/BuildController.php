@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-
 class BuildController extends Controller
 {
     protected SupabaseClient $supabase;
@@ -42,7 +41,7 @@ class BuildController extends Controller
         $memberships = $this->supabase->select('build_members', ['build_id', 'role'], ['user_id' => $userId]);
         $sharedBuildIds = array_column($memberships, 'build_id');
         $roleMap = array_column($memberships, 'role', 'build_id');
-        
+
         $invitedBuilds = array_filter($allBuilds, function ($build) use ($sharedBuildIds, $userId) {
             // Avoid duplicates if owner is also in members table
             return in_array($build['id'], $sharedBuildIds, true) && $build['created_by'] !== $userId;
@@ -62,40 +61,40 @@ class BuildController extends Controller
         // 4. Attach members to each build for avatar stacking
         // First get all relevant memberships
         $allMemberships = $this->supabase->select('build_members', ['build_id', 'user_id', 'role'], []);
-        
+
         // Then get all users
         $allUsers = $this->supabase->select('users', ['id', 'name', 'email', 'avatar_url'], []);
         $userMap = collect($allUsers)->keyBy('id');
 
         foreach ($combined as $b) {
             $membersData = collect([]);
-            
+
             // Add owner
             $ownerUser = $userMap->get($b->created_by);
             if ($ownerUser) {
-                $membersData->push((object)[
+                $membersData->push((object) [
                     'id' => $b->created_by,
                     'name' => $ownerUser['name'],
                     'role' => 'owner',
-                    'avatar_url' => $ownerUser['avatar_url'] ?? null
+                    'avatar_url' => $ownerUser['avatar_url'] ?? null,
                 ]);
             }
-            
+
             // Add other members
             foreach ($allMemberships as $m) {
                 if ($m['build_id'] === $b->id && $m['user_id'] !== $b->created_by) {
                     $u = $userMap->get($m['user_id']);
                     if ($u) {
-                        $membersData->push((object)[
+                        $membersData->push((object) [
                             'id' => $u['id'],
                             'name' => $u['name'],
                             'role' => $m['role'],
-                            'avatar_url' => $u['avatar_url'] ?? null
+                            'avatar_url' => $u['avatar_url'] ?? null,
                         ]);
                     }
                 }
             }
-            
+
             $b->members = $membersData;
         }
 
@@ -174,7 +173,7 @@ class BuildController extends Controller
             // Check if invited
             $memberships = $this->supabase->select('build_members', ['role'], [
                 'build_id' => $buildId,
-                'user_id' => $userId
+                'user_id' => $userId,
             ]);
 
             if ($memberships === []) {
@@ -186,38 +185,40 @@ class BuildController extends Controller
 
         // 3. Fetch Members (Persistence)
         $rawMembers = $this->supabase->select('build_members', ['*'], ['build_id' => $buildId]);
-        
+
         // We need player names, so let's get all users who are members
         $allUsers = $this->supabase->select('users', ['id', 'name', 'avatar_url'], []); // Ideally use a join or IN query if supported
         $userMap = collect($allUsers)->keyBy('id');
 
         $membersData = [];
-        
+
         // Add the owner first
         $ownerUser = $userMap->get($build->created_by);
         $membersData[] = [
             'id' => $build->created_by,
-            'name' => ((string) ($ownerUser['name'] ?? 'Owner')) . ($userId === $build->created_by ? ' (You)' : ''),
+            'name' => ((string) ($ownerUser['name'] ?? 'Owner')).($userId === $build->created_by ? ' (You)' : ''),
             'role' => 'owner',
             'isOnline' => true, // Default for now
             'avatar_url' => $ownerUser['avatar_url'] ?? null,
             'color' => '#0066FF',
-            'color2' => '#818CF8'
+            'color2' => '#818CF8',
         ];
 
         // Add invited members
         foreach ($rawMembers as $m) {
-            if ($m['user_id'] === $build->created_by) continue; // Skip if owner is also in members table redundant
-            
+            if ($m['user_id'] === $build->created_by) {
+                continue;
+            } // Skip if owner is also in members table redundant
+
             $u = $userMap->get($m['user_id']);
             $membersData[] = [
                 'id' => $m['user_id'],
-                'name' => ((string) ($u['name'] ?? 'Guest')) . ($userId === $m['user_id'] ? ' (You)' : ''),
+                'name' => ((string) ($u['name'] ?? 'Guest')).($userId === $m['user_id'] ? ' (You)' : ''),
                 'role' => $m['role'],
                 'isOnline' => false,
                 'avatar_url' => $u['avatar_url'] ?? null,
                 'color' => '#6B7280',
-                'color2' => '#9CA3AF'
+                'color2' => '#9CA3AF',
             ];
         }
 
@@ -227,40 +228,41 @@ class BuildController extends Controller
 
         // 5. Fetch Issues for build
         $rawIssues = $this->supabase->select('build_issues', ['*'], ['build_id' => $buildId]);
-        Log::info('Raw issues from Supabase: ' . json_encode($rawIssues));
+        Log::info('Raw issues from Supabase: '.json_encode($rawIssues));
         $issues = collect($rawIssues);
         // Get user names for issues
         $userMap = collect($allUsers)->keyBy('id');
         $issues = collect($issues)->map(function ($issue) use ($userMap) {
             $issue['creator_name'] = $userMap->get($issue['created_by'])['name'] ?? 'Unknown';
-            $issue['status_color'] = match($issue['status']) {
+            $issue['status_color'] = match ($issue['status']) {
                 'open' => '#ef4444',
                 'in_progress' => '#eab308',
                 'resolved' => '#22c55e',
                 'closed' => '#6b7280',
                 default => '#6b7280',
             };
-            $issue['priority_color'] = match($issue['priority']) {
+            $issue['priority_color'] = match ($issue['priority']) {
                 'critical' => '#dc2626',
                 'high' => '#f97316',
                 'medium' => '#eab308',
                 'low' => '#22c55e',
                 default => '#6b7280',
             };
-            $issue['priority_label'] = match($issue['priority']) {
+            $issue['priority_label'] = match ($issue['priority']) {
                 'critical' => 'Critical',
                 'high' => 'High',
                 'medium' => 'Medium',
                 'low' => 'Low',
                 default => 'Medium',
             };
-            $issue['status_label'] = match($issue['status']) {
+            $issue['status_label'] = match ($issue['status']) {
                 'open' => 'Open',
                 'in_progress' => 'In Progress',
                 'resolved' => 'Resolved',
                 'closed' => 'Closed',
                 default => 'Open',
             };
+
             return $issue;
         })->values()->all();
 
@@ -275,12 +277,12 @@ class BuildController extends Controller
         $userPermissions = $this->calculatePermissions($userRole);
 
         return view('builds.show', compact(
-            'build', 
-            'userRole', 
-            'membersData', 
-            'messages', 
+            'build',
+            'userRole',
+            'membersData',
+            'messages',
             'issues',
-            'presets', 
+            'presets',
             'auth_user_id',
             'auth_user_name',
             'userPermissions'
@@ -329,7 +331,7 @@ class BuildController extends Controller
         $copyData = [
             'id' => Str::uuid()->toString(),
             'team_id' => $original['team_id'] ?? null,
-            'name' => ((string) ($original['name'] ?? 'Build')) . ' (Copy)',
+            'name' => ((string) ($original['name'] ?? 'Build')).' (Copy)',
             'description' => $original['description'] ?? null,
             'created_by' => $userId,
             'current_floor' => $original['current_floor'] ?? 1,
@@ -337,7 +339,9 @@ class BuildController extends Controller
             'canvas_json' => $original['canvas_json'] ?? json_encode(['version' => '1.0', 'parts' => []]),
         ];
 
-        $this->supabase->insert('builds', $copyData);            return redirect()->route('builds.show', ['build' => (string) $copyData['id']]);
+        $this->supabase->insert('builds', $copyData);
+
+        return redirect()->route('builds.show', ['build' => (string) $copyData['id']]);
     }
 
     public function destroy(AuthenticatedRequest $request, string $buildId)
@@ -346,7 +350,7 @@ class BuildController extends Controller
             // Cascade delete: Clean up dependent tables first
             // Note: In a production Supabase setup, you'd ideally use "ON DELETE CASCADE" in the DB.
             // But doing it here ensures reliability during our migration transition.
-            
+
             $this->supabase->delete('build_parts', ['build_id' => $buildId]);
             $this->supabase->delete('build_members', ['build_id' => $buildId]);
             $this->supabase->delete('build_messages', ['build_id' => $buildId]);
@@ -355,19 +359,21 @@ class BuildController extends Controller
             $deleted = $this->supabase->delete('builds', ['id' => $buildId]);
 
             if (! $deleted) {
-                Log::error('Failed to delete build from Supabase after cleanup: build_id=' . (string) $buildId);
+                Log::error('Failed to delete build from Supabase after cleanup: build_id='.(string) $buildId);
 
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json(['error' => 'Failed to delete build.'], 500);
                 }
+
                 return back()->with('error', 'Failed to delete build. Please try again.');
             }
 
-            Log::info('Build and related data deleted successfully: build_id=' . (string) $buildId);
+            Log::info('Build and related data deleted successfully: build_id='.(string) $buildId);
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Build deleted successfully.']);
             }
+
             return redirect()->route('dashboard')->with('success', 'Build deleted successfully.');
         } catch (\Exception $e) {
             Log::error('Exception in BuildController@destroy: '.$e->getMessage());
@@ -375,6 +381,7 @@ class BuildController extends Controller
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['error' => 'An error occurred while deleting the build.'], 500);
             }
+
             return back()->with('error', 'An error occurred while deleting the build.');
         }
     }
@@ -404,7 +411,7 @@ class BuildController extends Controller
         $this->supabase->insert('build_members', $memberData);
 
         return response()->json([
-            'message' => (string) $user['name'] . ' added as ' . (string) $validated['role'] . '.',
+            'message' => (string) $user['name'].' added as '.(string) $validated['role'].'.',
             'user' => [
                 'id' => $user['id'],
                 'name' => $user['name'],
@@ -420,14 +427,14 @@ class BuildController extends Controller
         ]);
 
         // Find the member record in Supabase
-        $this->supabase->update('build_members', 
-            ['role' => $validated['role']], 
+        $this->supabase->update('build_members',
+            ['role' => $validated['role']],
             ['build_id' => $buildId, 'user_id' => $userId]
         );
 
         return response()->json([
             'message' => 'Member role updated successfully.',
-            'role' => $validated['role']
+            'role' => $validated['role'],
         ]);
     }
 
@@ -469,7 +476,7 @@ class BuildController extends Controller
     {
         $this->supabase->delete('build_members', [
             'build_id' => $buildId,
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Member removed.']);
@@ -498,7 +505,7 @@ class BuildController extends Controller
             ];
 
             return response()->json($exportData)
-                ->header('Content-Disposition', 'attachment; filename=' . (string) $build['name'] . '.json');
+                ->header('Content-Disposition', 'attachment; filename='.(string) $build['name'].'.json');
         }
 
         abort(404, 'Export format not supported');
@@ -533,7 +540,7 @@ class BuildController extends Controller
         // Check if user is already a member
         $memberships = $this->supabase->select('build_members', ['*'], [
             'build_id' => $buildId,
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
 
         if ($memberships === []) {
@@ -542,7 +549,7 @@ class BuildController extends Controller
 
             // Add user as a member
             $this->supabase->insert('build_members', [
-                'id' => \Illuminate\Support\Str::uuid()->toString(),
+                'id' => Str::uuid()->toString(),
                 'build_id' => $buildId,
                 'user_id' => $userId,
                 'role' => $role,

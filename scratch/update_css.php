@@ -1,4 +1,5 @@
 <?php
+
 $file = 'resources/views/layouts/editor.blade.php';
 $content = file_get_contents($file);
 
@@ -20,10 +21,10 @@ $replacements = [
     // Update topbar to glassmorphism
     "        .editor-topbar {\n            display: flex;\n            align-items: center;\n            justify-content: space-between;\n            padding: 8px 16px;\n            background: var(--surface);\n            border-bottom: 1px solid var(--border-default);\n            height: 48px;\n            flex-shrink: 0;\n        }" => "        .editor-topbar {\n            display: flex;\n            align-items: center;\n            justify-content: space-between;\n            padding: 8px 16px;\n            background: color-mix(in srgb, var(--surface) 85%, transparent);\n            backdrop-filter: blur(24px);\n            -webkit-backdrop-filter: blur(24px);\n            border-bottom: 1px solid var(--border-default);\n            height: 56px;\n            flex-shrink: 0;\n            position: relative;\n            z-index: 100;\n        }",
     // Floating properties panel update
-    "        .properties-panel {\n            position: fixed;\n            top: 60px;\n            right: 16px;\n            width: 280px;\n            background: var(--surface);\n            border: 1px solid var(--border-default);\n            border-radius: 12px;\n            box-shadow: var(--shadow-lg);\n            padding: 16px;\n            display: none;\n            z-index: 100;\n            max-height: calc(100vh - 200px);\n            overflow-y: auto;\n        }" => "        .properties-panel {\n            position: fixed;\n            top: 70px;\n            right: 24px;\n            width: 300px;\n            background: color-mix(in srgb, var(--surface) 95%, transparent);\n            backdrop-filter: blur(24px);\n            -webkit-backdrop-filter: blur(24px);\n            border: 1px solid var(--border-default);\n            border-radius: var(--radius-xl);\n            box-shadow: var(--shadow-xl);\n            padding: 24px;\n            display: none;\n            z-index: 100;\n            max-height: calc(100vh - 200px);\n            overflow-y: auto;\n            transition: var(--transition-spring);\n        }"
+    "        .properties-panel {\n            position: fixed;\n            top: 60px;\n            right: 16px;\n            width: 280px;\n            background: var(--surface);\n            border: 1px solid var(--border-default);\n            border-radius: 12px;\n            box-shadow: var(--shadow-lg);\n            padding: 16px;\n            display: none;\n            z-index: 100;\n            max-height: calc(100vh - 200px);\n            overflow-y: auto;\n        }" => "        .properties-panel {\n            position: fixed;\n            top: 70px;\n            right: 24px;\n            width: 300px;\n            background: color-mix(in srgb, var(--surface) 95%, transparent);\n            backdrop-filter: blur(24px);\n            -webkit-backdrop-filter: blur(24px);\n            border: 1px solid var(--border-default);\n            border-radius: var(--radius-xl);\n            box-shadow: var(--shadow-xl);\n            padding: 24px;\n            display: none;\n            z-index: 100;\n            max-height: calc(100vh - 200px);\n            overflow-y: auto;\n            transition: var(--transition-spring);\n        }",
 ];
 
-foreach($replacements as $search => $replace) {
+foreach ($replacements as $search => $replace) {
     $content = str_replace($search, $replace, $content);
 }
 

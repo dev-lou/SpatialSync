@@ -1,13 +1,18 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\BotSeoMiddleware;
+use App\Http\Middleware\CheckBuildPermission;
 use App\Http\Middleware\RedirectIfSupabaseAuthenticated;
 use App\Http\Middleware\SupabaseAuthenticate;
 use App\Providers\ViewServiceProvider;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Session\Middleware\StartSession;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,15 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withMiddleware(function (Middleware $middleware) {
         // Intercept social media bots FIRST — before sessions, CSRF, or auth
-        $middleware->prepend(\App\Http\Middleware\BotSeoMiddleware::class);
+        $middleware->prepend(BotSeoMiddleware::class);
 
         $middleware->trustProxies(at: '*');
 
         $middleware->api(prepend: [
-            \Illuminate\Cookie\Middleware\EncryptCookies::class,
-            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            \Illuminate\Session\Middleware\StartSession::class,
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+            VerifyCsrfToken::class,
         ]);
 
         // Register middleware aliases - override Laravel defaults for Supabase auth
@@ -37,7 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => SupabaseAuthenticate::class,
             'guest' => RedirectIfSupabaseAuthenticated::class,
             'admin' => AdminMiddleware::class,
-            'build.permission' => \App\Http\Middleware\CheckBuildPermission::class,
+            'build.permission' => CheckBuildPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

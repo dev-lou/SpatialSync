@@ -1,11 +1,18 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Api\BuildIssueController;
+use App\Http\Controllers\Api\BuildMessageController;
+use App\Http\Controllers\Api\BuildPartController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\BiometricAuthController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BuildController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,15 +22,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Keep-alive ping (prevents Render free tier from sleeping)
-Route::get('/ping', fn() => response('ok', 200));
+Route::get('/ping', fn () => response('ok', 200));
 
 // Public marketing pages
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/features', [PageController::class, 'features'])->name('features');
 Route::get('/pricing', [PageController::class, 'pricing'])->name('pricing');
 Route::get('/about', [PageController::class, 'about'])->name('about');
-Route::get('/contact-sales', [\App\Http\Controllers\ContactController::class, 'sales'])->name('contact.sales');
-Route::post('/contact-sales', [\App\Http\Controllers\ContactController::class, 'submit']);
+Route::get('/contact-sales', [ContactController::class, 'sales'])->name('contact.sales');
+Route::post('/contact-sales', [ContactController::class, 'submit']);
 
 // Guest routes (auth)
 Route::middleware('guest')->group(function () {
@@ -31,9 +38,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store']);
-    
+
     // Neural Face Login
-    Route::post('/login/biometrics', [\App\Http\Controllers\Auth\BiometricAuthController::class, 'login'])->name('login.biometrics');
+    Route::post('/login/biometrics', [BiometricAuthController::class, 'login'])->name('login.biometrics');
 });
 
 // Logout
@@ -45,17 +52,17 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile & Settings (Overriding Jetstream's Inertia routes)
-    Route::get('/user/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
-    Route::put('/user/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::post('/user/profile/avatar', [\App\Http\Controllers\ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
-    Route::put('/user/profile/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password');
-    Route::post('/user/profile/biometrics', [\App\Http\Controllers\ProfileController::class, 'saveBiometrics'])->name('profile.biometrics.save');
-    Route::delete('/user/profile/biometrics', [\App\Http\Controllers\ProfileController::class, 'deleteBiometrics'])->name('profile.biometrics.delete');
+    Route::get('/user/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/user/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/user/profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
+    Route::put('/user/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/user/profile/biometrics', [ProfileController::class, 'saveBiometrics'])->name('profile.biometrics.save');
+    Route::delete('/user/profile/biometrics', [ProfileController::class, 'deleteBiometrics'])->name('profile.biometrics.delete');
 
     // Checkout Simulation
-    Route::get('/checkout/{plan}', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
-    Route::post('/checkout/process', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
-    Route::get('/checkout/success', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/{plan}', [CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
     // Build routes
     Route::get('/builds', [BuildController::class, 'index'])->name('builds.index');
@@ -73,26 +80,26 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/builds/{build}/export/{format}', [BuildController::class, 'export'])->name('builds.export');
 
     // Editor API routes (using /editor/ prefix to get web middleware CSRF)
-    Route::get('/editor/builds/{buildId}/parts', [\App\Http\Controllers\Api\BuildPartController::class, 'allParts']);
-    Route::get('/editor/builds/{buildId}/parts/floor', [\App\Http\Controllers\Api\BuildPartController::class, 'index']);
-    Route::post('/editor/builds/{buildId}/parts', [\App\Http\Controllers\Api\BuildPartController::class, 'store'])
+    Route::get('/editor/builds/{buildId}/parts', [BuildPartController::class, 'allParts']);
+    Route::get('/editor/builds/{buildId}/parts/floor', [BuildPartController::class, 'index']);
+    Route::post('/editor/builds/{buildId}/parts', [BuildPartController::class, 'store'])
         ->middleware('build.permission:edit_geometry');
-    Route::put('/editor/builds/{buildId}/parts/{partId}', [\App\Http\Controllers\Api\BuildPartController::class, 'update'])
+    Route::put('/editor/builds/{buildId}/parts/{partId}', [BuildPartController::class, 'update'])
         ->middleware('build.permission:edit_geometry');
-    Route::delete('/editor/builds/{buildId}/parts/{partId}', [\App\Http\Controllers\Api\BuildPartController::class, 'destroy'])
+    Route::delete('/editor/builds/{buildId}/parts/{partId}', [BuildPartController::class, 'destroy'])
         ->middleware('build.permission:delete_parts');
-    
+
     // Issue API routes
-    Route::get('/editor/builds/{buildId}/issues', [\App\Http\Controllers\Api\BuildIssueController::class, 'index']);
-    Route::post('/editor/builds/{buildId}/issues', [\App\Http\Controllers\Api\BuildIssueController::class, 'store']);
-    Route::get('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'show']);
-    Route::put('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'update']);
-    Route::delete('/editor/builds/{buildId}/issues/{issueId}', [\App\Http\Controllers\Api\BuildIssueController::class, 'destroy']);
-    Route::patch('/editor/builds/{buildId}/issues/{issueId}/status', [\App\Http\Controllers\Api\BuildIssueController::class, 'updateStatus']);
+    Route::get('/editor/builds/{buildId}/issues', [BuildIssueController::class, 'index']);
+    Route::post('/editor/builds/{buildId}/issues', [BuildIssueController::class, 'store']);
+    Route::get('/editor/builds/{buildId}/issues/{issueId}', [BuildIssueController::class, 'show']);
+    Route::put('/editor/builds/{buildId}/issues/{issueId}', [BuildIssueController::class, 'update']);
+    Route::delete('/editor/builds/{buildId}/issues/{issueId}', [BuildIssueController::class, 'destroy']);
+    Route::patch('/editor/builds/{buildId}/issues/{issueId}/status', [BuildIssueController::class, 'updateStatus']);
 
     // Chat API
-    Route::get('/editor/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'index'])->name('api.builds.messages.index');
-    Route::post('/editor/builds/{build}/messages', [\App\Http\Controllers\Api\BuildMessageController::class, 'store'])->name('api.builds.messages.store');
+    Route::get('/editor/builds/{build}/messages', [BuildMessageController::class, 'index'])->name('api.builds.messages.index');
+    Route::post('/editor/builds/{build}/messages', [BuildMessageController::class, 'store'])->name('api.builds.messages.store');
 
     // Shared build view
     Route::get('/builds/{build}/shared/{token}', [BuildController::class, 'shared'])->name('builds.shared');
@@ -105,7 +112,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/blueprints', [AdminController::class, 'builds'])->name('admin.builds');
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
         Route::delete('/builds/{build}', [AdminController::class, 'deleteBuild'])->name('admin.builds.delete');
-        
+
         // Biometrics & Security (Admin Personal)
         Route::get('/security', [AdminController::class, 'security'])->name('admin.security');
         Route::post('/biometrics/save', [AdminController::class, 'saveBiometrics'])->name('admin.biometrics.save');

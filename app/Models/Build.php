@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Model
+ * @extends Model
  *
- * @property-read \App\Models\Team|null $team
- * @property-read \App\Models\User|null $creator
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $members
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildPart> $parts
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildShare> $shares
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildMessage> $messages
+ * @property-read Team|null $team
+ * @property-read User|null $creator
+ * @property-read Collection<int, User> $members
+ * @property-read Collection<int, BuildPart> $parts
+ * @property-read Collection<int, BuildShare> $shares
+ * @property-read Collection<int, BuildMessage> $messages
  *
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Team, \App\Models\Build> team()
  * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\Build> creator()
@@ -43,7 +44,7 @@ class Build extends Model
     ];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Team, \App\Models\Build>
+     * @return BelongsTo<Team, Build>
      */
     public function team(): BelongsTo
     {
@@ -51,7 +52,7 @@ class Build extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\Build>
+     * @return BelongsTo<User, Build>
      */
     public function creator(): BelongsTo
     {
@@ -59,7 +60,7 @@ class Build extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Models\User>
+     * @return BelongsToMany<User>
      */
     public function members(): BelongsToMany
     {
@@ -69,7 +70,7 @@ class Build extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildPart, \App\Models\Build>
+     * @return HasMany<BuildPart, Build>
      */
     public function parts(): HasMany
     {
@@ -77,7 +78,7 @@ class Build extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildShare, \App\Models\Build>
+     * @return HasMany<BuildShare, Build>
      */
     public function shares(): HasMany
     {
@@ -85,7 +86,7 @@ class Build extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildMessage, \App\Models\Build>
+     * @return HasMany<BuildMessage, Build>
      */
     public function messages(): HasMany
     {

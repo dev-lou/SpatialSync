@@ -5,15 +5,14 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Services\SupabaseClient;
 use App\Services\SupabaseUserService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 
 class BiometricAuthController extends Controller
 {
     protected SupabaseClient $supabase;
+
     protected SupabaseUserService $userService;
 
     public function __construct()
@@ -32,9 +31,9 @@ class BiometricAuthController extends Controller
         ]);
 
         $liveDescriptor = (array) $request->descriptor;
-        
+
         // 1. Fetch all users who have biometric data enrolled
-        // In a massive app, you'd filter by email or use a vector database, 
+        // In a massive app, you'd filter by email or use a vector database,
         // but for this scale, a direct comparison is high-performance.
         $allUsers = $this->userService->all();
         $match = null;
@@ -42,7 +41,9 @@ class BiometricAuthController extends Controller
         $threshold = 0.45; // Standard sensitivity threshold for face-api.js
 
         foreach ($allUsers as $userData) {
-            if (($userData['biometric_data'] ?? null) === null) continue;
+            if (($userData['biometric_data'] ?? null) === null) {
+                continue;
+            }
 
             $rawData = $userData['biometric_data'];
             $storedDescriptor = null;
@@ -68,7 +69,9 @@ class BiometricAuthController extends Controller
                 $storedDescriptor = $rawData;
             }
 
-            if (!is_array($storedDescriptor) || $storedDescriptor === []) continue;
+            if (! is_array($storedDescriptor) || $storedDescriptor === []) {
+                continue;
+            }
 
             $distance = $this->calculateEuclideanDistance($liveDescriptor, $storedDescriptor);
 
@@ -81,7 +84,7 @@ class BiometricAuthController extends Controller
         if ($match) {
             // 2. Successful Match - Initialize Session
             $user = (object) $match;
-            
+
             // Set session data as per project standard (SupabaseAuthenticate middleware relies on these)
             session([
                 'supabase_user_id' => $user->id,
@@ -96,13 +99,13 @@ class BiometricAuthController extends Controller
                 'success' => true,
                 'name' => $user->name,
                 'avatar_url' => $user->avatar_url ?? '',
-                'message' => 'Identity verified. Welcome back, ' . (string) $user->name,
-                'redirect' => route('dashboard')
+                'message' => 'Identity verified. Welcome back, '.(string) $user->name,
+                'redirect' => route('dashboard'),
             ]);
         }
 
         return response()->json([
-            'message' => 'Identity verification failed. No match found.'
+            'message' => 'Identity verification failed. No match found.',
         ], 401);
     }
 
@@ -111,7 +114,9 @@ class BiometricAuthController extends Controller
      */
     private function calculateEuclideanDistance(array $query, array $stored): float
     {
-        if (count($query) !== count($stored)) return 1.0;
+        if (count($query) !== count($stored)) {
+            return 1.0;
+        }
 
         $sum = 0.0;
         for ($i = 0; $i < count($query); $i++) {

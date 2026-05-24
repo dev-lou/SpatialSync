@@ -1,10 +1,12 @@
 <?php
+
 require 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 use App\Services\SupabaseClient;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Str;
 
 $supabase = app(SupabaseClient::class);
@@ -12,7 +14,7 @@ $supabase = app(SupabaseClient::class);
 echo "Fetching users...\n";
 $users = $supabase->select('users', ['id', 'name', 'email', 'is_admin'], []);
 if (empty($users)) {
-    die("No users found in Supabase.\n");
+    exit("No users found in Supabase.\n");
 }
 
 $adminUser = null;
@@ -23,11 +25,11 @@ foreach ($users as $u) {
     }
 }
 
-if (!$adminUser) {
+if (! $adminUser) {
     $adminUser = $users[0];
-    echo "No admin user found. Using first user: " . $adminUser['email'] . "\n";
+    echo 'No admin user found. Using first user: '.$adminUser['email']."\n";
 } else {
-    echo "Found admin user: " . $adminUser['email'] . "\n";
+    echo 'Found admin user: '.$adminUser['email']."\n";
 }
 
 $userId = $adminUser['id'];
@@ -46,8 +48,8 @@ $buildData = [
 
 echo "Creating build...\n";
 $build = $supabase->insert('builds', $buildData);
-if (!$build) {
-    die("Failed to create build.\n");
+if (! $build) {
+    exit("Failed to create build.\n");
 }
 echo "Build created: $buildId\n";
 
@@ -58,13 +60,16 @@ foreach ($presetsData as $p) {
     $presetsMap[$p['name']] = $p;
 }
 
-function createPart($type, $presetName, $x, $y, $z, $rotationY = 0, $w = null, $h = null, $d = null) {
+function createPart($type, $presetName, $x, $y, $z, $rotationY = 0, $w = null, $h = null, $d = null)
+{
     global $presetsMap, $buildId, $userId;
-    if (!isset($presetsMap[$presetName])) {
+    if (! isset($presetsMap[$presetName])) {
         echo "Warning: Preset $presetName not found.\n";
+
         return null;
     }
     $preset = $presetsMap[$presetName];
+
     return [
         'id' => Str::uuid()->toString(),
         'build_id' => $buildId,
@@ -131,14 +136,14 @@ $parts[] = createPart('landscape', 'Round Bush', -6, 0.6, 5, 0);
 
 $parts = array_filter($parts); // Remove nulls
 
-echo "Inserting " . count($parts) . " parts...\n";
+echo 'Inserting '.count($parts)." parts...\n";
 $successCount = 0;
 foreach ($parts as $part) {
     $res = $supabase->insert('build_parts', $part);
     if ($res) {
         $successCount++;
     } else {
-        echo "Failed to insert part: " . $part['type'] . "\n";
+        echo 'Failed to insert part: '.$part['type']."\n";
     }
 }
 

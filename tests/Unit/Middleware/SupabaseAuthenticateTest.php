@@ -17,7 +17,7 @@ class SupabaseAuthenticateTest extends TestCase
     {
         parent::setUp();
 
-        $this->middleware = new SupabaseAuthenticate();
+        $this->middleware = new SupabaseAuthenticate;
 
         // Ensure clean session state between tests
         $this->app['session.store']->flush();
@@ -30,7 +30,7 @@ class SupabaseAuthenticateTest extends TestCase
 
     private function makeRequest(): AuthenticatedRequest
     {
-        $request = new AuthenticatedRequest();
+        $request = new AuthenticatedRequest;
         $request->setLaravelSession($this->app['session.store']);
 
         return $request;

@@ -1,11 +1,12 @@
 <?php
 
 use App\Services\SupabaseClient;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Str;
 
-require __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 $supabase = app(SupabaseClient::class);
@@ -39,7 +40,7 @@ $newPresets = [
     // Updated Existing Variants
     ['name' => 'Half Wall', 'type' => 'wall', 'variant' => 'half', 'default_width' => 1, 'default_height' => 3, 'default_depth' => 0.2, 'default_color' => '#E5E7EB', 'is_active' => 'true'],
     ['name' => 'Glass Wall', 'type' => 'wall', 'variant' => 'glass', 'default_width' => 1, 'default_height' => 3, 'default_depth' => 0.1, 'default_color' => '#AADDFF', 'is_active' => 'true'],
-    
+
     ['name' => 'Double Door', 'type' => 'door', 'variant' => 'double', 'default_width' => 2, 'default_height' => 2.2, 'default_depth' => 0.2, 'default_color' => '#8B5A2B', 'is_active' => 'true'],
     ['name' => 'Arch Door', 'type' => 'door', 'variant' => 'arch', 'default_width' => 1.2, 'default_height' => 2.4, 'default_depth' => 0.2, 'default_color' => '#5C4033', 'is_active' => 'true'],
 
@@ -63,7 +64,7 @@ foreach ($newPresets as $preset) {
             echo "Failed to insert {$preset['name']} - check laravel log for Supabase error.\n";
         }
     } catch (Exception $e) {
-        echo "Failed to insert {$preset['name']}: " . $e->getMessage() . "\n";
+        echo "Failed to insert {$preset['name']}: ".$e->getMessage()."\n";
     }
 }
 
