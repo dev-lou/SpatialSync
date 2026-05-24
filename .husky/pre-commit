@@ -1,1 +1,17 @@
-npm test
+#!/bin/sh
+# =============================================================================
+# SpatialSync — Pre-commit Hook
+# Runs ESLint + Prettier on staged files via lint-staged
+# =============================================================================
+
+echo "🔍 Running pre-commit checks..."
+
+npx lint-staged
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  echo "❌ Pre-commit checks failed. Fix the issues above and try again."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
