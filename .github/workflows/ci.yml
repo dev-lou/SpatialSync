@@ -54,12 +54,16 @@ jobs:
             ${{ runner.os }}-composer-
 
       - name: Create .env for CI
-        run: |
-          cp .env.example .env
-          php artisan key:generate --force
+        run: cp .env.example .env
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install PHP dependencies (without scripts)
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+      - name: Generate app key
+        run: php artisan key:generate --force
+
+      - name: Run post-install scripts
+        run: composer run-script post-autoload-dump --ansi --no-interaction
 
       - name: Run Laravel Pint (Code Style)
         run: vendor/bin/pint --test --ansi
@@ -125,12 +129,16 @@ jobs:
           coverage: none
 
       - name: Create .env for CI
-        run: |
-          cp .env.example .env
-          php artisan key:generate --force
+        run: cp .env.example .env
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install PHP dependencies (without scripts)
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+      - name: Generate app key
+        run: php artisan key:generate --force
+
+      - name: Run post-install scripts
+        run: composer run-script post-autoload-dump --ansi --no-interaction
 
       - name: Build frontend assets
         run: npm run build

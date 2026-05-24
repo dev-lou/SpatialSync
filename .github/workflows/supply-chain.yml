@@ -132,14 +132,14 @@ jobs:
           coverage: none
 
       - name: Create .env for CI
-        run: |
-          cp .env.example .env
-          php artisan key:generate --force
+        run: cp .env.example .env
 
       - name: Fresh PHP install from lockfile
         run: |
           rm -rf vendor
-          composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+          composer install --no-interaction --prefer-dist --no-progress --no-scripts
+          php artisan key:generate --force
+          composer run-script post-autoload-dump --ansi --no-interaction
           echo "✅ Fresh install successful"
 
       - name: Setup Node.js
