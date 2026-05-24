@@ -138,7 +138,7 @@ jobs:
         run: |
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-progress --no-scripts
-          php artisan key:generate --force
+          php -r "file_put_contents('.env', preg_replace('/^APP_KEY=.*/m', 'APP_KEY=base64:' . base64_encode(random_bytes(32)), file_get_contents('.env')));"
           composer run-script post-autoload-dump --ansi --no-interaction
           echo "✅ Fresh install successful"
 
