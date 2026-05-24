@@ -18,7 +18,7 @@ class CheckoutController extends Controller
     public function index(Request $request, $plan)
     {
         // Allowed plans for simulation
-        if (!in_array($plan, ['pro', 'enterprise'])) {
+        if (!in_array($plan, ['pro', 'enterprise'], true)) {
             return redirect()->route('pricing');
         }
 

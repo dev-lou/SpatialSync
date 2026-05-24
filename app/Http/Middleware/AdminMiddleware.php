@@ -2,20 +2,21 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\AuthenticatedRequest;
 use Closure;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+
 
 class AdminMiddleware
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(AuthenticatedRequest $request, Closure $next): Response
     {
-        $isAdmin = $request->session()->get('supabase_user_admin', false);
-
-        if (! $isAdmin) {
+        if (! $request->auth_user_admin) {
             abort(403, 'Access denied. Admin privileges required.');
         }
 
-        return $next($request);
+        /** @var Response $response */
+        $response = $next($request);
+        return $response;
     }
 }

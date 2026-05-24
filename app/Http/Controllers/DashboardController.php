@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\AuthenticatedRequest;
 use App\Services\SupabaseClient;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -14,10 +14,10 @@ class DashboardController extends Controller
         $this->supabase = app(SupabaseClient::class);
     }
 
-    public function index(Request $request)
+    public function index(AuthenticatedRequest $request)
     {
-        $userId = $request->session()->get('supabase_user_id');
-        $userName = $request->session()->get('supabase_user_name', 'User');
+        $userId = (string) ($request->auth_user_id ?? '');
+        $userName = (string) ($request->auth_user_name ?? 'User');
 
         // Fetch all builds
         $allBuilds = $this->supabase->select('builds', ['*'], []);
@@ -42,7 +42,7 @@ class DashboardController extends Controller
             ->toArray();
             
         $sharedBuildsFilter = array_filter($allBuilds, function ($build) use ($sharedBuildIds, $userId) {
-            return in_array($build['id'], $sharedBuildIds) && (isset($build['created_by']) ? $build['created_by'] !== $userId : true);
+            return in_array($build['id'], $sharedBuildIds, true) && (isset($build['created_by']) ? $build['created_by'] !== $userId : true);
         });
         
         usort($sharedBuildsFilter, function ($a, $b) {
@@ -110,7 +110,7 @@ class DashboardController extends Controller
             'enterprise' => 100
         ];
         
-        $storageLimit = $limits[strtolower($plan)] ?? 1;
+        $storageLimit = $limits[strtolower((string) $plan)] ?? 1;
         $buildCount = $builds->count();
         
         // Simulated usage: ~45MB per build + base overhead

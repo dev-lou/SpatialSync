@@ -2,7 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\AuthenticatedRequest;
+use App\Http\Requests\SaveBiometricsRequest;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UploadAvatarRequest;
+use App\Services\SupabaseClient;
+use App\Services\SupabaseUserService;
 use Illuminate\Support\Facades\Crypt;
 
 class ProfileController extends Controller
@@ -10,11 +16,11 @@ class ProfileController extends Controller
     /**
      * Show the user profile page.
      */
-    public function show(Request $request, \App\Services\SupabaseUserService $supabaseUserService)
+    public function show(AuthenticatedRequest $request, SupabaseUserService $supabaseUserService)
     {
         $userId = $request->auth_user_id;
         $userRecord = $supabaseUserService->findById($userId);
-        $hasBiometrics = !empty($userRecord['biometric_data']);
+        $hasBiometrics = ($userRecord['biometric_data'] ?? null) !== null;
 
         // Data is already merged into the request by SupabaseAuthenticate middleware
         return view('profile.show', [
@@ -33,14 +39,12 @@ class ProfileController extends Controller
     /**
      * Update the user profile (display name).
      */
-    public function update(Request $request, \App\Services\SupabaseUserService $supabaseUserService)
+    public function update(UpdateProfileRequest $request, SupabaseUserService $supabaseUserService)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
-        $userId = $request->session()->get('supabase_user_id');
-        if ($userId) {
+        $userId = $request->auth_user_id;
+        if ($userId !== null) {
             $supabaseUserService->update($userId, ['name' => $validated['name']]);
         }
 
@@ -51,24 +55,20 @@ class ProfileController extends Controller
     /**
      * Upload profile avatar
      */
-    public function uploadAvatar(Request $request, \App\Services\SupabaseClient $supabaseClient, \App\Services\SupabaseUserService $supabaseUserService)
+    public function uploadAvatar(UploadAvatarRequest $request, SupabaseClient $supabaseClient, SupabaseUserService $supabaseUserService)
     {
-        $request->validate([
-            'avatar' => 'required|image|max:5120', // 5MB max
-        ]);
-
-        $userId = $request->session()->get('supabase_user_id');
-        if (!$userId) return back()->with('error', 'Unauthenticated');
+        $userId = $request->auth_user_id;
+        if ($userId === null) return back()->with('error', 'Unauthenticated');
 
         $file = $request->file('avatar');
-        $filename = "{$userId}_" . time() . '.' . $file->getClientOriginalExtension();
+        $filename = "{$userId}_" . time() . '.' . ($file ? $file->getClientOriginalExtension() : 'jpg');
         $path = "avatars/{$filename}";
         
         $uploadedPath = $supabaseClient->uploadFile(
             'storage', 
             $path, 
-            file_get_contents($file->getRealPath()), 
-            $file->getMimeType()
+            $file ? file_get_contents((string) $file->getRealPath()) : '', 
+            $file ? (string) $file->getMimeType() : 'image/jpeg'
         );
 
         if ($uploadedPath) {
@@ -89,26 +89,23 @@ class ProfileController extends Controller
     /**
      * Update password
      */
-    public function updatePassword(Request $request, \App\Services\SupabaseUserService $supabaseUserService)
+    public function updatePassword(UpdatePasswordRequest $request, SupabaseUserService $supabaseUserService)
     {
-        $request->validate([
-            'current_password' => 'required',
-            'password' => 'required|min:8|confirmed',
-        ]);
+        $validated = $request->validated();
 
-        $email = $request->session()->get('supabase_user_email');
-        $userId = $request->session()->get('supabase_user_id');
+        $email = (string) ($request->auth_user_email ?? '');
+        $userId = $request->auth_user_id;
 
         // Verify current password
-        $user = $supabaseUserService->verifyPassword($email, $request->current_password);
+        $user = $supabaseUserService->verifyPassword($email, (string) $request->current_password);
         
-        if (!$user) {
+        if ($user === null) {
             return back()->withErrors(['current_password' => 'The provided password does not match our records.']);
         }
 
         // Update password (hashing it as we do in registration)
-        $supabaseUserService->update($userId, [
-            'password' => \Illuminate\Support\Facades\Hash::make($request->password)
+        $supabaseUserService->update((string) $userId, [
+            'password' => \Illuminate\Support\Facades\Hash::make((string) $validated['password'])
         ]);
 
         return back()->with('success', 'Password updated successfully.');
@@ -117,22 +114,18 @@ class ProfileController extends Controller
     /**
      * Save biometric descriptor for Face ID login
      */
-    public function saveBiometrics(Request $request, \App\Services\SupabaseClient $supabaseClient)
+    public function saveBiometrics(SaveBiometricsRequest $request, SupabaseClient $supabaseClient)
     {
-        $request->validate([
-            'descriptor' => 'required|array',
-        ]);
-
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
         
-        if (!$userId) {
+        if ($userId === null) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
         // Save to Supabase using biometric_data column (AES-256 encrypted at rest)
         $success = $supabaseClient->update('users', ['biometric_data' => Crypt::encryptString(json_encode($request->descriptor))], ['id' => $userId]);
 
-        if ($success) {
+        if ($success !== 0) {
             // Update session so UI knows it's setup
             $request->session()->put('supabase_user_has_biometrics', true);
             return response()->json(['message' => 'Face fingerprint saved successfully.']);
@@ -144,18 +137,18 @@ class ProfileController extends Controller
     /**
      * Delete biometric descriptor
      */
-    public function deleteBiometrics(Request $request, \App\Services\SupabaseClient $supabaseClient)
+    public function deleteBiometrics(AuthenticatedRequest $request, SupabaseClient $supabaseClient)
     {
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
         
-        if (!$userId) {
+        if ($userId === null) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
         // Set biometric_data to null in Supabase
         $success = $supabaseClient->update('users', ['biometric_data' => null], ['id' => $userId]);
 
-        if ($success) {
+        if ($success !== 0) {
             $request->session()->forget('supabase_user_has_biometrics');
             return response()->json(['message' => 'Face fingerprint removed successfully.']);
         }

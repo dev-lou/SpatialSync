@@ -1,0 +1,336 @@
+# =============================================================================
+# SpatialSync — Render.com Deployment Pipeline
+# Triggers on every new release (after semantic-release) and on manual dispatch
+# 2026 Industry Standard: Automated CD with deploy hooks
+# =============================================================================
+
+name: Deploy to Render
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
+      clear_cache:
+        description: 'Clear build cache'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'release' && 'production' || inputs.environment }}
+  cancel-in-progress: true
+
+env:
+  APP_NAME: SpatialSync
+  RENDER_SERVICE_NAME: blueprintflow
+  DEPLOY_ENV: ${{ github.event_name == 'release' && 'production' || inputs.environment }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Pre-Deployment Validation
+  # ---------------------------------------------------------------------------
+  validate:
+    name: ✅ Pre-Deploy Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate render.yaml exists
+        run: |
+          if [ ! -f "render.yaml" ]; then
+            echo "::error::render.yaml not found! Required for Render deployment."
+            exit 1
+          fi
+          echo "✅ render.yaml found"
+
+      - name: Validate Dockerfile exists
+        run: |
+          if [ ! -f "Dockerfile" ]; then
+            echo "::error::Dockerfile not found! Required for Docker deployment."
+            exit 1
+          fi
+          echo "✅ Dockerfile found"
+
+      - name: Version info
+        run: |
+          echo "## 🚀 Deployment Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${{ github.event.release.tag_name || github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Revision** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ env.DEPLOY_ENV }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Service** | ${{ env.RENDER_SERVICE_NAME }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+  # ---------------------------------------------------------------------------
+  # 2. Render Deploy Hook Trigger
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: 🚀 Deploy to Render
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate]
+    environment:
+      name: ${{ env.DEPLOY_ENV }}
+      url: ${{ steps.deploy_result.outputs.service_url || 'https://dashboard.render.com' }}
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔄 Trigger Render Deploy Hook
+        id: deploy_hook
+        run: |
+          DEPLOY_HOOK_URL="${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+          if [ -z "$DEPLOY_HOOK_URL" ] || [ "$DEPLOY_HOOK_URL" = "" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK_URL secret not set."
+            echo "::warning::To enable automated deploys:"
+            echo "::warning::1. Go to Render Dashboard → Services → blueprintflow → Settings → Deploy Hook"
+            echo "::warning::2. Copy the deploy hook URL"
+            echo "::warning::3. Add it as a GitHub secret: RENDER_DEPLOY_HOOK_URL"
+            echo ""
+            echo "🔍 Render Auto-Deploy is still active via render.yaml (autoDeploy: true)"
+            echo "    → Any push to main will trigger a Render deployment."
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "🌐 Triggering Render deployment via Deploy Hook..."
+          echo "    Service: ${{ env.RENDER_SERVICE_NAME }}"
+          echo "    Environment: ${{ env.DEPLOY_ENV }}"
+
+          CLEAR_CACHE="${{ github.event_name == 'workflow_dispatch' && inputs.clear_cache || 'false' }}"
+
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$DEPLOY_HOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d "{\"clearCache\": $CLEAR_CACHE}" 2>&1)
+
+          HTTP_BODY=$(echo "$HTTP_RESPONSE" | head -n -1)
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n 1)
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Response: $HTTP_BODY"
+
+          if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "201" ] || [ "$HTTP_STATUS" = "202" ]; then
+            echo "✅ Deploy hook triggered successfully (HTTP $HTTP_STATUS)"
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Deploy hook returned HTTP $HTTP_STATUS"
+            echo "::warning::Response: $HTTP_BODY"
+            echo "::warning::Render auto-deploy (push to main) is still active as fallback."
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      # ---------------------------------------------------------------------------
+      # 3. Render API Deployment (optional — requires API key)
+      # ---------------------------------------------------------------------------
+      - name: 🔧 Trigger Render API Deploy
+        id: deploy_api
+        if: env.RENDER_API_KEY != '' && steps.deploy_hook.outputs.status != 'success'
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "🌐 Triggering Render deployment via API..."
+
+          SERVICE_ID="${{ secrets.RENDER_SERVICE_ID }}"
+          if [ -z "$SERVICE_ID" ]; then
+            echo "::warning::RENDER_SERVICE_ID secret not set."
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          RESPONSE=$(curl -s -X POST "https://api.render.com/v1/services/${SERVICE_ID}/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"clearCache\": ${{ github.event_name == 'workflow_dispatch' && inputs.clear_cache || 'false' }}}" 2>&1)
+
+          DEPLOY_ID=$(echo "$RESPONSE" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+          if [ -n "$DEPLOY_ID" ]; then
+            echo "✅ Render deploy triggered via API. Deploy ID: $DEPLOY_ID"
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+
+            echo "🔍 Monitoring deployment..."
+            echo "deploy_id=$DEPLOY_ID" >> $GITHUB_STEP_SUMMARY
+
+            # Poll for deployment status (up to 10 minutes)
+            for i in $(seq 1 60); do
+              STATUS_RESPONSE=$(curl -s "https://api.render.com/v1/services/${SERVICE_ID}/deploys/${DEPLOY_ID}" \
+                -H "Authorization: Bearer $RENDER_API_KEY")
+              STATUS=$(echo "$STATUS_RESPONSE" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+              echo "  Deployment status: $STATUS (${i}s)"
+
+              if [ "$STATUS" = "live" ]; then
+                echo "✅ Deployment completed successfully!"
+                echo "result=success" >> $GITHUB_OUTPUT
+                SERVICE_URL=$(echo "$STATUS_RESPONSE" | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
+                echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+                break
+              elif [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; then
+                echo "::error::Deployment $STATUS"
+                echo "result=failed" >> $GITHUB_OUTPUT
+                break
+              fi
+              sleep 10
+            done
+          else
+            echo "::warning::Failed to trigger Render deploy via API"
+            echo "Response: $RESPONSE"
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      # ---------------------------------------------------------------------------
+      # 4. Deployment Status Summary
+      # ---------------------------------------------------------------------------
+      - name: 📋 Deployment Summary
+        id: deploy_result
+        run: |
+          DEPLOY_STATUS="${{ steps.deploy_hook.outputs.status || steps.deploy_api.outputs.status }}"
+
+          echo "## 📋 Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$DEPLOY_STATUS" = "success" ]; then
+            echo "### ✅ Deployment Triggered Successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          elif [ "$DEPLOY_STATUS" = "skipped" ]; then
+            echo "### ⚠️ Deploy Hook Not Configured" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To enable automated deploys via GitHub Actions:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "1. Go to **Render Dashboard → Services → blueprintflow → Settings → Deploy Hook**" >> $GITHUB_STEP_SUMMARY
+            echo "2. Copy the deploy hook URL" >> $GITHUB_STEP_SUMMARY
+            echo "3. Add it as a GitHub secret: \`RENDER_DEPLOY_HOOK_URL\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> Render **autoDeploy** (\`render.yaml\`) is still active — pushing to \`main\` will auto-deploy." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "| Detail | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${{ github.event.release.tag_name || github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Service** | ${{ env.RENDER_SERVICE_NAME }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ env.DEPLOY_ENV }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Method** | ${{ steps.deploy_hook.outputs.status == 'success' && 'Deploy Hook' || steps.deploy_api.outputs.status == 'success' && 'Render API' || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Monitor** | [Render Dashboard](https://dashboard.render.com) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "service_url=https://${{ env.RENDER_SERVICE_NAME }}.onrender.com" >> $GITHUB_OUTPUT
+
+      # ---------------------------------------------------------------------------
+      # 5. Create GitHub Deployment (visibility)
+      # ---------------------------------------------------------------------------
+      - name: 🏷️ Create GitHub Deployment
+        if: always()
+        run: |
+          DEPLOY_ID="${{ steps.deploy_api.outputs.deploy_id }}"
+
+          echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [Render Dashboard](https://dashboard.render.com)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Service: ${{ env.RENDER_SERVICE_NAME }}](https://dashboard.render.com/web/srv-${{ env.RENDER_SERVICE_NAME }})" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$DEPLOY_ID" ]; then
+            echo "- [Deployment Details](https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys/$DEPLOY_ID)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- [Release v${{ github.event.release.tag_name }}](${{ github.event.release.html_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      # ---------------------------------------------------------------------------
+      # 6. Rollback Instructions
+      # ---------------------------------------------------------------------------
+      - name: 🔙 Rollback Info
+        run: |
+          echo "### 🔙 Rollback Instructions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "If this deployment has issues:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Go to **Render Dashboard → Services → blueprintflow → Deployments**" >> $GITHUB_STEP_SUMMARY
+          echo "2. Find the last **working** deployment" >> $GITHUB_STEP_SUMMARY
+          echo "3. Click **Redeploy**" >> $GITHUB_STEP_SUMMARY
+          echo "4. Or revert the release: \`gh release delete v${{ github.event.release.tag_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+  # ---------------------------------------------------------------------------
+  # 7. Post-Deploy Smoke Tests
+  # ---------------------------------------------------------------------------
+  smoke-test:
+    name: 🔍 Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [deploy]
+    if: always() && needs.deploy.result == 'success'
+
+    steps:
+      - name: ⏳ Wait for service to be ready
+        run: sleep 30
+
+      - name: 🔍 Health check
+        id: health
+        run: |
+          APP_URL="https://${{ env.RENDER_SERVICE_NAME }}.onrender.com"
+          echo "Checking health at: $APP_URL/up"
+
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$APP_URL/up" 2>&1 || echo "000")
+
+          if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "302" ]; then
+            echo "✅ Health check passed (HTTP $HTTP_STATUS)"
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Health check returned HTTP $HTTP_STATUS"
+            echo "::warning::The service may still be starting up."
+            echo "status=warn" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🔍 Page load check
+        run: |
+          APP_URL="https://${{ env.RENDER_SERVICE_NAME }}.onrender.com"
+          echo "Checking main page: $APP_URL"
+
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 -L "$APP_URL" 2>&1 || echo "000")
+          PAGE_SIZE=$(curl -s --connect-timeout 10 --max-time 15 -L "$APP_URL" 2>/dev/null | wc -c || echo "0")
+
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✅ Main page loads (HTTP $HTTP_STATUS, $PAGE_SIZE bytes)"
+          else
+            echo "::warning::Main page returned HTTP $HTTP_STATUS ($PAGE_SIZE bytes)"
+            echo "::warning::Monitor the service at: https://dashboard.render.com"
+          fi
+
+      - name: 📊 Smoke test results
+        if: always()
+        run: |
+          echo "### 🔍 Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.health.outputs.status }}" = "pass" ]; then
+            echo "- ✅ **Health Check**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️ **Health Check**: Warning (service may still be starting)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "- ✅ **Page Load**: Checked" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 **Live URL**: https://${{ env.RENDER_SERVICE_NAME }}.onrender.com" >> $GITHUB_STEP_SUMMARY

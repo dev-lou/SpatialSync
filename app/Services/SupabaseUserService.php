@@ -121,11 +121,11 @@ class SupabaseUserService
     {
         $user = $this->findByEmail($email);
 
-        if (! $user) {
+        if ($user === null) {
             return null;
         }
 
-        if (isset($user['password']) && Hash::check($password, $user['password'])) {
+        if (isset($user['password']) && Hash::check($password, (string) $user['password'])) {
             return $user;
         }
 

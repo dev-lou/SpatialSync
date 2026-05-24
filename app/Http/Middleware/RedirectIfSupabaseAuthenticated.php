@@ -14,6 +14,8 @@ class RedirectIfSupabaseAuthenticated
             return redirect()->route('builds.index');
         }
 
-        return $next($request);
+        /** @var Response $response */
+        $response = $next($request);
+        return $response;
     }
 }

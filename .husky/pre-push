@@ -1,0 +1,30 @@
+#!/bin/bash
+# =============================================================================
+# SpatialSync — Pre-push Hook (optional)
+# Runs full validation before pushing to remote
+# =============================================================================
+
+echo "🧪 Running pre-push validation..."
+
+# Validate branch name
+if [ -f "scripts/validate-branch.sh" ]; then
+  bash scripts/validate-branch.sh
+fi
+
+# Run full build check
+if [ -f "package.json" ]; then
+  echo "📦 Checking build..."
+  npm run build --if-present 2>/dev/null
+  if [ $? -ne 0 ]; then
+    echo "❌ Build failed. Fix before pushing."
+    exit 1
+  fi
+fi
+
+# Check for uncommitted lockfile changes
+if git diff --name-only | grep -qE "(composer.lock|package-lock.json)"; then
+  echo "⚠️  Lockfile changes detected but not staged!"
+  echo "   Run: git add composer.lock package-lock.json"
+fi
+
+echo "✅ Pre-push checks passed!"

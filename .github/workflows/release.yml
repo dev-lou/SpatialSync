@@ -1,0 +1,93 @@
+# =============================================================================
+# SpatialSync — Automated Release Pipeline
+# Uses semantic-release to automate version bumps, changelog, and tags
+# 2026 Industry Standard: Trunk-based releases with Conventional Commits
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-release
+  cancel-in-progress: false # Never cancel releases
+
+env:
+  PHP_VERSION: '8.3'
+  NODE_VERSION: '20'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Quality Gates (must pass before release)
+  # ---------------------------------------------------------------------------
+  quality:
+    name: 🧪 Quality Gates
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  security:
+    name: 🛡️ Security Gates
+    uses: ./.github/workflows/security.yml
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # 2. Semantic Release
+  # ---------------------------------------------------------------------------
+  release:
+    name: 🚀 Semantic Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [quality, security]
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install release dependencies
+        run: |
+          npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
+
+      - name: Run semantic-release
+        run: |
+          npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SBOM (Software Bill of Materials)
+        if: success()
+        run: |
+          npm install -g @cyclonedx/bom
+          cyclonedx-bom -o sbom.json
+          echo "✅ SBOM generated: sbom.json"
+        continue-on-error: true
+
+      - name: Tag version
+        id: tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create release summary
+        run: |
+          echo "## 🚀 Release ${{ steps.tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "CHANGELOG.md" ]; then
+            head -50 CHANGELOG.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No changelog generated yet." >> $GITHUB_STEP_SUMMARY
+          fi

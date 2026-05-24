@@ -72,7 +72,7 @@ class AdminController extends Controller
         return view('admin.builds', compact('builds'));
     }
 
-    public function deleteUser(Request $request, $userId)
+    public function deleteUser(Request $request, string $userId)
     {
         $deleted = $this->supabase->delete('users', ['id' => $userId]);
 
@@ -83,7 +83,7 @@ class AdminController extends Controller
         return back()->with('error', 'Failed to delete user.');
     }
 
-    public function deleteBuild(Request $request, $buildId)
+    public function deleteBuild(Request $request, string $buildId)
     {
         $this->supabase->delete('build_parts', ['build_id' => $buildId]);
         $deleted = $this->supabase->delete('builds', ['id' => $buildId]);
@@ -97,7 +97,7 @@ class AdminController extends Controller
 
     public function security()
     {
-        $userId = session('supabase_user_id');
+        $userId = (string) session('supabase_user_id', '');
         $userData = $this->userService->findById($userId);
         $user = (object) $userData;
 
@@ -110,12 +110,12 @@ class AdminController extends Controller
             'descriptor' => 'required|array',
         ]);
 
-        $userId = session('supabase_user_id');
+        $userId = (string) session('supabase_user_id', '');
         
         // Save to Supabase using biometric_data column (AES-256 encrypted at rest)
         $success = $this->supabase->update('users', ['biometric_data' => Crypt::encryptString(json_encode($request->descriptor))], ['id' => $userId]);
 
-        if ($success) {
+        if ($success !== 0) {
             return response()->json(['message' => 'Face fingerprint saved successfully.']);
         }
 

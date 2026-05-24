@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\AuthenticatedRequest;
 use App\Http\Controllers\Controller;
-use App\Models\Build;
 use App\Services\SupabaseClient;
-use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
-    protected $supabase;
+    protected SupabaseClient $supabase;
 
     public function __construct(SupabaseClient $supabase)
     {
@@ -19,17 +18,17 @@ class PermissionController extends Controller
     /**
      * Get all permissions for the current user on a specific build
      */
-    public function getPermissions(Request $request, $buildId)
+    public function getPermissions(AuthenticatedRequest $request, string $buildId)
     {
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
 
-        if (!$userId) {
+        if ($userId === null) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         // Get build from Supabase
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return response()->json(['error' => 'Build not found'], 404);
         }
         $build = (object) $builds[0];
@@ -45,7 +44,7 @@ class PermissionController extends Controller
                 'build_id' => $buildId,
                 'user_id' => $userId
             ]);
-            if (!empty($members)) {
+            if ($members !== []) {
                 $role = $members[0]['role'];
             }
         }
@@ -65,17 +64,17 @@ class PermissionController extends Controller
     /**
      * Check a specific permission
      */
-    public function checkPermission(Request $request, $buildId, $permission)
+    public function checkPermission(AuthenticatedRequest $request, string $buildId, string $permission)
     {
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
 
-        if (!$userId) {
+        if ($userId === null) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
         // Get build from Supabase
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return response()->json(['error' => 'Build not found'], 404);
         }
         $build = (object) $builds[0];
@@ -91,7 +90,7 @@ class PermissionController extends Controller
                 'build_id' => $buildId,
                 'user_id' => $userId
             ]);
-            if (!empty($members)) {
+            if ($members !== []) {
                 $role = $members[0]['role'];
             }
         }

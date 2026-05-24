@@ -2,14 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\AuthenticatedRequest;
 use Closure;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\SupabaseClient;
 
 class CheckBuildPermission
 {
-    protected $supabase;
+    protected SupabaseClient $supabase;
 
     public function __construct(SupabaseClient $supabase)
     {
@@ -19,12 +19,12 @@ class CheckBuildPermission
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  \Closure(\App\Http\AuthenticatedRequest): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $permission): Response
+    public function handle(AuthenticatedRequest $request, Closure $next, string $permission): Response
     {
         $buildId = $request->route('buildId') ?? $request->route('build');
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
 
         if (!$buildId || !$userId) {
             return response()->json(['error' => 'Unauthorized'], 403);
@@ -32,7 +32,7 @@ class CheckBuildPermission
 
         // Get build to check ownership
         $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return response()->json(['error' => 'Build not found'], 404);
         }
 
@@ -47,7 +47,7 @@ class CheckBuildPermission
                 'build_id' => $buildId,
                 'user_id' => $userId
             ]);
-            $role = !empty($members) ? $members[0]['role'] : null;
+            $role = $members !== [] ? $members[0]['role'] : null;
         }
 
         // Check if user has the required permission
@@ -92,6 +92,6 @@ class CheckBuildPermission
             return false;
         }
 
-        return in_array($permission, $permissions[$role]);
+        return in_array($permission, $permissions[$role], true);
     }
 }

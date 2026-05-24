@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Model
+ */
 class PartPreset extends Model
 {
     protected $fillable = [

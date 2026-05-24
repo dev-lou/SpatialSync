@@ -1,0 +1,28 @@
+#!/bin/sh
+# =============================================================================
+# SpatialSync — Commit-msg Hook
+# Validates commit messages follow Conventional Commits standard
+# =============================================================================
+
+echo "📝 Validating commit message..."
+
+npx commitlint --edit "$1"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  echo ""
+  echo "❌ Invalid commit message format."
+  echo "   Commit messages must follow Conventional Commits:"
+  echo ""
+  echo "   feat: add user profile page"
+  echo "   fix: resolve login redirect loop"
+  echo "   docs: update API reference"
+  echo "   chore(deps): bump laravel/framework"
+  echo ""
+  echo "   Types: feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert | security"
+  echo ""
+  echo "   See: https://www.conventionalcommits.org/"
+  exit 1
+fi
+
+echo "✅ Commit message is valid!"

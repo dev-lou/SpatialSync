@@ -31,7 +31,7 @@ class BiometricAuthController extends Controller
             'descriptor' => 'required|array',
         ]);
 
-        $liveDescriptor = $request->descriptor;
+        $liveDescriptor = (array) $request->descriptor;
         
         // 1. Fetch all users who have biometric data enrolled
         // In a massive app, you'd filter by email or use a vector database, 
@@ -42,7 +42,7 @@ class BiometricAuthController extends Controller
         $threshold = 0.45; // Standard sensitivity threshold for face-api.js
 
         foreach ($allUsers as $userData) {
-            if (empty($userData['biometric_data'])) continue;
+            if (($userData['biometric_data'] ?? null) === null) continue;
 
             $rawData = $userData['biometric_data'];
             $storedDescriptor = null;
@@ -68,7 +68,7 @@ class BiometricAuthController extends Controller
                 $storedDescriptor = $rawData;
             }
 
-            if (!is_array($storedDescriptor) || empty($storedDescriptor)) continue;
+            if (!is_array($storedDescriptor) || $storedDescriptor === []) continue;
 
             $distance = $this->calculateEuclideanDistance($liveDescriptor, $storedDescriptor);
 
@@ -96,7 +96,7 @@ class BiometricAuthController extends Controller
                 'success' => true,
                 'name' => $user->name,
                 'avatar_url' => $user->avatar_url ?? '',
-                'message' => 'Identity verified. Welcome back, ' . $user->name,
+                'message' => 'Identity verified. Welcome back, ' . (string) $user->name,
                 'redirect' => route('dashboard')
             ]);
         }

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\AuthenticatedRequest;
 use App\Http\Controllers\Controller;
 use App\Services\SupabaseClient;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
@@ -20,13 +20,13 @@ class BuildMessageController extends Controller
     /**
      * Check if user has access to build
      */
-    protected function checkBuildAccess(Request $request, $buildId): bool
+    protected function checkBuildAccess(AuthenticatedRequest $request, string $buildId): bool
     {
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
 
         // Get build to check ownership
         $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return false;
         }
 
@@ -41,10 +41,10 @@ class BuildMessageController extends Controller
             'user_id' => $userId
         ]);
 
-        return !empty($members);
+        return $members !== [];
     }
 
-    public function index(Request $request, $buildId)
+    public function index(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
         if (!$this->checkBuildAccess($request, $buildId)) {
@@ -55,12 +55,12 @@ class BuildMessageController extends Controller
 
         $messages = array_slice(array_reverse($messages), 0, 100);
 
-        $userIds = array_unique(array_filter(array_column($messages, 'user_id')));
-        if (!empty($userIds)) {
+        $userIds = array_unique(array_filter(array_column($messages, 'user_id'), fn($v) => $v !== null && $v !== ''));
+        if ($userIds !== []) {
             $allUsers = $this->supabase->select('users', ['id', 'name'], []);
             $userMap = [];
             foreach ($allUsers as $u) {
-                if (in_array($u['id'], $userIds)) {
+                if (in_array($u['id'], $userIds, true)) {
                     $userMap[$u['id']] = $u;
                 }
             }
@@ -73,7 +73,7 @@ class BuildMessageController extends Controller
         return response()->json(array_values($messages));
     }
 
-    public function store(Request $request, $buildId)
+    public function store(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
         if (!$this->checkBuildAccess($request, $buildId)) {
@@ -84,8 +84,8 @@ class BuildMessageController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
-        $userId = $request->session()->get('supabase_user_id');
-        $userName = $request->session()->get('supabase_user_name', 'User');
+        $userId = $request->auth_user_id;
+        $userName = $request->auth_user_name ?? 'User';
 
         $messageData = [
             'id' => Str::uuid()->toString(),

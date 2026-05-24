@@ -3,12 +3,12 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
+use App\Http\AuthenticatedRequest;
 use Symfony\Component\HttpFoundation\Response;
 
 class SupabaseAuthenticate
 {
-    public function handle(Request $request, Closure $next, ...$guards): Response
+    public function handle(AuthenticatedRequest $request, Closure $next, ...$guards): Response
     {
         if (! $request->session()->has('supabase_user_id')) {
             if ($request->expectsJson()) {
@@ -28,6 +28,8 @@ class SupabaseAuthenticate
             'auth_user_avatar' => $request->session()->get('supabase_user_avatar'),
         ]);
 
-        return $next($request);
+        /** @var Response $response */
+        $response = $next($request);
+        return $response;
     }
 }

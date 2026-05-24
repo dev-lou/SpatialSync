@@ -1,0 +1,33 @@
+# =============================================================================
+# SpatialSync — PHPStan Configuration
+# Static Analysis for PHP code at max level
+# =============================================================================
+
+includes:
+  - vendor/phpstan/phpstan-strict-rules/rules.neon
+  - phpstan-baseline.neon
+
+parameters:
+  level: max
+  paths:
+    - app/
+    - config/
+    - routes/
+  excludePaths:
+    - vendor/
+    - storage/
+    - bootstrap/
+    - bootstrap/cache/
+
+  # Ignored patterns (use sparingly)
+  ignoreErrors:
+    - '#Method .*::[a-zA-Z]+\(\) has no return type specified#'
+
+  # Reporting
+  reportUnmatchedIgnoredErrors: true
+  treatPhpDocTypesAsCertain: false  # Don't blindly trust @phpdoc types — enforce explicit typing
+
+  # Performance
+  parallel:
+    maximumNumberOfProcesses: 4
+    minimumNumberOfJobsPerProcess: 10

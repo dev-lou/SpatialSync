@@ -1,0 +1,99 @@
+# =============================================================================
+# SpatialSync — Dependabot Configuration
+# 2026 Industry Standard: Automated dependency health
+# =============================================================================
+
+version: 2
+updates:
+  # ── PHP / Composer ───────────────────────────────────────────────────────
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Manila"
+    versioning-strategy: "increase-if-necessary"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "php"
+    reviewers:
+      - "dev-lou"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    # Group non-breaking updates together
+    groups:
+      laravel:
+        patterns:
+          - "laravel/*"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── npm / Node.js ───────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Manila"
+    versioning-strategy: "increase-if-necessary"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+    reviewers:
+      - "dev-lou"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    # Ignore major updates for Three.js (breaking API changes)
+    ignore:
+      - dependency-name: "three"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@types/three"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "fabric"
+        update-types:
+          - "version-update:semver-major"
+    groups:
+      threejs:
+        patterns:
+          - "three"
+          - "@types/three"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Manila"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

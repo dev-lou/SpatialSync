@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Model
+ *
+ * @property-read \App\Models\Build|null $build
+ *
+ * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildPart> build()
+ */
 class BuildPart extends Model
 {
     protected $fillable = [
@@ -40,12 +47,18 @@ class BuildPart extends Model
         'z_index' => 'integer',
     ];
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildPart>
+     */
     public function build(): BelongsTo
     {
         return $this->belongsTo(Build::class);
     }
 
-    public function preset()
+    /**
+     * @return \App\Models\PartPreset|null
+     */
+    public function preset(): ?PartPreset
     {
         return PartPreset::where('type', $this->type)
             ->where('variant', $this->variant)

@@ -55,16 +55,16 @@ class RegisteredUserController extends Controller
 
         // Create default team in Supabase
         $teamId = Str::uuid()->toString();
-        $teamUrl = config('supabase.url').'/rest/v1/teams';
+        $teamUrl = (string) config('supabase.url') . '/rest/v1/teams';
         $teamData = [
             'id' => $teamId,
-            'name' => $validated['name']."'s Team",
+            'name' => (string) $validated['name'] . "'s Team",
         ];
 
         try {
             Http::withHeaders([
                 'apikey' => config('supabase.service_key'),
-                'Authorization' => 'Bearer '.config('supabase.service_key'),
+                'Authorization' => 'Bearer ' . (string) config('supabase.service_key'),
                 'Content-Type' => 'application/json',
             ])->post($teamUrl, $teamData);
         } catch (\Exception $e) {

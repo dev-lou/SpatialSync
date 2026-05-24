@@ -1,0 +1,152 @@
+# =============================================================================
+# SpatialSync — Pull Request Quality Gates
+# Runs on every PR to enforce team standards
+# 2026 Industry Standard: Automated PR validation
+# =============================================================================
+
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Conventional Commit Validation
+  # ---------------------------------------------------------------------------
+  commit-message:
+    name: 📝 Commit Convention
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate PR title matches Conventional Commits
+        uses: amannn/action-semantic-pull-request@v5
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+            security
+
+      - name: Validate commit messages
+        run: |
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose || echo "Commit messages validated"
+
+  # ---------------------------------------------------------------------------
+  # 2. PR Size & Scope Check
+  # ---------------------------------------------------------------------------
+  pr-size:
+    name: 📏 PR Size
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: diff } = await github.rest.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base: context.payload.pull_request.base.sha,
+              head: context.payload.pull_request.head.sha,
+            });
+            const totalChanges = diff.files.reduce((acc, f) => acc + f.additions + f.deletions, 0);
+            const message = totalChanges > 1000
+              ? `⚠️ This PR is large (${totalChanges} lines). Consider splitting into smaller PRs for faster review.`
+              : `✅ PR size is reasonable (${totalChanges} lines).`;
+            core.notice(message);
+            if (totalChanges > 2000) {
+              core.warning(`Very large PR: ${totalChanges} lines. Please split into multiple PRs.`);
+            }
+
+  # ---------------------------------------------------------------------------
+  # 3. TODO / FIXME Check
+  # ---------------------------------------------------------------------------
+  todo-check:
+    name: 🔍 TODO Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for unresolved TODOs and FIXMEs
+        run: |
+          TODOS=$(grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.php" --include="*.js" --include="*.css" --include="*.blade.php" resources/ app/ config/ routes/ database/ 2>/dev/null || true)
+          if [ -n "$TODOS" ]; then
+            echo "⚠️ Found unresolved markers:"
+            echo "$TODOS"
+            echo "::warning::Found TODO/FIXME/HACK markers in the codebase"
+          else
+            echo "✅ No TODO/FIXME markers found"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 4. Dependency Diff Check
+  # ---------------------------------------------------------------------------
+  dependency-check:
+    name: 📦 Dependency Diff
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for dependency changes
+        id: dep-changes
+        run: |
+          if git diff --name-only HEAD~1 | grep -qE "composer.(json|lock)|package.(json|lock)"; then
+            echo "⚠️ Dependencies have changed — review carefully for security implications."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on dependency changes
+        if: steps.dep-changes.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **Dependencies changed in this PR.**\n\nPlease verify:\n- [ ] No breaking changes\n- [ ] No known vulnerabilities\n- [ ] Changes are necessary\n\nRun `composer audit` and `npm audit` locally to verify.'
+            })

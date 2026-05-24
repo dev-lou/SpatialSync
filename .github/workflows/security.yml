@@ -1,0 +1,179 @@
+# =============================================================================
+# SpatialSync — Security Scanning Pipeline
+# 2026 Industry Standard: Integrated security at every stage
+# =============================================================================
+
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.3'
+  NODE_VERSION: '20'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. CodeQL Security Analysis
+  # ---------------------------------------------------------------------------
+  codeql:
+    name: 🛡️ CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript, python
+          queries: security-extended, security-and-quality
+          source-root: resources/js
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:javascript-typescript'
+
+  # ---------------------------------------------------------------------------
+  # 2. PHP Security Audit
+  # ---------------------------------------------------------------------------
+  php-audit:
+    name: 🔒 PHP Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, bcmath, gd, zip, pdo_pgsql, pgsql
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run Composer Audit
+        run: composer audit --ansi
+        continue-on-error: true
+
+      - name: Check for abandoned packages
+        run: |
+          ABANDONED=$(composer show --abandoned 2>/dev/null | grep -i "abandoned" || true)
+          if [ -n "$ABANDONED" ]; then
+            echo "::warning::Abandoned packages found:"
+            echo "$ABANDONED"
+          else
+            echo "✅ No abandoned packages"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 3. JavaScript Security Audit
+  # ---------------------------------------------------------------------------
+  npm-audit:
+    name: 🔒 NPM Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run NPM Audit
+        run: |
+          npm audit --audit-level=high || true
+          echo "::warning::npm audit completed. Review any high/critical findings above."
+
+      - name: Run NPM Audit for production deps only
+        run: npm audit --production --audit-level=high
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # 4. Secret Scanning (git leaks)
+  # ---------------------------------------------------------------------------
+  secrets:
+    name: 🔑 Secret Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets with trufflehog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --results=verified,unknown --no-verification
+        continue-on-error: true
+
+      - name: Basic secret pattern check
+        run: |
+          echo "🔍 Checking for potential secrets in code..."
+          ISSUES=0
+          
+          # Check for hardcoded API keys
+          if grep -rnP '(?<![A-Za-z])[A-Za-z0-9_-]{32,}(?![A-Za-z])' --include="*.php" --include="*.js" app/ resources/ config/ routes/ 2>/dev/null | grep -v "base64:" | grep -v "tests/"; then
+            ISSUES=$((ISSUES + 1))
+          fi
+          
+          # Check for common secret patterns
+          for PATTERN in "password" "secret" "api_key" "apikey" "supabase_key"; do
+            if grep -rn "$PATTERN" --include="*.php" --include="*.js" app/ resources/ config/ routes/ 2>/dev/null | grep -v "env(" | grep -v "config(" | grep -v "//\|/\*\|#\|<!--\|{{--"; then
+              echo "::warning::Potential hardcoded $PATTERN found"
+              ISSUES=$((ISSUES + 1))
+            fi
+          done
+          
+          if [ $ISSUES -eq 0 ]; then
+            echo "✅ No obvious secrets found in code"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 5. GitHub Advisory Database Check
+  # ---------------------------------------------------------------------------
+  advisories:
+    name: 📋 Advisory Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Check GitHub advisories for dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: true
+        continue-on-error: true

@@ -1,0 +1,23 @@
+# =============================================================================
+# SpatialSync — Lint-Staged Configuration
+# Runs linters only on staged files for instant feedback
+# =============================================================================
+
+{
+  "*.php": [
+    "vendor/bin/pint --test"
+  ],
+  "*.{js,mjs,cjs}": [
+    "npx eslint --fix --max-warnings=0",
+    "npx prettier --write"
+  ],
+  "*.{css,scss}": [
+    "npx prettier --write"
+  ],
+  "*.{json,md,yml,yaml}": [
+    "npx prettier --write"
+  ],
+  "*.blade.php": [
+    "vendor/bin/pint --test"
+  ]
+}

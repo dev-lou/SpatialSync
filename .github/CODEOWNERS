@@ -1,0 +1,37 @@
+# =============================================================================
+# SpatialSync — Code Owners
+# These owners will be requested for review when changes modify their paths
+# =============================================================================
+
+# Default owner for all files
+* @dev-lou
+
+# Core application logic
+/app/ @dev-lou
+/app/Http/Controllers/ @dev-lou
+/app/Models/ @dev-lou
+/app/Services/ @dev-lou
+/app/Providers/ @dev-lou
+
+# Routes
+/routes/ @dev-lou
+
+# Frontend assets
+/resources/js/ @dev-lou
+/resources/css/ @dev-lou
+/resources/views/ @dev-lou
+
+# Configuration
+/config/ @dev-lou
+
+# Database
+/database/ @dev-lou
+
+# Infrastructure & CI/CD
+/.github/ @dev-lou
+/Dockerfile @dev-lou
+/render.yaml @dev-lou
+
+# Documentation
+/README.md @dev-lou
+/DEPLOYMENT.md @dev-lou

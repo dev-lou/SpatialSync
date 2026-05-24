@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\AuthenticatedRequest;
 use App\Http\Controllers\Controller;
 use App\Services\SupabaseClient;
-use Illuminate\Http\Request;
 
 class BuildPartController extends Controller
 {
@@ -18,13 +18,13 @@ class BuildPartController extends Controller
     /**
      * Check if user has access to build
      */
-    protected function checkBuildAccess(Request $request, $buildId): bool
+    protected function checkBuildAccess(AuthenticatedRequest $request, string $buildId): bool
     {
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
 
         // Get build to check ownership
         $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return false;
         }
 
@@ -39,19 +39,19 @@ class BuildPartController extends Controller
             'user_id' => $userId
         ]);
 
-        return !empty($members);
+        return $members !== [];
     }
 
     /**
      * Check if user can modify build (owner or editor)
      */
-    protected function canModifyBuild(Request $request, $buildId): bool
+    protected function canModifyBuild(AuthenticatedRequest $request, string $buildId): bool
     {
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
 
         // Get build to check ownership
         $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return false;
         }
 
@@ -66,10 +66,10 @@ class BuildPartController extends Controller
             'user_id' => $userId
         ]);
 
-        return !empty($members) && $members[0]['role'] === 'editor';
+        return $members !== [] && $members[0]['role'] === 'editor';
     }
 
-    public function index(Request $request, $buildId)
+    public function index(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
         if (!$this->checkBuildAccess($request, $buildId)) {
@@ -78,7 +78,7 @@ class BuildPartController extends Controller
 
         // Get build to check current floor
         $builds = $this->supabase->select('builds', ['current_floor'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return response()->json(['error' => 'Build not found'], 404);
         }
 
@@ -93,7 +93,7 @@ class BuildPartController extends Controller
         return response()->json($parts);
     }
 
-    public function allParts(Request $request, $buildId)
+    public function allParts(AuthenticatedRequest $request, string $buildId)
     {
         // Check access
         if (!$this->checkBuildAccess($request, $buildId)) {
@@ -104,18 +104,18 @@ class BuildPartController extends Controller
 
         // Sort by floor_number then z_index
         usort($parts, function ($a, $b) {
-            $floorCompare = ($a['floor_number'] ?? 1) - ($b['floor_number'] ?? 1);
+            $floorCompare = (int) ($a['floor_number'] ?? 1) - (int) ($b['floor_number'] ?? 1);
             if ($floorCompare !== 0) {
                 return $floorCompare;
             }
 
-            return ($a['z_index'] ?? 0) - ($b['z_index'] ?? 0);
+            return (int) ($a['z_index'] ?? 0) - (int) ($b['z_index'] ?? 0);
         });
 
         return response()->json($parts);
     }
 
-    public function store(Request $request, $buildId)
+    public function store(AuthenticatedRequest $request, string $buildId)
     {
         // Check modify permission
         if (!$this->canModifyBuild($request, $buildId)) {
@@ -158,7 +158,7 @@ class BuildPartController extends Controller
         return response()->json($part, 201);
     }
 
-    public function update(Request $request, $buildId, $partId)
+    public function update(AuthenticatedRequest $request, string $buildId, string $partId)
     {
         // Check modify permission
         if (!$this->canModifyBuild($request, $buildId)) {
@@ -189,7 +189,7 @@ class BuildPartController extends Controller
             'build_id' => $buildId,
         ];
 
-        if (!empty($validated['updated_at'])) {
+        if (isset($validated['updated_at']) && $validated['updated_at'] !== null) {
             $filters['updated_at'] = $validated['updated_at'];
         }
 
@@ -198,7 +198,7 @@ class BuildPartController extends Controller
         if ($count === 0) {
             // Check if part exists at all
             $existing = $this->supabase->select('build_parts', ['id', 'updated_at'], ['id' => $partId]);
-            if (!empty($existing)) {
+            if ($existing !== []) {
                 return response()->json([
                     'error' => 'Part was modified by another user. Please refresh.',
                     'conflict' => true,
@@ -219,7 +219,7 @@ class BuildPartController extends Controller
         return response()->json($parts[0] ?? []);
     }
 
-    public function destroy(Request $request, $buildId, $partId)
+    public function destroy(AuthenticatedRequest $request, string $buildId, string $partId)
     {
         // Check modify permission
         if (!$this->canModifyBuild($request, $buildId)) {

@@ -1,0 +1,1969 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined static method App\\Models\\User\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Console/Commands/MakeUserAdmin.php
+
+		-
+			message: '#^Cannot access property \$is_admin on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Console/Commands/MakeUserAdmin.php
+
+		-
+			message: '#^Cannot access property \$name on mixed\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Console/Commands/MakeUserAdmin.php
+
+		-
+			message: '#^Cannot call method first\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Console/Commands/MakeUserAdmin.php
+
+		-
+			message: '#^Cannot call method save\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Console/Commands/MakeUserAdmin.php
+
+		-
+			message: '#^Part \$email \(array\|bool\|string\|null\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 3
+			path: app/Console/Commands/MakeUserAdmin.php
+
+		-
+			message: '#^Part \$user\-\>name \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: app/Console/Commands/MakeUserAdmin.php
+
+		-
+			message: '#^Parameter \#1 \$string of function addslashes expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 7
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$build\-\>created_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$build\-\>created_by \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$build\-\>current_floor \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$build\-\>id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$build\-\>team_id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$build\-\>updated_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>build_id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>color \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>color_back \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>color_front \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>created_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>depth \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>floor_number \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>height \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>material \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>position_x \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>position_y \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>position_z \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>rotation_y \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>type \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>updated_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>variant \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>width \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$part\-\>z_index \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$team\-\>created_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$team\-\>id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$team\-\>updated_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$user\-\>created_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$user\-\>id \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Part \$user\-\>updated_at \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Console/Commands/MigrateToSupabaseCommand.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$descriptor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Parameter \#1 \$value of static method Illuminate\\Support\\Facades\\Crypt\:\:encryptString\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''creator_name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''priority'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 8
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''priority_color'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''priority_label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''status'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 8
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''status_color'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''status_label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_unique expects an array of values castable to string, array\<int\<0, max\>, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Parameter \#1 \$priority of method App\\Http\\Controllers\\Api\\BuildIssueController\:\:getPriorityColor\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 4
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Parameter \#1 \$priority of method App\\Http\\Controllers\\Api\\BuildIssueController\:\:getPriorityLabel\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 4
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Parameter \#1 \$status of method App\\Http\\Controllers\\Api\\BuildIssueController\:\:getStatusColor\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 4
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Parameter \#1 \$status of method App\\Http\\Controllers\\Api\\BuildIssueController\:\:getStatusLabel\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 4
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 5
+			path: app/Http/Controllers/Api/BuildIssueController.php
+
+		-
+			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Cannot access offset ''id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Cannot access offset ''user'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Cannot access offset ''user_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_unique expects an array of values castable to string, array\<int\<0, max\>, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 2
+			path: app/Http/Controllers/Api/BuildMessageController.php
+
+		-
+			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Cannot access offset ''current_floor'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Cannot access offset ''floor_number'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Cannot access offset ''role'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Cannot access offset ''updated_at'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Cannot access offset ''z_index'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 4
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Api/BuildPartController.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/Api/PartPresetController.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Api/PartPresetController.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 3
+			path: app/Http/Controllers/Api/PartPresetController.php
+
+		-
+			message: '#^Cannot access offset ''role'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/Api/PermissionController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\PermissionController\:\:calculatePermissions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/Api/PermissionController.php
+
+		-
+			message: '#^Parameter \#1 \$role of method App\\Http\\Controllers\\Api\\PermissionController\:\:calculatePermissions\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/Api/PermissionController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: app/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Parameter \#1 \$email of method App\\Services\\SupabaseUserService\:\:findByEmail\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$descriptor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/BiometricAuthController.php
+
+		-
+			message: '#^Binary operation "\-" between mixed and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Http/Controllers/Auth/BiometricAuthController.php
+
+		-
+			message: '#^Cannot access offset ''biometric_data'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/Auth/BiometricAuthController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Http/Controllers/Auth/BiometricAuthController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Auth\\BiometricAuthController\:\:calculateEuclideanDistance\(\) has parameter \$query with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/Auth/BiometricAuthController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Auth\\BiometricAuthController\:\:calculateEuclideanDistance\(\) has parameter \$stored with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/Auth/BiometricAuthController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 3
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Parameter \#1 \$email of method App\\Services\\SupabaseUserService\:\:findByEmail\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Parameter \#1 \$value of static method Illuminate\\Support\\Facades\\Hash\:\:make\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Auth/RegisteredUserController.php
+
+		-
+			message: '#^Cannot access offset ''access_level'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''avatar_url'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''build_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''canvas_json'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''creator_name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''current_floor'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''description'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 5
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 10
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''priority'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''priority_color'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''priority_label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''role'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''roof_visible'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''status'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''status_color'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''status_label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''team_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''user_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 6
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''user_role'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 7
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 2
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\BuildController\:\:calculatePermissions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:get\(\) expects \(int\|string\), mixed given\.$#'
+			identifier: argument.type
+			count: 5
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Parameter \#1 \$role of method App\\Http\\Controllers\\BuildController\:\:calculatePermissions\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: app/Http/Controllers/BuildController.php
+
+		-
+			message: '#^Cannot access offset ''plan'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/CheckoutController.php
+
+		-
+			message: '#^Cannot call method findById\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/CheckoutController.php
+
+		-
+			message: '#^Cannot call method update\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/CheckoutController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\CheckoutController\:\:index\(\) has parameter \$plan with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Http/Controllers/CheckoutController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: app/Http/Controllers/CheckoutController.php
+
+		-
+			message: '#^Parameter \#1 \$string of function ucfirst expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/CheckoutController.php
+
+		-
+			message: '#^Property App\\Http\\Controllers\\CheckoutController\:\:\$supabaseUser has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: app/Http/Controllers/CheckoutController.php
+
+		-
+			message: '#^Cannot access offset ''avatar_url'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''build_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''created_at'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''plan'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''role'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot access offset ''user_id'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Support\\Collection\:\:get\(\) expects TKey of \(int\|string\), mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:get\(\) expects \(int\|string\), mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\SaveBiometricsRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\SaveBiometricsRequest\:\:\$descriptor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UpdatePasswordRequest\:\:\$auth_user_email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UpdatePasswordRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UpdatePasswordRequest\:\:\$current_password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UpdateProfileRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UploadAvatarRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot access offset ''password'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot call method getClientOriginalExtension\(\) on array\<Illuminate\\Http\\UploadedFile\>\|Illuminate\\Http\\UploadedFile\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot call method getMimeType\(\) on array\<Illuminate\\Http\\UploadedFile\>\|Illuminate\\Http\\UploadedFile\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot call method getRealPath\(\) on array\<Illuminate\\Http\\UploadedFile\>\|Illuminate\\Http\\UploadedFile\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 4
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, array\<Illuminate\\Http\\UploadedFile\>\|Illuminate\\Http\\UploadedFile\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 3
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\SupabaseUserService\:\:findById\(\) expects string, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\SupabaseUserService\:\:update\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Parameter \#1 \$value of static method Illuminate\\Support\\Facades\\Crypt\:\:encryptString\(\) expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Part \$userId \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Http/Middleware/BotSeoMiddleware.php
+
+		-
+			message: '#^Parameter \#1 \$string of function strtolower expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/BotSeoMiddleware.php
+
+		-
+			message: '#^Property App\\Http\\Middleware\\BotSeoMiddleware\:\:\$bots type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Middleware/BotSeoMiddleware.php
+
+		-
+			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Middleware/CheckBuildPermission.php
+
+		-
+			message: '#^Cannot access offset ''role'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Http/Middleware/CheckBuildPermission.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, object\|string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: app/Http/Middleware/CheckBuildPermission.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 2
+			path: app/Http/Middleware/CheckBuildPermission.php
+
+		-
+			message: '#^Parameter \#1 \$role of method App\\Http\\Middleware\\CheckBuildPermission\:\:hasPermission\(\) expects string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/CheckBuildPermission.php
+
+		-
+			message: '#^Method App\\Http\\Middleware\\RedirectIfSupabaseAuthenticated\:\:handle\(\) has parameter \$guards with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Http/Middleware/RedirectIfSupabaseAuthenticated.php
+
+		-
+			message: '#^Method App\\Http\\Middleware\\SupabaseAuthenticate\:\:handle\(\) has parameter \$guards with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Http/Middleware/SupabaseAuthenticate.php
+
+		-
+			message: '#^PHPDoc type array\|string\|null of property App\\Http\\Middleware\\TrustProxies\:\:\$proxies is not the same as PHPDoc type array\<int, string\>\|string\|null of overridden property Illuminate\\Http\\Middleware\\TrustProxies\:\:\$proxies\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Http/Middleware/TrustProxies.php
+
+		-
+			message: '#^Property App\\Http\\Middleware\\TrustProxies\:\:\$proxies type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Middleware/TrustProxies.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\SaveBiometricsRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Requests/SaveBiometricsRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UpdatePasswordRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Requests/UpdatePasswordRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UpdateProfileRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Requests/UpdateProfileRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Requests\\UploadAvatarRequest\:\:\$auth_user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Requests/UploadAvatarRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$is_admin\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/Build.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$pivot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Cannot access property \$role on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\User\>\:\:where\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User\> in PHPDoc tag @method for method App\\Models\\Build\:\:members\(\) return type does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Method App\\Models\\Build\:\:creator\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\Build\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\Build\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Method App\\Models\\Build\:\:members\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User, \$this\(App\\Models\\Build\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Method App\\Models\\Build\:\:messages\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildMessage, App\\Models\\Build\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildMessage, \$this\(App\\Models\\Build\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Method App\\Models\\Build\:\:parts\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildPart, App\\Models\\Build\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildPart, \$this\(App\\Models\\Build\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Method App\\Models\\Build\:\:shares\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildShare, App\\Models\\Build\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildShare, \$this\(App\\Models\\Build\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Method App\\Models\\Build\:\:team\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Team, App\\Models\\Build\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Team, \$this\(App\\Models\\Build\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Method App\\Models\\Build\:\:userRole\(\) should return string\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Property App\\Models\\Build\:\:\$casts type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Build.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildIssue\:\:\$position_x\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildIssue\:\:\$position_y\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildIssue\:\:\$position_z\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildIssue\:\:\$priority\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildIssue\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Cannot call method getKeyName\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Cannot call method where\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Cannot call method whereIn\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:build\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, App\\Models\\BuildIssue\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, \$this\(App\\Models\\BuildIssue\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:creator\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\BuildIssue\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\BuildIssue\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:getPositionAttribute\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:part\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BuildPart, App\\Models\\BuildIssue\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BuildPart, \$this\(App\\Models\\BuildIssue\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:scopeByPriority\(\) has parameter \$priority with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:scopeByPriority\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:scopeByStatus\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:scopeByStatus\(\) has parameter \$status with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:scopeOpen\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildIssue\:\:scopeResolved\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\r\\n \*", expected ''\<'' at offset 52 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Parameter \#1 \$string of function ucfirst expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Property App\\Models\\BuildIssue\:\:\$casts type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Variable property access on mixed\.$#'
+			identifier: property.dynamicName
+			count: 2
+			path: app/Models/BuildIssue.php
+
+		-
+			message: '#^Method App\\Models\\BuildMessage\:\:build\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, App\\Models\\BuildMessage\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, \$this\(App\\Models\\BuildMessage\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildMessage.php
+
+		-
+			message: '#^Method App\\Models\\BuildMessage\:\:user\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\BuildMessage\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\BuildMessage\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildMessage.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/BuildMessage.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildPart\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildPart\:\:\$variant\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\PartPreset\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Cannot call method first\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Cannot call method where\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Method App\\Models\\BuildPart\:\:build\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, App\\Models\\BuildPart\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, \$this\(App\\Models\\BuildPart\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Method App\\Models\\BuildPart\:\:preset\(\) should return App\\Models\\PartPreset\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Property App\\Models\\BuildPart\:\:\$casts type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/BuildPart.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BuildShare\:\:\$expires_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/BuildShare.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/BuildShare.php
+
+		-
+			message: '#^Method App\\Models\\BuildShare\:\:build\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, App\\Models\\BuildShare\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Build, \$this\(App\\Models\\BuildShare\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildShare.php
+
+		-
+			message: '#^Method App\\Models\\BuildShare\:\:user\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\BuildShare\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\BuildShare\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BuildShare.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/BuildShare.php
+
+		-
+			message: '#^Property App\\Models\\BuildShare\:\:\$casts type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/BuildShare.php
+
+		-
+			message: '#^Cannot call method where\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Models/PartPreset.php
+
+		-
+			message: '#^Method App\\Models\\PartPreset\:\:scopeActive\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/PartPreset.php
+
+		-
+			message: '#^Method App\\Models\\PartPreset\:\:scopeOfType\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/PartPreset.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n ", expected ''\<'' at offset 51 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/PartPreset.php
+
+		-
+			message: '#^Property App\\Models\\PartPreset\:\:\$casts type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/PartPreset.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User\> in PHPDoc tag @method for method App\\Models\\Team\:\:members\(\) return type does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Method App\\Models\\Team\:\:builds\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Build, App\\Models\\Team\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Build, \$this\(App\\Models\\Team\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Method App\\Models\\Team\:\:members\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\User, \$this\(App\\Models\\Team\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Method App\\Models\\Team\:\:owner\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Models\\Team\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Models\\Team\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Database\\Eloquent\\Model\)\: Unexpected token "\\n \*", expected ''\<'' at offset 51 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Cannot access property \$email on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$is_admin on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$name on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$password on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$plan on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$supabase_id on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Build\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Team\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:buildMemberships\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Build\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Build, \$this\(App\\Models\\User\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:buildShares\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildShare, App\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BuildShare, \$this\(App\\Models\\User\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:builds\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Build, App\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Build, \$this\(App\\Models\\User\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:currentTeam\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Team, App\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Team, \$this\(App\\Models\\User\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:ownedTeams\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Team, App\\Models\\User\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Team, \$this\(App\\Models\\User\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:teams\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Team\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<App\\Models\\Team, \$this\(App\\Models\\User\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc tag @extends has invalid value \(\\Illuminate\\Foundation\\Auth\\User\)\: Unexpected token "\\r\\n \*", expected ''\<'' at offset 49 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Property App\\Models\\User\:\:\$appends type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Policies/BuildPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$is_admin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Policies/BuildPolicy.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\BuildShare\>\:\:where\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: app/Policies/BuildPolicy.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\User\>\:\:where\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: app/Policies/BuildPolicy.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Query\\Builder\:\:exists\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 2
+			path: app/Policies/BuildPolicy.php
+
+		-
+			message: '#^Method App\\Policies\\BuildPolicy\:\:getPermissions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Policies/BuildPolicy.php
+
+		-
+			message: '#^Method App\\Providers\\SupabaseUser\:\:__construct\(\) has parameter \$user with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Providers/SupabaseAuthServiceProvider.php
+
+		-
+			message: '#^Method App\\Providers\\SupabaseUser\:\:__get\(\) has parameter \$key with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Providers/SupabaseAuthServiceProvider.php
+
+		-
+			message: '#^Method App\\Providers\\SupabaseUser\:\:getAuthPassword\(\) should return string but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Providers/SupabaseAuthServiceProvider.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: app/Providers/SupabaseAuthServiceProvider.php
+
+		-
+			message: '#^Property App\\Providers\\SupabaseUser\:\:\$user type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Providers/SupabaseAuthServiceProvider.php
+
+		-
+			message: '#^Return type \(string\|null\) of method App\\Providers\\SupabaseUser\:\:getRememberToken\(\) should be covariant with return type \(string\) of method Illuminate\\Contracts\\Auth\\Authenticatable\:\:getRememberToken\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: app/Providers/SupabaseAuthServiceProvider.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: app/Providers/ViewServiceProvider.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, bool\|string given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: app/Providers/ViewServiceProvider.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Cannot access offset 0 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 3
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Deprecated in PHP 8\.0\: Required parameter \$column follows optional parameter \$columns\.$#'
+			identifier: parameter.requiredAfterOptional
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Deprecated in PHP 8\.0\: Required parameter \$query follows optional parameter \$columns\.$#'
+			identifier: parameter.requiredAfterOptional
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:anonHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:delete\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:insert\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:insert\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:insert\(\) should return array\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:insertMany\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:select\(\) has parameter \$columns with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:select\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:select\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:select\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:selectLike\(\) has parameter \$columns with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:selectLike\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:selectLike\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:serviceHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:update\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:update\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseClient\:\:uploadFile\(\) has parameter \$fileContents with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Parameter \#1 \$string of function urlencode expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Property App\\Services\\SupabaseClient\:\:\$anonKey \(string\) does not accept mixed\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Property App\\Services\\SupabaseClient\:\:\$serviceKey \(string\) does not accept mixed\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Property App\\Services\\SupabaseClient\:\:\$url \(string\) does not accept mixed\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/SupabaseClient.php
+
+		-
+			message: '#^Cannot access offset 0 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:all\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:all\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:create\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:create\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:create\(\) should return array\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:findByEmail\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:findByEmail\(\) should return array\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:findById\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:findById\(\) should return array\|null but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:search\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:search\(\) should return array but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:serviceHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:update\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Method App\\Services\\SupabaseUserService\:\:verifyPassword\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Property App\\Services\\SupabaseUserService\:\:\$serviceKey \(string\) does not accept mixed\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Property App\\Services\\SupabaseUserService\:\:\$url \(string\) does not accept mixed\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Services/SupabaseUserService.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: config/filesystems.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 4
+			path: config/sanctum.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 2
+			path: config/sanctum.php
+
+		-
+			message: '#^Cannot call method comment\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: routes/console.php
+
+		-
+			message: '#^Undefined variable\: \$this$#'
+			identifier: variable.undefined
+			count: 1
+			path: routes/console.php

@@ -33,7 +33,7 @@ class BotSeoMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        $userAgent = strtolower($request->userAgent() ?? '');
+        $userAgent = strtolower((string) ($request->userAgent() ?? ''));
 
         $isBot = false;
         foreach ($this->bots as $bot) {
@@ -49,7 +49,7 @@ class BotSeoMiddleware
 
         // Serve a clean, instant OG page to the bot — no sessions, no auth, no JS
         $appUrl   = config('app.url', 'https://spatialsync.isufstcict.com');
-        $imageUrl = rtrim($appUrl, '/') . '/images/og-meta.png';
+        $imageUrl = rtrim((string) $appUrl, '/') . '/images/og-meta.png';
         $pageUrl  = $request->url();
 
         $html = <<<HTML

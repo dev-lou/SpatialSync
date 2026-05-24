@@ -6,6 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Model
+ *
+ * @property-read \App\Models\Build|null $build
+ * @property-read \App\Models\BuildPart|null $part
+ * @property-read \App\Models\User|null $creator
+ *
+ * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildIssue> build()
+ * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\BuildPart, \App\Models\BuildIssue> part()
+ * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\BuildIssue> creator()
+ */
 class BuildIssue extends Model
 {
     protected $keyType = 'string';
@@ -40,16 +51,25 @@ class BuildIssue extends Model
         });
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Build, \App\Models\BuildIssue>
+     */
     public function build(): BelongsTo
     {
         return $this->belongsTo(Build::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\BuildPart, \App\Models\BuildIssue>
+     */
     public function part(): BelongsTo
     {
         return $this->belongsTo(BuildPart::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\BuildIssue>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -148,7 +168,7 @@ class BuildIssue extends Model
      */
     public function isOpen(): bool
     {
-        return in_array($this->status, ['open', 'in_progress']);
+        return in_array($this->status, ['open', 'in_progress'], true);
     }
 
     /**

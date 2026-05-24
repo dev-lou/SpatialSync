@@ -1,0 +1,21 @@
+---
+preset: laravel
+rules:
+  declare_strict_types: true
+  no_empty_comment: true
+  array_syntax:
+    syntax: short
+  global_namespace_import:
+    import_classes: true
+    import_constants: true
+    import_functions: true
+  single_trait_insert_per_statement: true
+  no_extra_blank_lines:
+    tokens:
+      - extra
+      - throw
+      - use
+      - use_trait
+  no_useless_else: true
+  no_useless_return: true
+  simplify_if_return: true

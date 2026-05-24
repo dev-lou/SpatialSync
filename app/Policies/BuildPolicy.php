@@ -24,7 +24,7 @@ class BuildPolicy
     {
         $role = $build->userRole($user);
 
-        return in_array($role, ['admin', 'editor']);
+        return in_array($role, ['admin', 'editor'], true);
     }
 
     public function delete(User $user, Build $build): bool
@@ -34,12 +34,12 @@ class BuildPolicy
 
     public function share(User $user, Build $build): bool
     {
-        return in_array($build->userRole($user), ['admin', 'editor']);
+        return in_array($build->userRole($user), ['admin', 'editor'], true);
     }
 
     public function addViewer(User $user, Build $build): bool
     {
-        return in_array($build->userRole($user), ['admin', 'editor']);
+        return in_array($build->userRole($user), ['admin', 'editor'], true);
     }
 
     /**
@@ -50,7 +50,7 @@ class BuildPolicy
     {
         // Only admin and editor can edit geometry (place, move, delete parts)
         $role = $build->userRole($user);
-        return in_array($role, ['admin', 'editor']);
+        return in_array($role, ['admin', 'editor'], true);
     }
 
     public function deleteParts(User $user, Build $build): bool
@@ -69,14 +69,14 @@ class BuildPolicy
     {
         // All roles can add comments
         $role = $build->userRole($user);
-        return in_array($role, ['admin', 'editor', 'viewer']);
+        return in_array($role, ['admin', 'editor', 'viewer'], true);
     }
 
     public function exportBuild(User $user, Build $build): bool
     {
         // Admin and editor can export
         $role = $build->userRole($user);
-        return in_array($role, ['admin', 'editor']);
+        return in_array($role, ['admin', 'editor'], true);
     }
 
     public function changeSettings(User $user, Build $build): bool
@@ -89,7 +89,7 @@ class BuildPolicy
     {
         // All roles can view
         $role = $build->userRole($user);
-        return in_array($role, ['admin', 'editor', 'viewer']);
+        return in_array($role, ['admin', 'editor', 'viewer'], true);
     }
 
     /**

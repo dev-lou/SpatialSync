@@ -7,6 +7,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Model
+ *
+ * @property-read \App\Models\Team|null $team
+ * @property-read \App\Models\User|null $creator
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $members
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildPart> $parts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildShare> $shares
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BuildMessage> $messages
+ *
+ * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Team, \App\Models\Build> team()
+ * @method \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\Build> creator()
+ * @method \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Models\User> members()
+ * @method \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildPart, \App\Models\Build> parts()
+ * @method \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildShare, \App\Models\Build> shares()
+ * @method \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildMessage, \App\Models\Build> messages()
+ */
 class Build extends Model
 {
     protected $fillable = [
@@ -25,16 +42,25 @@ class Build extends Model
         'roof_visible' => 'boolean',
     ];
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Team, \App\Models\Build>
+     */
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\User, \App\Models\Build>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<\App\Models\User>
+     */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'build_members')
@@ -42,16 +68,25 @@ class Build extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildPart, \App\Models\Build>
+     */
     public function parts(): HasMany
     {
         return $this->hasMany(BuildPart::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildShare, \App\Models\Build>
+     */
     public function shares(): HasMany
     {
         return $this->hasMany(BuildShare::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\BuildMessage, \App\Models\Build>
+     */
     public function messages(): HasMany
     {
         return $this->hasMany(BuildMessage::class);
@@ -70,7 +105,7 @@ class Build extends Model
 
     public function canEdit(User $user): bool
     {
-        return in_array($this->userRole($user), ['admin', 'editor']);
+        return in_array($this->userRole($user), ['admin', 'editor'], true);
     }
 
     public function isAdmin(User $user): bool

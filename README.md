@@ -28,6 +28,26 @@
   <img src="https://img.shields.io/badge/Vite-5.x-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 5">
   <img src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge" alt="MIT License">
 
+  <br/>
+
+  <!-- CI/CD DevOps Badges 2026 -->
+  <img src="https://img.shields.io/github/actions/workflow/status/dev-lou/SpatialSync/ci.yml?style=for-the-badge&logo=github&label=CI" alt="CI">
+  <img src="https://img.shields.io/github/actions/workflow/status/dev-lou/SpatialSync/pr-checks.yml?style=for-the-badge&logo=github&label=PR%20Checks" alt="PR Checks">
+  <img src="https://img.shields.io/github/actions/workflow/status/dev-lou/SpatialSync/security.yml?style=for-the-badge&logo=github&label=Security" alt="Security">
+  <img src="https://img.shields.io/github/actions/workflow/status/dev-lou/SpatialSync/supply-chain.yml?style=for-the-badge&logo=github&label=Supply%20Chain" alt="Supply Chain">
+  <img src="https://img.shields.io/github/actions/workflow/status/dev-lou/SpatialSync/release.yml?style=for-the-badge&logo=github&label=Release" alt="Release">
+  <br/>
+  <img src="https://img.shields.io/badge/Dependabot-active-025E8C?style=for-the-badge&logo=dependabot" alt="Dependabot">
+  <img src="https://img.shields.io/badge/Commits-Conventional-0a7b5c?style=for-the-badge&logo=conventionalcommits" alt="Conventional Commits">
+  <img src="https://img.shields.io/badge/Release-Semantic-e10079?style=for-the-badge&logo=semanticrelease" alt="Semantic Release">
+  <img src="https://img.shields.io/badge/Linter-ESLint-4B32C3?style=for-the-badge&logo=eslint" alt="ESLint">
+  <img src="https://img.shields.io/badge/Code%20Style-Prettier-1a2b34?style=for-the-badge&logo=prettier" alt="Prettier">
+  <img src="https://img.shields.io/badge/Code%20Style-Pint-FF2D20?style=for-the-badge&logo=laravel" alt="Laravel Pint">
+  <img src="https://img.shields.io/badge/PHPStan-level%20max-brightgreen?style=for-the-badge&logo=php" alt="PHPStan">
+  <img src="https://img.shields.io/badge/Pre--commit-Husky-fedcba?style=for-the-badge&logo=husky" alt="Husky">
+  <img src="https://img.shields.io/badge/CodeQL-Passing-005C9A?style=for-the-badge&logo=github" alt="CodeQL">
+  <img src="https://img.shields.io/badge/SBOM-generated-22C55E?style=for-the-badge" alt="SBOM">
+
 </div>
 
 ---
@@ -234,12 +254,21 @@ SpatialSync is built on the **OpenCode UI/UX 2026** design system.
 | **Lucide Icons** | Latest | Icon library |
 | **SweetAlert2** | 11.x | Premium modal dialogs |
 
-### Infrastructure
+### Infrastructure & DevOps
 | Technology | Purpose |
 |---|---|
 | **Render** | Production cloud hosting |
 | **Docker** | Containerised deployment (`Dockerfile` included) |
-| **GitHub Actions** | CI/CD pipeline |
+| **GitHub Actions** | CI/CD pipeline & release automation |
+| **Dependabot** | Automated dependency security updates |
+| **Husky + lint-staged** | Pre-commit hooks for code quality gates |
+| **Commitlint** | Conventional Commits enforcement |
+| **Semantic Release** | Automated versioning, changelog & GitHub releases |
+| **PHPStan (max level)** | Static analysis for PHP |
+| **Laravel Pint** | Opinionated PHP code style |
+| **ESLint + Prettier** | JavaScript linting & formatting |
+| **CodeQL** | GitHub Advanced Security SAST scanning |
+| **CycloneDX SBOM** | Software Bill of Materials generation |
 
 ---
 

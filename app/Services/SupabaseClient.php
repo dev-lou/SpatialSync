@@ -54,15 +54,16 @@ class SupabaseClient
         $url = "{$this->url}/rest/v1/{$table}?select=".implode(',', $columns);
 
         foreach ($filters as $key => $value) {
+            $keyStr = (string) $key;
             if (is_array($value)) {
                 if (isset($value['op'])) {
-                    $url .= '&'.urlencode($key).'='.$value['op'].'.'.urlencode((string)$value['value']);
+                    $url .= '&' . urlencode($keyStr) . '=' . $value['op'] . '.' . urlencode((string) $value['value']);
                 } else {
-                    $vals = implode(',', array_map('urlencode', $value));
-                    $url .= '&'.urlencode($key).'=in.('.$vals.')';
+                    $vals = implode(',', array_map(function ($v) { return urlencode((string) $v); }, $value));
+                    $url .= '&' . urlencode($keyStr) . '=in.(' . $vals . ')';
                 }
             } else {
-                $url .= '&'.urlencode($key).'=eq.'.urlencode((string)$value);
+                $url .= '&' . urlencode($keyStr) . '=eq.' . urlencode((string) $value);
             }
         }
 

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\AuthenticatedRequest;
 use App\Http\Controllers\Controller;
 use App\Services\SupabaseClient;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class BuildIssueController extends Controller
@@ -19,13 +20,13 @@ class BuildIssueController extends Controller
     /**
      * Check if user has access to build
      */
-    protected function checkBuildAccess(Request $request, $buildId): bool
+    protected function checkBuildAccess(AuthenticatedRequest $request, string $buildId): bool
     {
-        $userId = $request->session()->get('supabase_user_id');
+        $userId = $request->auth_user_id;
 
         // Get build to check ownership
         $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             return false;
         }
 
@@ -40,20 +41,20 @@ class BuildIssueController extends Controller
             'user_id' => $userId
         ]);
 
-        return !empty($members);
+        return $members !== [];
     }
 
     /**
      * List all issues for a build
      */
-    public function index(Request $request, $buildId)
+    public function index(AuthenticatedRequest $request, string $buildId)
     {
         if (!$this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
-        $status = $request->get('status');
-        $priority = $request->get('priority');
+        $status = (string) $request->get('status', '');
+        $priority = (string) $request->get('priority', '');
 
         $filters = ['build_id' => $buildId];
         if ($status) {
@@ -78,9 +79,9 @@ class BuildIssueController extends Controller
         });
 
         // Get user names for each issue
-        $userIds = array_values(array_unique(array_filter(array_column($issues, 'created_by'))));
+        $userIds = array_values(array_unique(array_filter(array_column($issues, 'created_by'), fn($v) => $v !== null && $v !== '')));
         $users = [];
-        if (!empty($userIds)) {
+        if ($userIds !== []) {
             $userData = $this->supabase->select('users', ['id', 'name'], ['id' => $userIds]);
             $users = collect($userData)->keyBy('id')->toArray();
         }
@@ -101,13 +102,13 @@ class BuildIssueController extends Controller
     /**
      * Create a new issue
      */
-    public function store(Request $request, $buildId)
+    public function store(AuthenticatedRequest $request, string $buildId)
     {
         try {
             if (!$this->checkBuildAccess($request, $buildId)) {
-                \Log::warning('Issue creation denied: access check failed', [
+                Log::warning('Issue creation denied: access check failed', [
                     'build_id' => $buildId,
-                    'user_id' => $request->session()->get('supabase_user_id'),
+                    'user_id' => $request->auth_user_id,
                 ]);
                 return response()->json(['error' => 'Access denied'], 403);
             }
@@ -122,7 +123,7 @@ class BuildIssueController extends Controller
                 'position_z' => 'nullable|numeric',
             ]);
 
-            $userId = $request->session()->get('supabase_user_id');
+            $userId = $request->auth_user_id;
 
             $data = [
                 'id' => Str::uuid()->toString(),
@@ -141,7 +142,7 @@ class BuildIssueController extends Controller
             $issue = $this->supabase->insert('build_issues', $data);
 
             if (!$issue) {
-                \Log::error('Issue creation failed: Supabase insert returned null', [
+                Log::error('Issue creation failed: Supabase insert returned null', [
                     'build_id' => $buildId,
                     'user_id' => $userId,
                     'data' => $data,
@@ -157,7 +158,7 @@ class BuildIssueController extends Controller
             $issue['status_label'] = $this->getStatusLabel($issue['status']);
             $issue['priority_label'] = $this->getPriorityLabel($issue['priority']);
 
-            \Log::info('Issue created successfully', [
+            Log::info('Issue created successfully', [
                 'issue_id' => $issue['id'],
                 'build_id' => $buildId,
                 'user_id' => $userId,
@@ -165,7 +166,7 @@ class BuildIssueController extends Controller
 
             return response()->json($issue, 201);
         } catch (\Exception $e) {
-            \Log::error('Issue creation exception', [
+            Log::error('Issue creation exception', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'build_id' => $buildId,
@@ -177,7 +178,7 @@ class BuildIssueController extends Controller
     /**
      * Get single issue
      */
-    public function show(Request $request, $buildId, $issueId)
+    public function show(AuthenticatedRequest $request, string $buildId, string $issueId)
     {
         if (!$this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
@@ -188,14 +189,14 @@ class BuildIssueController extends Controller
             'build_id' => $buildId
         ]);
 
-        if (empty($issues)) {
+        if ($issues === []) {
             return response()->json(['error' => 'Issue not found'], 404);
         }
 
         $issue = $issues[0];
 
         // Get creator name
-        if ($issue['created_by']) {
+        if (($issue['created_by'] ?? null) !== null) {
             $users = $this->supabase->select('users', ['name'], ['id' => $issue['created_by']]);
             $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
         }
@@ -211,7 +212,7 @@ class BuildIssueController extends Controller
     /**
      * Update issue
      */
-    public function update(Request $request, $buildId, $issueId)
+    public function update(AuthenticatedRequest $request, string $buildId, string $issueId)
     {
         if (!$this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
@@ -230,7 +231,7 @@ class BuildIssueController extends Controller
             'build_id' => $buildId
         ]);
 
-        if (empty($issues)) {
+        if ($issues === []) {
             return response()->json(['error' => 'Issue not found'], 404);
         }
 
@@ -248,7 +249,7 @@ class BuildIssueController extends Controller
         $issue = $issues[0];
 
         // Get creator name
-        if ($issue['created_by']) {
+        if (($issue['created_by'] ?? null) !== null) {
             $users = $this->supabase->select('users', ['name'], ['id' => $issue['created_by']]);
             $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
         }
@@ -264,7 +265,7 @@ class BuildIssueController extends Controller
     /**
      * Delete issue
      */
-    public function destroy(Request $request, $buildId, $issueId)
+    public function destroy(AuthenticatedRequest $request, string $buildId, string $issueId)
     {
         if (!$this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
@@ -276,7 +277,7 @@ class BuildIssueController extends Controller
             'build_id' => $buildId
         ]);
 
-        if (empty($issues)) {
+        if ($issues === []) {
             return response()->json(['error' => 'Issue not found'], 404);
         }
 
@@ -295,7 +296,7 @@ class BuildIssueController extends Controller
     /**
      * Update issue status only
      */
-    public function updateStatus(Request $request, $buildId, $issueId)
+    public function updateStatus(AuthenticatedRequest $request, string $buildId, string $issueId)
     {
         if (!$this->checkBuildAccess($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);

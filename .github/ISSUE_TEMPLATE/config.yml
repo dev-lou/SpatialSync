@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discord / Community
+    url: https://spatialsync.onrender.com
+    about: Ask questions and discuss features with the community
+  - name: 📖 Documentation
+    url: https://github.com/dev-lou/SpatialSync#readme
+    about: Check the README for guides and documentation
+  - name: 🔒 Security Concern
+    url: https://github.com/dev-lou/SpatialSync/security/policy
+    about: Please report security vulnerabilities privately

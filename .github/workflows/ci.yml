@@ -1,0 +1,134 @@
+# =============================================================================
+# SpatialSync — Main CI Pipeline
+# Runs on every push to main and every PR
+# 2026 Industry Standard: Shift-left quality gates
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.3'
+  NODE_VERSION: '20'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. PHP Quality Gate — Laravel Pint + PHPStan
+  # ---------------------------------------------------------------------------
+  php-quality:
+    name: 🐘 PHP Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, bcmath, gd, zip, pdo_pgsql, pgsql
+          tools: composer:v2
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run Laravel Pint (Code Style)
+        run: vendor/bin/pint --test --ansi
+
+      - name: Run PHPStan (Static Analysis)
+        run: vendor/bin/phpstan analyse --no-progress --error-format=github
+
+  # ---------------------------------------------------------------------------
+  # 2. JavaScript Quality Gate — ESLint + Prettier
+  # ---------------------------------------------------------------------------
+  js-quality:
+    name: 📦 JS Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint JavaScript
+        run: npx eslint resources/js/ --max-warnings=0
+
+      - name: Check formatting (Prettier)
+        run: npx prettier --check "resources/**/*.{js,css}"
+
+  # ---------------------------------------------------------------------------
+  # 3. Build Gate — Vite Production Build
+  # ---------------------------------------------------------------------------
+  build:
+    name: 🏗️ Production Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [php-quality, js-quality]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, bcmath, gd, zip, pdo_pgsql, pgsql
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Cache production build
+        uses: actions/cache@v4
+        with:
+          path: public/build
+          key: build-${{ github.sha }}
+          restore-keys: |
+            build-

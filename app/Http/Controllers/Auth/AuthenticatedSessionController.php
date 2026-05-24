@@ -23,14 +23,14 @@ class AuthenticatedSessionController extends Controller
 
         $supabaseUser = app(SupabaseUserService::class)->findByEmail($credentials['email']);
 
-        if (! $supabaseUser || ! isset($supabaseUser['password'])) {
+        if ($supabaseUser === null || ! isset($supabaseUser['password'])) {
             return back()->withErrors([
                 'email' => 'The provided credentials do not match our records.',
             ]);
         }
 
         // Verify password using bcrypt
-        if (! Hash::check($credentials['password'], $supabaseUser['password'])) {
+        if (! Hash::check((string) $credentials['password'], (string) $supabaseUser['password'])) {
             return back()->withErrors([
                 'email' => 'The provided credentials do not match our records.',
             ]);

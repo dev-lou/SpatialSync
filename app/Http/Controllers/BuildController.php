@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\AuthenticatedRequest;
 use App\Services\SupabaseClient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+
 
 class BuildController extends Controller
 {
@@ -15,17 +18,17 @@ class BuildController extends Controller
         $this->supabase = app(SupabaseClient::class);
     }
 
-    protected function getUserId(Request $request): string
+    protected function getUserId(AuthenticatedRequest $request): string
     {
-        return $request->session()->get('supabase_user_id');
+        return (string) ($request->auth_user_id ?? '');
     }
 
-    protected function getUserName(Request $request): string
+    protected function getUserName(AuthenticatedRequest $request): string
     {
-        return $request->session()->get('supabase_user_name', 'User');
+        return (string) ($request->auth_user_name ?? 'User');
     }
 
-    public function index(Request $request)
+    public function index(AuthenticatedRequest $request)
     {
         $userId = $this->getUserId($request);
 
@@ -42,7 +45,7 @@ class BuildController extends Controller
         
         $invitedBuilds = array_filter($allBuilds, function ($build) use ($sharedBuildIds, $userId) {
             // Avoid duplicates if owner is also in members table
-            return in_array($build['id'], $sharedBuildIds) && $build['created_by'] !== $userId;
+            return in_array($build['id'], $sharedBuildIds, true) && $build['created_by'] !== $userId;
         });
 
         // 3. Combine and flag roles
@@ -114,7 +117,7 @@ class BuildController extends Controller
         return view('builds.create', compact('presets'));
     }
 
-    public function store(Request $request)
+    public function store(AuthenticatedRequest $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -138,27 +141,27 @@ class BuildController extends Controller
             $build = $this->supabase->insert('builds', $buildData);
 
             if (! $build) {
-                \Log::error('Supabase insert failed for build: '.json_encode($buildData));
+                Log::error('Supabase insert failed for build: '.json_encode($buildData));
 
                 return back()->with('error', 'Failed to create build. Please try again.');
             }
 
             return redirect()->route('builds.show', ['build' => $build['id']]);
         } catch (\Exception $e) {
-            \Log::error('Exception in BuildController@store: '.$e->getMessage());
+            Log::error('Exception in BuildController@store: '.$e->getMessage());
 
             return back()->with('error', 'An error occurred while creating the build.');
         }
     }
 
-    public function show(Request $request, $buildId)
+    public function show(AuthenticatedRequest $request, string $buildId)
     {
         $userId = $this->getUserId($request);
         $userName = $this->getUserName($request);
 
         // 1. Fetch the Build
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             abort(404, 'Build not found');
         }
         $build = (object) $builds[0];
@@ -174,7 +177,7 @@ class BuildController extends Controller
                 'user_id' => $userId
             ]);
 
-            if (empty($memberships)) {
+            if ($memberships === []) {
                 // Strict Privacy: Only owner and invitees can enter
                 abort(403, 'You do not have permission to access this build.');
             }
@@ -194,7 +197,7 @@ class BuildController extends Controller
         $ownerUser = $userMap->get($build->created_by);
         $membersData[] = [
             'id' => $build->created_by,
-            'name' => ($ownerUser['name'] ?? 'Owner') . ($userId === $build->created_by ? ' (You)' : ''),
+            'name' => ((string) ($ownerUser['name'] ?? 'Owner')) . ($userId === $build->created_by ? ' (You)' : ''),
             'role' => 'owner',
             'isOnline' => true, // Default for now
             'avatar_url' => $ownerUser['avatar_url'] ?? null,
@@ -209,7 +212,7 @@ class BuildController extends Controller
             $u = $userMap->get($m['user_id']);
             $membersData[] = [
                 'id' => $m['user_id'],
-                'name' => ($u['name'] ?? 'Guest') . ($userId === $m['user_id'] ? ' (You)' : ''),
+                'name' => ((string) ($u['name'] ?? 'Guest')) . ($userId === $m['user_id'] ? ' (You)' : ''),
                 'role' => $m['role'],
                 'isOnline' => false,
                 'avatar_url' => $u['avatar_url'] ?? null,
@@ -224,7 +227,7 @@ class BuildController extends Controller
 
         // 5. Fetch Issues for build
         $rawIssues = $this->supabase->select('build_issues', ['*'], ['build_id' => $buildId]);
-        \Log::info('Raw issues from Supabase: ' . json_encode($rawIssues));
+        Log::info('Raw issues from Supabase: ' . json_encode($rawIssues));
         $issues = collect($rawIssues);
         // Get user names for issues
         $userMap = collect($allUsers)->keyBy('id');
@@ -284,7 +287,7 @@ class BuildController extends Controller
         ));
     }
 
-    public function update(Request $request, $buildId)
+    public function update(AuthenticatedRequest $request, string $buildId)
     {
         $validated = $request->validate([
             'current_floor' => 'integer|min:1|max:10',
@@ -312,11 +315,11 @@ class BuildController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function duplicate(Request $request, $buildId)
+    public function duplicate(AuthenticatedRequest $request, string $buildId)
     {
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
 
-        if (empty($builds)) {
+        if ($builds === []) {
             abort(404, 'Build not found');
         }
 
@@ -326,7 +329,7 @@ class BuildController extends Controller
         $copyData = [
             'id' => Str::uuid()->toString(),
             'team_id' => $original['team_id'] ?? null,
-            'name' => ($original['name'] ?? 'Build').' (Copy)',
+            'name' => ((string) ($original['name'] ?? 'Build')) . ' (Copy)',
             'description' => $original['description'] ?? null,
             'created_by' => $userId,
             'current_floor' => $original['current_floor'] ?? 1,
@@ -334,12 +337,10 @@ class BuildController extends Controller
             'canvas_json' => $original['canvas_json'] ?? json_encode(['version' => '1.0', 'parts' => []]),
         ];
 
-        $this->supabase->insert('builds', $copyData);
-
-        return redirect()->route('builds.show', ['build' => $copyData['id']]);
+        $this->supabase->insert('builds', $copyData);            return redirect()->route('builds.show', ['build' => (string) $copyData['id']]);
     }
 
-    public function destroy(Request $request, $buildId)
+    public function destroy(AuthenticatedRequest $request, string $buildId)
     {
         try {
             // Cascade delete: Clean up dependent tables first
@@ -354,7 +355,7 @@ class BuildController extends Controller
             $deleted = $this->supabase->delete('builds', ['id' => $buildId]);
 
             if (! $deleted) {
-                \Log::error('Failed to delete build from Supabase after cleanup: build_id='.$buildId);
+                Log::error('Failed to delete build from Supabase after cleanup: build_id=' . (string) $buildId);
 
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json(['error' => 'Failed to delete build.'], 500);
@@ -362,14 +363,14 @@ class BuildController extends Controller
                 return back()->with('error', 'Failed to delete build. Please try again.');
             }
 
-            \Log::info('Build and related data deleted successfully: build_id='.$buildId);
+            Log::info('Build and related data deleted successfully: build_id=' . (string) $buildId);
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Build deleted successfully.']);
             }
             return redirect()->route('dashboard')->with('success', 'Build deleted successfully.');
         } catch (\Exception $e) {
-            \Log::error('Exception in BuildController@destroy: '.$e->getMessage());
+            Log::error('Exception in BuildController@destroy: '.$e->getMessage());
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['error' => 'An error occurred while deleting the build.'], 500);
@@ -378,7 +379,7 @@ class BuildController extends Controller
         }
     }
 
-    public function addMember(Request $request, $buildId)
+    public function addMember(AuthenticatedRequest $request, string $buildId)
     {
         $validated = $request->validate([
             'email' => 'required|email',
@@ -387,7 +388,7 @@ class BuildController extends Controller
 
         $users = $this->supabase->select('users', ['*'], ['email' => $validated['email']]);
 
-        if (empty($users)) {
+        if ($users === []) {
             return response()->json(['error' => 'User not found.'], 404);
         }
 
@@ -403,7 +404,7 @@ class BuildController extends Controller
         $this->supabase->insert('build_members', $memberData);
 
         return response()->json([
-            'message' => "{$user['name']} added as {$validated['role']}.",
+            'message' => (string) $user['name'] . ' added as ' . (string) $validated['role'] . '.',
             'user' => [
                 'id' => $user['id'],
                 'name' => $user['name'],
@@ -412,7 +413,7 @@ class BuildController extends Controller
         ]);
     }
 
-    public function updateMemberRole(Request $request, $buildId, $userId)
+    public function updateMemberRole(Request $request, string $buildId, string $userId)
     {
         $validated = $request->validate([
             'role' => 'required|in:viewer,editor',
@@ -432,7 +433,7 @@ class BuildController extends Controller
 
     public function searchUsers(Request $request)
     {
-        $query = $request->get('q');
+        $query = (string) $request->get('q', '');
         if (strlen($query) < 2) {
             return response()->json([]);
         }
@@ -446,7 +447,7 @@ class BuildController extends Controller
         return response()->json(array_slice($users, 0, 5));
     }
 
-    public function createShare($buildId)
+    public function createShare(string $buildId)
     {
         $token = Str::random(32);
 
@@ -464,7 +465,7 @@ class BuildController extends Controller
         ]);
     }
 
-    public function removeMember($buildId, $userId)
+    public function removeMember(string $buildId, string $userId)
     {
         $this->supabase->delete('build_members', [
             'build_id' => $buildId,
@@ -474,11 +475,11 @@ class BuildController extends Controller
         return response()->json(['success' => true, 'message' => 'Member removed.']);
     }
 
-    public function export($buildId, string $format)
+    public function export(string $buildId, string $format)
     {
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
 
-        if (empty($builds)) {
+        if ($builds === []) {
             abort(404, 'Build not found');
         }
 
@@ -497,13 +498,13 @@ class BuildController extends Controller
             ];
 
             return response()->json($exportData)
-                ->header('Content-Disposition', 'attachment; filename='.$build['name'].'.json');
+                ->header('Content-Disposition', 'attachment; filename=' . (string) $build['name'] . '.json');
         }
 
         abort(404, 'Export format not supported');
     }
 
-    public function shared(Request $request, $buildId, string $token)
+    public function shared(AuthenticatedRequest $request, string $buildId, string $token)
     {
         $userId = $this->getUserId($request);
 
@@ -512,14 +513,14 @@ class BuildController extends Controller
             'share_token' => $token,
         ]);
 
-        if (empty($shares)) {
+        if ($shares === []) {
             abort(403, 'Invalid or expired share link.');
         }
 
         $share = $shares[0];
 
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
-        if (empty($builds)) {
+        if ($builds === []) {
             abort(404, 'Build not found');
         }
         $build = (object) $builds[0];
@@ -535,7 +536,7 @@ class BuildController extends Controller
             'user_id' => $userId
         ]);
 
-        if (empty($memberships)) {
+        if ($memberships === []) {
             // Determine role from share link (default to viewer if not specified)
             $role = isset($share['access_level']) && $share['access_level'] === 'edit' ? 'editor' : 'viewer';
 

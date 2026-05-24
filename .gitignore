@@ -18,3 +18,22 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# =============================================================================
+# CI/CD & DevOps
+# =============================================================================
+
+# PHPStan
+/phpstan.neon
+
+# ESLint cache
+.eslintcache
+
+# Prettier cache
+.prettiercache
+
+# Husky internal (gitignore already in .husky/.gitignore)
+
+# Build artifacts (CI generated)
+*.sbom.json
+coverage/
