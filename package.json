@@ -40,7 +40,7 @@
     "alpinejs": "^3.x",
     "axios": "^1.6.4",
     "fabric": "^5.3.0",
-    "three": "^0.183.2"
+    "three": "^0.184.0"
   },
   "config": {
     "commitizen": {
