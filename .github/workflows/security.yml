@@ -72,7 +72,9 @@ jobs:
           coverage: none
 
       - name: Create .env for CI
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress

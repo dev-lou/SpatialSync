@@ -132,7 +132,9 @@ jobs:
           coverage: none
 
       - name: Create .env for CI
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
 
       - name: Fresh PHP install from lockfile
         run: |
