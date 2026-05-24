@@ -63,27 +63,7 @@ jobs:
         run: php -r "file_put_contents('.env', preg_replace('/^APP_KEY=.*/m', 'APP_KEY=base64:' . base64_encode(random_bytes(32)), file_get_contents('.env')));"
 
       - name: Run Laravel Pint (Code Style)
-        id: pint
-        continue-on-error: true
-        run: |
-          vendor/bin/pint --test --ansi > pint-output.txt 2>&1
-          exit_code=$?
-          cat pint-output.txt
-          echo "exit_code=${exit_code}" >> $GITHUB_OUTPUT
-
-      - name: Upload Pint output (debug artifact)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pint-output-${{ github.run_id }}
-          path: pint-output.txt
-          retention-days: 1
-
-      - name: Check Pint result
-        if: steps.pint.outputs.exit_code != '0'
-        run: |
-          echo "::error::Pint found code style violations (exit code ${{ steps.pint.outputs.exit_code }}). Download the 'pint-output' artifact from this run to see details."
-          exit 1
+        run: vendor/bin/pint --test --ansi
 
       - name: Run PHPStan (Static Analysis)
         run: vendor/bin/phpstan analyse --no-progress --error-format=github
