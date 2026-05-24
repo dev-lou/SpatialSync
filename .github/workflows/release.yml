@@ -69,9 +69,10 @@ jobs:
 
       - name: Run semantic-release
         run: |
-          semantic-release --debug
+          semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEBUG: semantic-release:*
 
       - name: Generate SBOM (Software Bill of Materials)
         if: success()
