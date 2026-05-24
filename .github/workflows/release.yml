@@ -10,6 +10,11 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
 concurrency:
   group: ${{ github.workflow }}-release
   cancel-in-progress: false # Never cancel releases
