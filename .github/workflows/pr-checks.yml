@@ -39,7 +39,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Validate PR title matches Conventional Commits
-        uses: amannn/action-semantic-pull-request@v5
+        uses: amannn/action-semantic-pull-request@v6
         id: lint_pr_title
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
