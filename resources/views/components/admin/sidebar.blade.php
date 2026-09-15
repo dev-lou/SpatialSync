@@ -10,7 +10,6 @@
             ['r' => 'admin.presets',  'icon' => 'package',       'label' => 'Asset Library'],
         ],
         'Security' => [
-            ['r' => 'admin.security', 'icon' => 'shield-check',  'label' => 'Biometric Auth'],
         ],
     ];
 @endphp

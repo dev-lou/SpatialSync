@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Services\SupabaseClient;
 use App\Services\SupabaseUserService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 
 class AdminController extends Controller
 {
@@ -93,32 +92,5 @@ class AdminController extends Controller
         }
 
         return back()->with('error', 'Failed to delete build.');
-    }
-
-    public function security()
-    {
-        $userId = (string) session('supabase_user_id', '');
-        $userData = $this->userService->findById($userId);
-        $user = (object) $userData;
-
-        return view('admin.security', compact('user'));
-    }
-
-    public function saveBiometrics(Request $request)
-    {
-        $request->validate([
-            'descriptor' => 'required|array',
-        ]);
-
-        $userId = (string) session('supabase_user_id', '');
-
-        // Save to Supabase using biometric_data column (AES-256 encrypted at rest)
-        $success = $this->supabase->update('users', ['biometric_data' => Crypt::encryptString(json_encode($request->descriptor))], ['id' => $userId]);
-
-        if ($success !== 0) {
-            return response()->json(['message' => 'Face fingerprint saved successfully.']);
-        }
-
-        return response()->json(['message' => 'Failed to save biometric data.'], 500);
     }
 }

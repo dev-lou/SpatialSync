@@ -82,7 +82,6 @@
                 ['icon'=>'users',             'label'=>'Users & Tiers',    'route'=>'admin.users'],
                 ['icon'=>'layers',            'label'=>'All Builds',       'route'=>'admin.builds'],
                 ['icon'=>'package',           'label'=>'Asset Library',    'route'=>'admin.presets'],
-                ['icon'=>'shield-check',      'label'=>'Biometric Auth',   'route'=>'admin.security'],
             ] as $item)
             <a href="{{ route($item['route']) }}" @click="mobNavOpen=false" style="display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:10px;text-decoration:none;color:var(--c-text);font-size:14px;font-weight:500;margin-bottom:4px;transition:background .15s;" @mouseenter="$el.style.background='var(--c-bg)'" @mouseleave="$el.style.background=''">
                 <i data-lucide="{{ $item['icon'] }}" style="width:16px;height:16px;color:var(--c-muted);flex-shrink:0;"></i>

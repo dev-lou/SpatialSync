@@ -28,7 +28,7 @@ assignees: ''
 
 - [ ] 3D Build Editor
 - [ ] Collaboration / Realtime
-- [ ] Authentication / Biometrics
+- [ ] Authentication
 - [ ] Admin Panel
 - [ ] Dashboard / UI
 - [ ] Performance

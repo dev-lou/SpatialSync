@@ -3,13 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\AuthenticatedRequest;
-use App\Http\Requests\SaveBiometricsRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadAvatarRequest;
 use App\Services\SupabaseClient;
 use App\Services\SupabaseUserService;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
@@ -20,8 +18,6 @@ class ProfileController extends Controller
     public function show(AuthenticatedRequest $request, SupabaseUserService $supabaseUserService)
     {
         $userId = $request->auth_user_id;
-        $userRecord = $supabaseUserService->findById($userId);
-        $hasBiometrics = ($userRecord['biometric_data'] ?? null) !== null;
 
         // Data is already merged into the request by SupabaseAuthenticate middleware
         return view('profile.show', [
@@ -32,7 +28,6 @@ class ProfileController extends Controller
                 'plan' => $request->auth_user_plan,
                 'is_admin' => $request->auth_user_admin,
                 'avatar_url' => $request->auth_user_avatar,
-                'has_biometrics' => $hasBiometrics,
             ],
         ]);
     }
@@ -113,52 +108,5 @@ class ProfileController extends Controller
         ]);
 
         return back()->with('success', 'Password updated successfully.');
-    }
-
-    /**
-     * Save biometric descriptor for Face ID login
-     */
-    public function saveBiometrics(SaveBiometricsRequest $request, SupabaseClient $supabaseClient)
-    {
-        $userId = $request->auth_user_id;
-
-        if ($userId === null) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        // Save to Supabase using biometric_data column (AES-256 encrypted at rest)
-        $success = $supabaseClient->update('users', ['biometric_data' => Crypt::encryptString(json_encode($request->descriptor))], ['id' => $userId]);
-
-        if ($success !== 0) {
-            // Update session so UI knows it's setup
-            $request->session()->put('supabase_user_has_biometrics', true);
-
-            return response()->json(['message' => 'Face fingerprint saved successfully.']);
-        }
-
-        return response()->json(['message' => 'Failed to save biometric data.'], 500);
-    }
-
-    /**
-     * Delete biometric descriptor
-     */
-    public function deleteBiometrics(AuthenticatedRequest $request, SupabaseClient $supabaseClient)
-    {
-        $userId = $request->auth_user_id;
-
-        if ($userId === null) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        // Set biometric_data to null in Supabase
-        $success = $supabaseClient->update('users', ['biometric_data' => null], ['id' => $userId]);
-
-        if ($success !== 0) {
-            $request->session()->forget('supabase_user_has_biometrics');
-
-            return response()->json(['message' => 'Face fingerprint removed successfully.']);
-        }
-
-        return response()->json(['message' => 'Failed to remove biometric data.'], 500);
     }
 }
