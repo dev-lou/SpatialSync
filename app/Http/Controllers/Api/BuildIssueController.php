@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\AuthenticatedRequest;
+use App\Http\Concerns\ResolvesCollaboratorAccess;
 use App\Http\Controllers\Controller;
 use App\Services\SupabaseClient;
+use App\Support\GuestReview;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class BuildIssueController extends Controller
 {
+    use ResolvesCollaboratorAccess;
+
     protected SupabaseClient $supabase;
 
     public function __construct()
@@ -18,30 +22,12 @@ class BuildIssueController extends Controller
     }
 
     /**
-     * Check if user has access to build
+     * Check if the caller may read and create issues on this build. Members of
+     * any role qualify, and so does a guest holding a valid share link.
      */
     protected function checkBuildAccess(AuthenticatedRequest $request, string $buildId): bool
     {
-        $userId = $request->auth_user_id;
-
-        // Get build to check ownership
-        $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
-        if ($builds === []) {
-            return false;
-        }
-
-        // Owner has access
-        if ($builds[0]['created_by'] === $userId) {
-            return true;
-        }
-
-        // Check if user is a member
-        $members = $this->supabase->select('build_members', ['role'], [
-            'build_id' => $buildId,
-            'user_id' => $userId,
-        ]);
-
-        return $members !== [];
+        return $this->collaboratorCanComment($request, $buildId);
     }
 
     /**
@@ -88,8 +74,13 @@ class BuildIssueController extends Controller
         }
 
         // Format issues with metadata
-        $formattedIssues = array_map(function ($issue) use ($users) {
-            $issue['creator_name'] = $users[$issue['created_by']]['name'] ?? 'Unknown';
+        $formattedIssues = array_map(function (mixed $issue) use ($users): array {
+            $issue = (array) $issue;
+            $description = is_string($issue['description'] ?? null) ? $issue['description'] : null;
+            $issue['creator_name'] = $users[$issue['created_by']]['name']
+                ?? GuestReview::issueReviewerName($description)
+                ?? 'Unknown';
+            $issue['description'] = GuestReview::issueBody($description);
             $issue['status_color'] = $this->getStatusColor($issue['status']);
             $issue['priority_color'] = $this->getPriorityColor($issue['priority']);
             $issue['status_label'] = $this->getStatusLabel($issue['status']);
@@ -127,13 +118,21 @@ class BuildIssueController extends Controller
             ]);
 
             $userId = $request->auth_user_id;
+            $isGuest = $this->isGuestReviewer($request);
+            $guestName = $isGuest ? $this->guestNameOrFallback($request) : null;
+
+            $description = isset($validated['description']) && is_string($validated['description'])
+                ? $validated['description']
+                : null;
 
             $data = [
                 'id' => Str::uuid()->toString(),
                 'build_id' => $buildId,
                 'created_by' => $userId,
                 'title' => $validated['title'],
-                'description' => $validated['description'] ?? null,
+                'description' => $guestName !== null
+                    ? GuestReview::issueDescription($guestName, $description)
+                    : $description,
                 'priority' => $validated['priority'],
                 'status' => 'open',
                 'part_id' => $validated['part_id'] ?? null,
@@ -142,9 +141,10 @@ class BuildIssueController extends Controller
                 'position_z' => $validated['position_z'] ?? null,
             ];
 
-            $issue = $this->supabase->insert('build_issues', $data);
+            $inserted = $this->supabase->insert('build_issues', $data);
+            $issue = is_array($inserted) ? $inserted : null;
 
-            if (! $issue) {
+            if ($issue === null) {
                 Log::error('Issue creation failed: Supabase insert returned null', [
                     'build_id' => $buildId,
                     'user_id' => $userId,
@@ -154,9 +154,17 @@ class BuildIssueController extends Controller
                 return response()->json(['error' => 'Failed to create issue in database'], 500);
             }
 
-            // Get creator name
-            $users = $this->supabase->select('users', ['name'], ['id' => $userId]);
-            $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
+            // Get creator name (guests have no user row; their name rides along
+            // in the description marker)
+            if ($guestName !== null) {
+                $issue['creator_name'] = $guestName;
+            } else {
+                $users = $this->supabase->select('users', ['name'], ['id' => $userId]);
+                $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
+            }
+            $issue['description'] = GuestReview::issueBody(
+                is_string($issue['description'] ?? null) ? $issue['description'] : null
+            );
             $issue['status_color'] = $this->getStatusColor($issue['status']);
             $issue['priority_color'] = $this->getPriorityColor($issue['priority']);
             $issue['status_label'] = $this->getStatusLabel($issue['status']);
@@ -198,14 +206,19 @@ class BuildIssueController extends Controller
             return response()->json(['error' => 'Issue not found'], 404);
         }
 
-        $issue = $issues[0];
+        $issue = (array) $issues[0];
 
-        // Get creator name
+        // Get creator name (a guest's name lives in the description marker)
+        $description = is_string($issue['description'] ?? null) ? $issue['description'] : null;
+
         if (($issue['created_by'] ?? null) !== null) {
             $users = $this->supabase->select('users', ['name'], ['id' => $issue['created_by']]);
             $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
+        } else {
+            $issue['creator_name'] = GuestReview::issueReviewerName($description) ?? GuestReview::FALLBACK_NAME;
         }
 
+        $issue['description'] = GuestReview::issueBody($description);
         $issue['status_color'] = $this->getStatusColor($issue['status']);
         $issue['priority_color'] = $this->getPriorityColor($issue['priority']);
         $issue['status_label'] = $this->getStatusLabel($issue['status']);
@@ -219,7 +232,7 @@ class BuildIssueController extends Controller
      */
     public function update(AuthenticatedRequest $request, string $buildId, string $issueId)
     {
-        if (! $this->checkBuildAccess($request, $buildId)) {
+        if (! $this->collaboratorCanModerate($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
@@ -251,14 +264,19 @@ class BuildIssueController extends Controller
 
         // Get updated issue
         $issues = $this->supabase->select('build_issues', ['*'], ['id' => $issueId]);
-        $issue = $issues[0];
+        $issue = (array) $issues[0];
 
-        // Get creator name
+        // Get creator name (a guest's name lives in the description marker)
+        $description = is_string($issue['description'] ?? null) ? $issue['description'] : null;
+
         if (($issue['created_by'] ?? null) !== null) {
             $users = $this->supabase->select('users', ['name'], ['id' => $issue['created_by']]);
             $issue['creator_name'] = $users[0]['name'] ?? 'Unknown';
+        } else {
+            $issue['creator_name'] = GuestReview::issueReviewerName($description) ?? GuestReview::FALLBACK_NAME;
         }
 
+        $issue['description'] = GuestReview::issueBody($description);
         $issue['status_color'] = $this->getStatusColor($issue['status']);
         $issue['priority_color'] = $this->getPriorityColor($issue['priority']);
         $issue['status_label'] = $this->getStatusLabel($issue['status']);
@@ -272,7 +290,7 @@ class BuildIssueController extends Controller
      */
     public function destroy(AuthenticatedRequest $request, string $buildId, string $issueId)
     {
-        if (! $this->checkBuildAccess($request, $buildId)) {
+        if (! $this->collaboratorCanModerate($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 
@@ -303,7 +321,7 @@ class BuildIssueController extends Controller
      */
     public function updateStatus(AuthenticatedRequest $request, string $buildId, string $issueId)
     {
-        if (! $this->checkBuildAccess($request, $buildId)) {
+        if (! $this->collaboratorCanModerate($request, $buildId)) {
             return response()->json(['error' => 'Access denied'], 403);
         }
 

@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\AuthenticatedRequest;
+use App\Http\Concerns\ResolvesCollaboratorAccess;
 use App\Http\Controllers\Controller;
 use App\Services\SupabaseClient;
+use App\Support\GuestReview;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class BuildMessageController extends Controller
 {
+    use ResolvesCollaboratorAccess;
+
     protected SupabaseClient $supabase;
 
     public function __construct()
@@ -18,30 +22,12 @@ class BuildMessageController extends Controller
     }
 
     /**
-     * Check if user has access to build
+     * Check if the caller may read and post messages on this build. Members of
+     * any role qualify, and so does a guest holding a valid share link.
      */
     protected function checkBuildAccess(AuthenticatedRequest $request, string $buildId): bool
     {
-        $userId = $request->auth_user_id;
-
-        // Get build to check ownership
-        $builds = $this->supabase->select('builds', ['created_by'], ['id' => $buildId]);
-        if ($builds === []) {
-            return false;
-        }
-
-        // Owner has access
-        if ($builds[0]['created_by'] === $userId) {
-            return true;
-        }
-
-        // Check if user is a member
-        $members = $this->supabase->select('build_members', ['role'], [
-            'build_id' => $buildId,
-            'user_id' => $userId,
-        ]);
-
-        return $members !== [];
+        return $this->collaboratorCanComment($request, $buildId);
     }
 
     public function index(AuthenticatedRequest $request, string $buildId)
@@ -56,19 +42,34 @@ class BuildMessageController extends Controller
         $messages = array_slice(array_reverse($messages), 0, 100);
 
         $userIds = array_unique(array_filter(array_column($messages, 'user_id'), fn ($v) => $v !== null && $v !== ''));
+        $userMap = [];
         if ($userIds !== []) {
             $allUsers = $this->supabase->select('users', ['id', 'name'], []);
-            $userMap = [];
             foreach ($allUsers as $u) {
                 if (in_array($u['id'], $userIds, true)) {
                     $userMap[$u['id']] = $u;
                 }
             }
-            foreach ($messages as &$msg) {
-                $uid = $msg['user_id'] ?? null;
-                $msg['user'] = ['name' => $userMap[$uid]['name'] ?? 'Collaborator'];
-            }
         }
+
+        $messages = array_map(function (mixed $msg) use ($userMap): array {
+            $row = (array) $msg;
+            $uid = $row['user_id'] ?? null;
+
+            if ($uid === null) {
+                // Guest reviewers have no user row: the name is carried at the
+                // start of the message text.
+                [$reviewer, $body] = GuestReview::splitMessage(
+                    is_string($row['message'] ?? null) ? $row['message'] : null
+                );
+                $row['message'] = $body;
+                $row['user'] = ['name' => $reviewer.' (client)'];
+            } else {
+                $row['user'] = ['name' => $userMap[$uid]['name'] ?? 'Collaborator'];
+            }
+
+            return $row;
+        }, $messages);
 
         return response()->json(array_values($messages));
     }
@@ -85,13 +86,20 @@ class BuildMessageController extends Controller
         ]);
 
         $userId = $request->auth_user_id;
-        $userName = $request->auth_user_name ?? 'User';
+        $isGuest = $this->isGuestReviewer($request);
+        $requestedName = $request->auth_user_name;
+        $userName = $isGuest
+            ? $this->guestNameOrFallback($request)
+            : (is_string($requestedName) ? $requestedName : 'User');
+        $messageBody = is_string($validated['message'] ?? null) ? $validated['message'] : '';
 
         $messageData = [
             'id' => Str::uuid()->toString(),
             'build_id' => $buildId,
             'user_id' => $userId,
-            'message' => $validated['message'],
+            'message' => $isGuest
+                ? GuestReview::message($userName, $messageBody)
+                : $messageBody,
             'created_at' => now()->toIso8601String(),
         ];
 
@@ -104,7 +112,7 @@ class BuildMessageController extends Controller
         }
 
         // Add virtual user object for UI compatibility
-        $message['user'] = ['name' => $userName];
+        $message['user'] = ['name' => $isGuest ? $userName.' (client)' : $userName];
 
         return response()->json($message, 201);
     }

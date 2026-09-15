@@ -3,13 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\AuthenticatedRequest;
+use App\Http\Concerns\ResolvesCollaboratorAccess;
 use App\Services\SupabaseClient;
+use App\Support\CostEstimate;
+use App\Support\GuestReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class BuildController extends Controller
 {
+    use ResolvesCollaboratorAccess;
+
     protected SupabaseClient $supabase;
 
     public function __construct()
@@ -19,6 +24,14 @@ class BuildController extends Controller
 
     protected function getUserId(AuthenticatedRequest $request): string
     {
+        // Guests reviewing through a share link have no user row; they are given
+        // a synthetic id so presence keys and "(You)" markers still work.
+        $guestId = $request->input('auth_guest_id');
+
+        if (is_string($guestId) && $guestId !== '') {
+            return $guestId;
+        }
+
         return (string) ($request->auth_user_id ?? '');
     }
 
@@ -158,6 +171,9 @@ class BuildController extends Controller
         $userId = $this->getUserId($request);
         $userName = $this->getUserName($request);
 
+        // Guest reviewers (share link, no account) are always viewers.
+        $isGuest = $this->isGuestReviewer($request);
+
         // 1. Fetch the Build
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
         if ($builds === []) {
@@ -167,7 +183,9 @@ class BuildController extends Controller
 
         // 2. Determine Role & Privacy Check
         $userRole = 'viewer';
-        if ($build->created_by === $userId) {
+        if ($isGuest) {
+            $userRole = 'viewer';
+        } elseif ($build->created_by === $userId) {
             $userRole = 'owner';
         } else {
             // Check if invited
@@ -233,7 +251,13 @@ class BuildController extends Controller
         // Get user names for issues
         $userMap = collect($allUsers)->keyBy('id');
         $issues = collect($issues)->map(function ($issue) use ($userMap) {
-            $issue['creator_name'] = $userMap->get($issue['created_by'])['name'] ?? 'Unknown';
+            $issue = (array) $issue;
+            $description = is_string($issue['description'] ?? null) ? $issue['description'] : null;
+
+            $issue['creator_name'] = $userMap->get($issue['created_by'])['name']
+                ?? GuestReview::issueReviewerName($description)
+                ?? 'Unknown';
+            $issue['description'] = GuestReview::issueBody($description);
             $issue['status_color'] = match ($issue['status']) {
                 'open' => '#ef4444',
                 'in_progress' => '#eab308',
@@ -270,6 +294,12 @@ class BuildController extends Controller
         $presetsData = $this->supabase->select('part_presets', ['*'], ['is_active' => 'true']);
         $presets = collect($presetsData)->groupBy('type');
 
+        // 7. Planning cost estimate — the editor refreshes this as parts change.
+        /** @var array<int, mixed> $storedParts */
+        $storedParts = $this->supabase->select('build_parts', ['*'], ['build_id' => $buildId]);
+        $costEstimate = CostEstimate::forParts($storedParts);
+        $costRates = (array) config('spatialsync.estimates.rates', []);
+
         $auth_user_id = $userId;
         $auth_user_name = $userName;
 
@@ -285,8 +315,109 @@ class BuildController extends Controller
             'presets',
             'auth_user_id',
             'auth_user_name',
-            'userPermissions'
+            'userPermissions',
+            'isGuest',
+            'costEstimate',
+            'costRates'
         ));
+    }
+
+    /**
+     * Resolve a share token to its row, or null when it is unknown or expired.
+     * The token is the only credential a guest holds, so it is always
+     * re-validated on the server rather than trusted from the session.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function resolveShare(string $token): ?array
+    {
+        if ($token === '') {
+            return null;
+        }
+
+        $shares = $this->supabase->select('build_shares', ['*'], ['share_token' => $token]);
+
+        if ($shares === []) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $share */
+        $share = (array) $shares[0];
+        $expiresAt = $share['expires_at'] ?? null;
+
+        if (is_string($expiresAt) && $expiresAt !== '' && strtotime($expiresAt) < time()) {
+            return null;
+        }
+
+        return $share;
+    }
+
+    /**
+     * A client opens a share link. No account, no signup: the token is the
+     * credential and the visitor is always a viewer.
+     */
+    public function guestShow(AuthenticatedRequest $request, string $token)
+    {
+        $share = $this->resolveShare($token);
+
+        if ($share === null) {
+            return response()->view('builds.guest-invalid', [], 404);
+        }
+
+        $buildId = $share['build_id'] ?? null;
+
+        if (! is_string($buildId) || $buildId === '') {
+            return response()->view('builds.guest-invalid', [], 404);
+        }
+
+        $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
+
+        if ($builds === []) {
+            return response()->view('builds.guest-invalid', [], 404);
+        }
+
+        $build = (object) $builds[0];
+        $sessionKey = 'guest_review_name_'.$token;
+        $guestName = $request->session()->get($sessionKey);
+
+        if (! is_string($guestName) || trim($guestName) === '') {
+            return view('builds.guest-join', ['build' => $build, 'token' => $token]);
+        }
+
+        // Remember who is reviewing so the comment endpoints can authorise
+        // their writes without an account.
+        $request->session()->put('guest_review', [
+            'token' => $token,
+            'build_id' => $buildId,
+            'name' => $guestName,
+        ]);
+
+        $request->merge([
+            'auth_guest_id' => 'guest_'.substr($token, 0, 12),
+            'collab_guest_token' => $token,
+            'collab_guest_build_id' => $buildId,
+            'collab_guest_name' => $guestName,
+        ]);
+
+        return $this->show($request, $buildId);
+    }
+
+    /**
+     * Capture the reviewer's display name, then hand them the model.
+     */
+    public function guestJoin(AuthenticatedRequest $request, string $token)
+    {
+        if ($this->resolveShare($token) === null) {
+            return response()->view('builds.guest-invalid', [], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:60',
+        ]);
+
+        $request->session()->put('guest_review_name_'.$token, GuestReview::cleanName((string) $validated['name']));
+
+        return redirect()->route('share.show', ['token' => $token]);
     }
 
     public function update(AuthenticatedRequest $request, string $buildId)
@@ -456,20 +587,47 @@ class BuildController extends Controller
 
     public function createShare(string $buildId)
     {
-        $token = Str::random(32);
+        $token = Str::random(64);
+        $shareId = Str::uuid()->toString();
+        $expiresAt = now()->addDays(30);
 
         $shareData = [
-            'id' => Str::uuid()->toString(),
+            'id' => $shareId,
             'build_id' => $buildId,
             'share_token' => $token,
             'access_level' => 'view',
+            'expires_at' => $expiresAt->toIso8601String(),
         ];
 
         $this->supabase->insert('build_shares', $shareData);
 
         return response()->json([
-            'url' => route('builds.shared', ['build' => $buildId, 'token' => $token]),
+            // The link you send to a client: opens the model with no account.
+            'url' => route('share.show', ['token' => $token]),
+            'share_id' => $shareId,
+            'expires_at' => $expiresAt->toDateString(),
+            // For teammates who already have an account on this instance.
+            'member_url' => route('builds.shared', ['build' => $buildId, 'token' => $token]),
         ]);
+    }
+
+    /**
+     * Revoke a share link, so it stops working immediately.
+     */
+    public function revokeShare(string $buildId, string $shareId)
+    {
+        $shares = $this->supabase->select('build_shares', ['id'], [
+            'id' => $shareId,
+            'build_id' => $buildId,
+        ]);
+
+        if ($shares === []) {
+            return response()->json(['error' => 'Share link not found.'], 404);
+        }
+
+        $this->supabase->delete('build_shares', ['id' => $shareId, 'build_id' => $buildId]);
+
+        return response()->json(['success' => true]);
     }
 
     public function removeMember(string $buildId, string $userId)
@@ -504,8 +662,10 @@ class BuildController extends Controller
                 'parts' => $parts,
             ];
 
+            $fileName = is_string($build['name'] ?? null) ? $build['name'] : 'build';
+
             return response()->json($exportData)
-                ->header('Content-Disposition', 'attachment; filename='.(string) $build['name'].'.json');
+                ->header('Content-Disposition', 'attachment; filename='.$fileName.'.json');
         }
 
         abort(404, 'Export format not supported');
@@ -515,16 +675,12 @@ class BuildController extends Controller
     {
         $userId = $this->getUserId($request);
 
-        $shares = $this->supabase->select('build_shares', ['*'], [
-            'build_id' => $buildId,
-            'share_token' => $token,
-        ]);
+        $share = $this->resolveShare($token);
+        $shareBuildId = $share['build_id'] ?? null;
 
-        if ($shares === []) {
+        if (! is_string($shareBuildId) || $shareBuildId !== $buildId) {
             abort(403, 'Invalid or expired share link.');
         }
-
-        $share = $shares[0];
 
         $builds = $this->supabase->select('builds', ['*'], ['id' => $buildId]);
         if ($builds === []) {

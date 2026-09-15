@@ -5,7 +5,6 @@ use App\Http\Controllers\Api\BuildIssueController;
 use App\Http\Controllers\Api\BuildMessageController;
 use App\Http\Controllers\Api\BuildPartController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\BiometricAuthController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BuildController;
 use App\Http\Controllers\CheckoutController;
@@ -32,19 +31,34 @@ Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact-sales', [ContactController::class, 'sales'])->name('contact.sales');
 Route::post('/contact-sales', [ContactController::class, 'submit']);
 
+// Client review links — a share token opens the model with no account required.
+// Throttled because the token is the only credential a visitor holds.
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/share/{token}', [BuildController::class, 'guestShow'])->name('share.show');
+    Route::post('/share/{token}/join', [BuildController::class, 'guestJoin'])->name('share.join');
+});
+
 // Guest routes (auth)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store']);
-
-    // Neural Face Login
-    Route::post('/login/biometrics', [BiometricAuthController::class, 'login'])->name('login.biometrics');
 });
 
 // Logout
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout')->middleware('auth');
+
+// Collaboration API — reachable by signed-in members and by guest reviewers
+// holding a valid share link (view + comment only).
+Route::middleware(['web', 'collab.access'])->group(function () {
+    Route::get('/editor/builds/{buildId}/issues', [BuildIssueController::class, 'index']);
+    Route::post('/editor/builds/{buildId}/issues', [BuildIssueController::class, 'store']);
+    Route::get('/editor/builds/{buildId}/issues/{issueId}', [BuildIssueController::class, 'show']);
+
+    Route::get('/editor/builds/{build}/messages', [BuildMessageController::class, 'index'])->name('api.builds.messages.index');
+    Route::post('/editor/builds/{build}/messages', [BuildMessageController::class, 'store'])->name('api.builds.messages.store');
+});
 
 // Authenticated routes (web middleware first for CSRF, then auth)
 Route::middleware(['web', 'auth'])->group(function () {
@@ -56,10 +70,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/user/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/user/profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
     Route::put('/user/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
-    Route::post('/user/profile/biometrics', [ProfileController::class, 'saveBiometrics'])->name('profile.biometrics.save');
-    Route::delete('/user/profile/biometrics', [ProfileController::class, 'deleteBiometrics'])->name('profile.biometrics.delete');
 
-    // Checkout Simulation
+    // Demo checkout — no payment provider is connected. The plan is applied
+    // immediately so the upgrade flow can be demonstrated end to end.
     Route::get('/checkout/{plan}', [CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
@@ -77,6 +90,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('/builds/{build}/members/{user}', [BuildController::class, 'updateMemberRole'])->name('builds.members.updateRole');
     Route::get('/users/search', [BuildController::class, 'searchUsers'])->name('users.search');
     Route::post('/builds/{build}/share', [BuildController::class, 'createShare'])->name('builds.share.create');
+    Route::delete('/builds/{build}/share/{shareId}', [BuildController::class, 'revokeShare'])
+        ->middleware('build.permission:edit_geometry');
     Route::get('/builds/{build}/export/{format}', [BuildController::class, 'export'])->name('builds.export');
 
     // Editor API routes (using /editor/ prefix to get web middleware CSRF)
@@ -89,17 +104,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/editor/builds/{buildId}/parts/{partId}', [BuildPartController::class, 'destroy'])
         ->middleware('build.permission:delete_parts');
 
-    // Issue API routes
-    Route::get('/editor/builds/{buildId}/issues', [BuildIssueController::class, 'index']);
-    Route::post('/editor/builds/{buildId}/issues', [BuildIssueController::class, 'store']);
-    Route::get('/editor/builds/{buildId}/issues/{issueId}', [BuildIssueController::class, 'show']);
+    // Issue API routes (moderating existing pins stays member-only)
     Route::put('/editor/builds/{buildId}/issues/{issueId}', [BuildIssueController::class, 'update']);
     Route::delete('/editor/builds/{buildId}/issues/{issueId}', [BuildIssueController::class, 'destroy']);
     Route::patch('/editor/builds/{buildId}/issues/{issueId}/status', [BuildIssueController::class, 'updateStatus']);
-
-    // Chat API
-    Route::get('/editor/builds/{build}/messages', [BuildMessageController::class, 'index'])->name('api.builds.messages.index');
-    Route::post('/editor/builds/{build}/messages', [BuildMessageController::class, 'store'])->name('api.builds.messages.store');
 
     // Shared build view
     Route::get('/builds/{build}/shared/{token}', [BuildController::class, 'shared'])->name('builds.shared');
@@ -112,9 +120,5 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/blueprints', [AdminController::class, 'builds'])->name('admin.builds');
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
         Route::delete('/builds/{build}', [AdminController::class, 'deleteBuild'])->name('admin.builds.delete');
-
-        // Biometrics & Security (Admin Personal)
-        Route::get('/security', [AdminController::class, 'security'])->name('admin.security');
-        Route::post('/biometrics/save', [AdminController::class, 'saveBiometrics'])->name('admin.biometrics.save');
     });
 });

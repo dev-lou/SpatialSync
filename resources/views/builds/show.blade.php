@@ -19,12 +19,14 @@
     <!-- Top Bar -->
     <header class="editor-topbar">
         <div class="editor-topbar__left">
-            <!-- Explicit Back Button -->
+            <!-- Explicit Back Button (signed-in members only) -->
+            @unless($isGuest)
             <a href="{{ route('builds.index') }}" class="btn btn--ghost btn--sm" style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none;" title="Back to Builds">
                 <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
                 <span class="hidden-md" style="font-size: 13px; font-weight: 600;">Back</span>
             </a>
             <div class="editor-topbar__divider"></div>
+            @endunless
             
             <button class="btn btn--ghost btn--sm" @click="sidebarOpen = !sidebarOpen" title="Toggle Sidebar">
                 <i data-lucide="menu" class="w-5 h-5"></i>
@@ -43,6 +45,21 @@
             <div class="view-only-badge" x-show="userRole === 'viewer'" title="You have view-only access">
                 <i data-lucide="eye" class="w-3 h-3"></i>
                 <span>View Only</span>
+            </div>
+
+            @if($isGuest)
+            <!-- Guest reviewer: arrived through a share link, no account -->
+            <div class="view-only-badge" title="You are reviewing through a share link">
+                <i data-lucide="user-round-check" class="w-3 h-3"></i>
+                <span>Reviewing as {{ $auth_user_name }}</span>
+            </div>
+            @endif
+
+            <!-- Planning cost estimate — refreshes as parts are placed -->
+            <div class="view-only-badge" style="background: rgba(34, 197, 94, 0.10); border-color: rgba(34, 197, 94, 0.30); color: #16a34a;"
+                 :title="costTooltip">
+                <i data-lucide="calculator" class="w-3 h-3"></i>
+                <span>{{ $costEstimate['label'] ?? 'Planning estimate' }}: <strong x-text="costLabel">{{ $costEstimate['formatted'] ?? '—' }}</strong></span>
             </div>
 
             <button class="btn btn--ghost btn--sm" @click="confirmReload()" title="Refresh Editor">
@@ -202,18 +219,18 @@
                     </div>
                 </div>
 
-                <!-- Share Link - Admin/Editor Only -->
+                <!-- Client review link - Owner/Editor Only -->
                 <div class="sidebar-section" x-show="userRole !== 'viewer'">
                     <div class="sidebar-section__title">
-                        <i data-lucide="link"></i> Share Invite Link
+                        <i data-lucide="link"></i> Client Review Link
                     </div>
-                    
+
                     <div x-show="!shareUrl">
                         <button class="btn btn--primary btn--sm w-full" @click="getShareUrl()" style="justify-content: center; gap: 8px;">
                             <i data-lucide="zap" class="w-4 h-4"></i>
-                            Generate Invite Link
+                            Generate Client Link
                         </button>
-                        <p class="text-[10px] text-slate-400 mt-2 text-center">Anyone with this link can view and participate.</p>
+                        <p class="text-[10px] text-slate-400 mt-2 text-center">Your client opens this link, looks around and comments — no account required. Links expire after 30 days.</p>
                     </div>
 
                     <div x-show="shareUrl" x-cloak class="space-y-2">
@@ -228,7 +245,10 @@
                                 <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                                 <span class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Active</span>
                             </div>
-                            <span @click="shareUrl = ''" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; cursor: pointer; transition: color 0.2s;" @mouseenter="$el.style.color='#ef4444'" @mouseleave="$el.style.color='#94a3b8'">Hide</span>
+                            <span style="display: flex; gap: 12px;">
+                                <span @click="revokeShare()" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #ef4444; cursor: pointer;" title="Stop this link working immediately">Revoke</span>
+                                <span @click="shareUrl = ''" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; cursor: pointer; transition: color 0.2s;" @mouseenter="$el.style.color='#ef4444'" @mouseleave="$el.style.color='#94a3b8'">Hide</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -238,10 +258,14 @@
                     <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <div class="flex items-center gap-2 text-yellow-700 mb-2">
                             <i data-lucide="eye" class="w-4 h-4"></i>
-                            <span class="font-semibold text-sm">View Only Access</span>
+                            <span class="font-semibold text-sm">{{ $isGuest ? 'You are reviewing this design' : 'View Only Access' }}</span>
                         </div>
                         <p class="text-xs text-yellow-600">
-                            You can view this build and participate in chat, but cannot edit or invite members. Contact the owner for edit access.
+                            @if($isGuest)
+                                Click a wall, door or window to pin a comment, or use the chat panel below. You cannot change the design — that keeps the review honest.
+                            @else
+                                You can view this build and participate in chat, but cannot edit or invite members. Contact the owner for edit access.
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -1062,6 +1086,7 @@ function debugError(...args) {
     if (window.DEBUG_MODE) console.error(...args);
 }
 </script>
+<script src="{{ asset('js/cost-estimate.js') }}?v={{ filemtime(public_path('js/cost-estimate.js')) }}"></script>
 <script src="{{ asset('js/build-editor.js') }}?v={{ filemtime(public_path('js/build-editor.js')) }}"></script>
 <script>
 document.addEventListener('alpine:init', () => {
@@ -1101,6 +1126,14 @@ document.addEventListener('alpine:init', () => {
         userRole: '{{ $userRole }}',
         userPermissions: @json($userPermissions),
         shareUrl: '',
+        shareId: null,
+
+        // Planning cost estimate (server-rendered, then kept fresh in the browser)
+        costRates: @json($costRates),
+        costSymbol: @json($costEstimate['symbol'] ?? '$'),
+        costNote: @json($costEstimate['note'] ?? ''),
+        costLabel: @json($costEstimate['formatted'] ?? ''),
+        costTooltip: @json(($costEstimate['note'] ?? '').' '.($costEstimate['label'] ?? '').' — adds up as you place parts.'),
         chatMessages: @json($messages),
         issues: @json($issues),
         selectedIssue: null,
@@ -1142,6 +1175,11 @@ document.addEventListener('alpine:init', () => {
         exportDropdownOpen: false,
 
         async init() {
+            // Keep the planning estimate in step with the model.
+            ['part-placed', 'part-deleted', 'part-updated'].forEach((eventName) => {
+                window.addEventListener(eventName, () => this.updateCost());
+            });
+
             // Debug: Log issues data
             debugLog('[Issues] Loaded from server:', this.issues.length, 'issues');
             debugLog('[Issues] Data:', JSON.parse(JSON.stringify(this.issues)));
@@ -1707,6 +1745,7 @@ document.addEventListener('alpine:init', () => {
                 });
                 const data = await res.json();
                 this.shareUrl = data.url;
+                this.shareId = data.share_id || null;
                 this.copyShareUrl();
             } catch (err) {
                 this.showToast('Failed to generate share link', 'error');
@@ -1716,8 +1755,44 @@ document.addEventListener('alpine:init', () => {
         copyShareUrl() {
             if (!this.shareUrl) return;
             navigator.clipboard.writeText(this.shareUrl);
-            this.showToast('Invite link copied to clipboard!', 'success');
+            this.showToast('Review link copied — send it to your client.', 'success');
             this.$nextTick(() => { if(window.lucide) lucide.createIcons(); });
+        },
+
+        updateCost() {
+            // Leave the server-rendered figure in place until the editor is up.
+            if (typeof window.CostEstimator === 'undefined' || !window.editor || !window.editor.parts) return;
+
+            const estimator = new window.CostEstimator({
+                rates: this.costRates,
+                symbol: this.costSymbol,
+            });
+            const result = estimator.estimate(Array.from(window.editor.parts.values()));
+
+            this.costLabel = result.formatted;
+            const summary = result.lines
+                .slice(0, 4)
+                .map((line) => `${line.label}: ${this.costSymbol}${Math.round(line.amount).toLocaleString()}`)
+                .join(' · ');
+            this.costTooltip = `${this.costNote} ${summary}`.trim();
+        },
+
+        async revokeShare() {
+            if (!this.shareId) { this.shareUrl = ''; return; }
+            try {
+                const res = await fetch(`/builds/{{ $build->id }}/share/${this.shareId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                if (!res.ok) throw new Error('Revoke failed');
+                this.shareUrl = '';
+                this.shareId = null;
+                this.showToast('Review link revoked', 'success');
+            } catch (err) {
+                this.showToast('Failed to revoke review link', 'error');
+            }
         },
 
         async fetchMessages() {
