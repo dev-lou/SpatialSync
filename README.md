@@ -6,11 +6,12 @@
        width="800" />
 
   <h1>SpatialSync</h1>
-  <p><strong>Next-Generation Collaborative 3D Architectural Engine</strong></p>
-  <p><em>Real-time multi-user 3D building design — in the browser, no plugins required.</em></p>
+  <p><strong>Build a house by dragging things. Get a price. Get a plan. Argue about the window.</strong></p>
+  <p><em>Drag-and-drop 3D building in the browser — with a planning estimate, a real floor-plan PDF, and client comments pinned onto the walls.</em></p>
 
   <p>
     <a href="https://spatialsync.onrender.com" target="_blank">🌐 Live Demo</a> &nbsp;·&nbsp;
+    <a href="DEMO.md">🎬 Demo runbook</a> &nbsp;·&nbsp;
     <a href="#-quick-start">⚡ Quick Start</a> &nbsp;·&nbsp;
     <a href="#-features">✨ Features</a> &nbsp;·&nbsp;
     <a href="#%EF%B8%8F-tech-stack">🛠️ Tech Stack</a> &nbsp;·&nbsp;
@@ -61,7 +62,7 @@
   - [Real-Time Collaboration](#-real-time-collaboration)
   - [Scenery & Environment](#-scenery--environment)
   - [Issue Tracker](#-issue-tracker)
-  - [Biometric Authentication](#-biometric-authentication)
+  - [Client Review Links](#-client-review-links)
   - [Admin Panel](#-admin-panel)
   - [Pricing & Checkout](#-pricing--checkout)
   - [UI/UX 2026 Standards](#-uiux-2026-standards)
@@ -76,6 +77,7 @@
   - [4 — Database Migration](#4--database-migration)
   - [5 — Build Assets & Run](#5--build-assets--run)
   - [6 — Create Admin Account](#6--create-admin-account)
+- [Testing & Verification](#-testing--verification)
 - [Keyboard Shortcuts](#-keyboard-shortcuts)
 - [Deployment](#-deployment)
 - [API Reference](#-api-reference)
@@ -86,11 +88,13 @@
 
 ## 🌐 Overview
 
-**SpatialSync** is a premium, browser-native collaborative 3D architectural platform. Teams of architects, engineers, and designers can simultaneously construct, annotate, and review spatial layouts — all synchronised in sub-second real-time via Supabase WebSockets.
+**Drop walls, doors and windows into a 3D scene in your browser and a house appears** — then turn it into a planning estimate, a floor-plan PDF, and a review link your client opens without creating an account.
 
-No desktop software. No plugins. Just open a browser.
+It is built for the people the professional tools skip: homeowners renovating, small builders and remodelers, students. Ten floors, snap-to-grid placement, live multi-user editing, role-based permissions, comment pins on real parts — all on a PHP + Supabase stack.
 
-> Built as a capstone academic project showcasing enterprise-grade engineering: real-time collaboration, biometric identity, WebGL 3D rendering, RBAC security, and a polished 2026 design system — all running on a PHP + Supabase stack.
+No desktop software. No plugins. No training. Just open a browser.
+
+> **Project status — September 2026.** Working product, **no paying customers yet**. Checkout is a sandbox with no payment provider connected, and the database's row-level security is not locked down. [`DEMO.md`](DEMO.md) lists exactly what is real and what is not; pitch material is in [`docs/pitch/`](docs/pitch/).
 
 ---
 
@@ -102,7 +106,7 @@ The heart of SpatialSync — a full WebGL 3D editor running in the browser, powe
 
 | Feature | Details |
 |---|---|
-| **16+ Smart Building Parts** | Walls, Floors, Roofs, Doors, Windows, Stairs — all with auto-height and auto-snap |
+| **11 Smart Building Parts** | Six part types — walls, five floor finishes, roofs, doors, windows, stairs — with auto-height and auto-snap |
 | **Multi-Floor Support** | Up to 10 independent floor levels with quick floor navigator (↑/↓ arrows) |
 | **Custom Polygon Drawing** | Freeform geometry creation for irregular floor plans |
 | **Texture Mapping** | Apply material textures (brick, marble, wood, glass) to any surface |
@@ -112,10 +116,12 @@ The heart of SpatialSync — a full WebGL 3D editor running in the browser, powe
 | **Auto-Save** | Manual save + periodic auto-sync to Supabase |
 | **Export PNG** | High-quality screenshot of the current 3D viewport |
 | **Export JSON** | Full geometry data backup for re-import |
-| **Export Blueprint PDF** | Professional 2D floor-plan drawing generated from the 3D model |
+| **Export Blueprint PDF** | Real 2D floor-plan drawing from the 3D model — A4/A3, 1:50–1:200, all floors or one |
 | **Orbit Controls** | Click-drag to rotate, scroll to zoom, right-drag to pan |
 | **Keyboard Navigation** | Full shortcut system (see [Keyboard Shortcuts](#-keyboard-shortcuts)) |
-| **Pricing Engine** | Dynamic cost estimation updates in real-time as parts are placed |
+| **Planning Estimate** | Indicative cost total that updates as parts are placed — rates in `config/spatialsync.php` |
+
+> **Export formats:** PNG and blueprint PDF come from the browser; geometry export is **JSON only**. There is no IFC, DWG or Revit import/export yet.
 
 ---
 
@@ -162,15 +168,18 @@ Built directly into the collaboration sidebar — no external tool required.
 
 ---
 
-### 🔐 Biometric Authentication
+### 🔗 Client Review Links
 
-SpatialSync implements **passwordless Biometric login** using the device camera.
+Send a link; your client opens the model and comments on it — **no account, no email, no password**.
 
-- **Face Recognition** — powered by `face-api.js` with pre-trained TensorFlow.js models
-- **Face Model HUD** — real-time facial landmark overlay during scan
-- **Fallback** — standard email/password login always available
-- **Model Loading Indicator** — "Initialising Neural Engine..." state while face models load
-- **Threshold Configurable** — recognition confidence threshold in `BiometricAuthController.php`
+- **View + comment only** — a guest can look around, pin comments onto parts and post in chat; they can never move or delete geometry
+- **Named attribution** — the visitor gives a display name, which appears on the pin and in chat
+- **Expiring and revocable** — links are created with a 30-day expiry and can be revoked from the editor sidebar immediately
+- **Re-validated server-side** — the token is the only credential a guest holds, so it is checked on every request, and the share routes are rate limited
+
+Implementation: `BuildController@guestShow`, `App\Http\Middleware\ResolveCollaborator`, `app/Support/GuestReview.php`.
+
+> **Note:** facial-biometric login was removed on 14 September 2026. It matched a visitor against every enrolled template at a 0.45 threshold — identification, not verification — and stored a face template per user. Run `database/migrations/2026_09_14_remove_biometric_data.sql` to clear any stored templates.
 
 ---
 
@@ -184,7 +193,6 @@ A dedicated admin interface for platform management.
 | **Users** | View all registered users, promote to admin, deactivate accounts |
 | **Builds** | View, manage, or delete any build on the platform |
 | **Presets** | Create and manage reusable building-part presets |
-| **Security** | Audit logs, RBAC overview, permission management |
 
 **Role Levels:**
 - `Admin` — Full platform access, user management, all builds
@@ -195,8 +203,8 @@ A dedicated admin interface for platform management.
 
 ### 💳 Pricing & Checkout
 
-- **Dynamic Material Pricing** — Estimated cost updates live as parts are added/removed
-- **Checkout Flow** — Simulated plan upgrade page
+- **Planning Estimate** — an indicative running total as parts are added or removed; the rates are illustrative defaults, not market data
+- **Checkout Flow** — a **sandbox** plan-upgrade screen: no payment provider is connected and no card is charged
 - **Contact Sales** — Enterprise inquiry form
 
 ---
@@ -248,7 +256,6 @@ SpatialSync is built on the **OpenCode UI/UX 2026** design system.
 | **Fabric.js** | 5.x | Canvas 2D overlay for blueprint/floor-plan tools |
 | **Alpine.js** | 3.x | Lightweight reactivity and component state |
 | **@supabase/supabase-js** | 2.x | Client-side Realtime subscription |
-| **face-api.js** | — | Browser-native face recognition (TensorFlow.js) |
 | **Tailwind CSS** | 3.4 | Utility CSS framework |
 | **Vite** | 5.x | Asset bundler and dev server |
 | **Lucide Icons** | Latest | Icon library |
@@ -281,7 +288,7 @@ graph TD
     FE -->|WebGL Canvas| R3D["3D Rendering Engine\nThree.js + Fabric.js"]
     FE -->|REST API| BE["Laravel 11 Backend"]
     FE <-->|WebSocket Realtime| SR["Supabase Realtime\nChannel: build:{id}"]
-    FE -->|face-api.js| BIO["Biometric Scanner\nFace Recognition"]
+    CLIENT["👤 Client (no account)\n/share/{token}"] -->|View + comment| FE
     BE -->|Sanctum + RBAC| DB[("PostgreSQL\nvia Supabase")]
     SR --> DB
     BE -->|Middleware| ADMIN["Admin Panel\n/admin/*"]
@@ -291,7 +298,7 @@ graph TD
     style R3D fill:#8B5CF6,color:#fff,stroke:none
     style DB fill:#10B981,color:#fff,stroke:none
     style SR fill:#3ECF8E,color:#fff,stroke:none
-    style BIO fill:#F59E0B,color:#fff,stroke:none
+    style CLIENT fill:#F59E0B,color:#fff,stroke:none
 ```
 
 ### Key Architectural Decisions
@@ -302,7 +309,8 @@ graph TD
 | **Debounced display status (3 s)** | Prevents UI jitter from transient network drops without alarming the user |
 | **8-second grace period on connect** | Avoids false "disconnected" alerts during initial page load |
 | **BotSeoMiddleware (prepend)** | Social scrapers (Facebook/Twitter) get instant static OG HTML — bypasses full SPA boot |
-| **face-api.js on client** | Face recognition runs 100% in-browser — no biometric data ever leaves the device |
+| **Client review links** | A 64-character share token, re-validated server-side on every request, with a 30-day expiry and immediate revocation from the editor |
+| **One request instance** | `public/index.php` creates the request as `AuthenticatedRequest` and binds it in the container, so middleware type hints and controller input read the same object instead of an empty rebuild |
 
 ---
 
@@ -317,7 +325,7 @@ builds                 — 3D build projects (name, owner, visibility)
 ├── build_parts        — Individual 3D parts (type, position, rotation, texture, colour, shape_points)
 ├── build_members      — Collaborator list with role (admin/editor/viewer)
 ├── build_messages     — In-app chat messages per build
-├── build_shares       — Shareable invite token links
+├── build_shares       — Client review links (share token, expiry, access level)
 ├── build_issues       — Bug/issue tracker entries per build
 └── part_presets       — Reusable part templates (admin-managed)
 
@@ -486,6 +494,29 @@ php artisan tinker
 ```php
 \App\Models\User::where('email', 'your@email.com')->update(['is_admin' => true]);
 ```
+
+---
+
+## ✅ Testing & Verification
+
+Everything this README claims can be checked with four commands:
+
+```bash
+vendor/bin/phpstan analyse        # static analysis at level max — no errors
+vendor/bin/phpunit --no-coverage  # 37 tests: unit + feature suites
+npx eslint resources/js/ --max-warnings=0
+npm run build                     # Vite production build
+```
+
+`tests/Feature/GuestReviewLinkTest.php` drives the **client review link** through
+real routing, middleware, session and Blade views, faking only the Supabase REST
+calls — so it runs with no credentials. It covers the no-signup join screen,
+comment attribution, expired and revoked tokens, a token presented against the
+wrong build, and every write a client is refused. If someone asks whether the
+no-signup link really works, that file is the answer you can run in front of them.
+
+`php artisan test` is not available in this Laravel version; CI calls PHPUnit
+directly (`.github/workflows/ci.yml`).
 
 ---
 

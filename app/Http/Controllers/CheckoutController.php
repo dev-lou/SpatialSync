@@ -7,6 +7,12 @@ use Illuminate\Http\Request;
 
 class CheckoutController extends Controller
 {
+    /**
+     * Demo checkout: no payment provider is connected. These are the only plan
+     * values the flow accepts, and the plan is applied immediately.
+     */
+    private const DEMO_PLANS = ['free', 'pro', 'enterprise'];
+
     protected $supabaseUser;
 
     public function __construct(SupabaseUserService $supabaseUser)
@@ -16,7 +22,6 @@ class CheckoutController extends Controller
 
     public function index(Request $request, $plan)
     {
-        // Allowed plans for simulation
         if (! in_array($plan, ['pro', 'enterprise'], true)) {
             return redirect()->route('pricing');
         }
@@ -36,7 +41,11 @@ class CheckoutController extends Controller
             return redirect()->route('login');
         }
 
-        // Simulate successful payment delay is handled by the UI spinner
+        if (! in_array($plan, self::DEMO_PLANS, true)) {
+            return redirect()->route('pricing');
+        }
+
+        // No payment step: the upgrade is applied straight away.
 
         // Update plan in Supabase
         $this->supabaseUser->update($userId, [

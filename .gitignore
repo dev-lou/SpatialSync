@@ -2,6 +2,7 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/framework/cache/*.php
 /storage/framework/cache/data/*
 /storage/framework/sessions/*
 /storage/framework/views/*.php
@@ -37,3 +38,13 @@ yarn-error.log
 # Build artifacts (CI generated)
 *.sbom.json
 coverage/
+
+# Local debugging leftovers — must never be committed
+/scratch/
+/cookies.txt
+/output.html
+/dump_html.php
+/extract_dom.php
+
+# Agent tooling (local only)
+/.freebuff/

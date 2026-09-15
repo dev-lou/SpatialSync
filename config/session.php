@@ -10,7 +10,7 @@ return [
     'table' => 'sessions',
     'store' => env('SESSION_STORE'),
     'lottery' => [2, 100],
-    'cookie' => env('SESSION_COOKIE', 'blueprintflow_session'),
+    'cookie' => env('SESSION_COOKIE', 'spatialsync_session'),
     'path' => '/',
     'domain' => env('SESSION_DOMAIN'),
     'secure' => env('SESSION_SECURE_COOKIE'),

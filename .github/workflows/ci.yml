@@ -70,6 +70,11 @@ jobs:
       - name: Run PHPStan (Static Analysis)
         run: vendor/bin/phpstan analyse --no-progress --error-format=github
 
+      # `php artisan test` is not available in this Laravel version, so run
+      # PHPUnit directly against phpunit.xml (the Unit suite).
+      - name: Run PHPUnit (Unit tests)
+        run: vendor/bin/phpunit --no-coverage
+
   # ---------------------------------------------------------------------------
   # 2. JavaScript Quality Gate — ESLint + Prettier
   # ---------------------------------------------------------------------------

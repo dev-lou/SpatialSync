@@ -235,33 +235,9 @@ parameters:
 			path: app/Console/Commands/MigrateToSupabaseCommand.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$descriptor\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/AdminController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
-			path: app/Http/Controllers/AdminController.php
-
-		-
-			message: '#^Parameter \#1 \$value of static method Illuminate\\Support\\Facades\\Crypt\:\:encryptString\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/AdminController.php
-
-		-
 			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: app/Http/Controllers/Api/BuildIssueController.php
-
-		-
-			message: '#^Cannot access offset ''creator_name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 1
 			path: app/Http/Controllers/Api/BuildIssueController.php
 
 		-
@@ -273,49 +249,19 @@ parameters:
 		-
 			message: '#^Cannot access offset ''priority'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 8
-			path: app/Http/Controllers/Api/BuildIssueController.php
-
-		-
-			message: '#^Cannot access offset ''priority_color'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: app/Http/Controllers/Api/BuildIssueController.php
-
-		-
-			message: '#^Cannot access offset ''priority_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 2
 			path: app/Http/Controllers/Api/BuildIssueController.php
 
 		-
 			message: '#^Cannot access offset ''status'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 8
-			path: app/Http/Controllers/Api/BuildIssueController.php
-
-		-
-			message: '#^Cannot access offset ''status_color'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: app/Http/Controllers/Api/BuildIssueController.php
-
-		-
-			message: '#^Cannot access offset ''status_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 2
 			path: app/Http/Controllers/Api/BuildIssueController.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
 			count: 2
-			path: app/Http/Controllers/Api/BuildIssueController.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
 			path: app/Http/Controllers/Api/BuildIssueController.php
 
 		-
@@ -374,18 +320,6 @@ parameters:
 
 		-
 			message: '#^Cannot access offset ''name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: app/Http/Controllers/Api/BuildMessageController.php
-
-		-
-			message: '#^Cannot access offset ''user'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: app/Http/Controllers/Api/BuildMessageController.php
-
-		-
-			message: '#^Cannot access offset ''user_id'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: app/Http/Controllers/Api/BuildMessageController.php
@@ -511,42 +445,6 @@ parameters:
 			path: app/Http/Controllers/Auth/AuthenticatedSessionController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Http\\Request\:\:\$descriptor\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Auth/BiometricAuthController.php
-
-		-
-			message: '#^Binary operation "\-" between mixed and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: app/Http/Controllers/Auth/BiometricAuthController.php
-
-		-
-			message: '#^Cannot access offset ''biometric_data'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: app/Http/Controllers/Auth/BiometricAuthController.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
-			path: app/Http/Controllers/Auth/BiometricAuthController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Auth\\BiometricAuthController\:\:calculateEuclideanDistance\(\) has parameter \$query with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Auth/BiometricAuthController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Auth\\BiometricAuthController\:\:calculateEuclideanDistance\(\) has parameter \$stored with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Auth/BiometricAuthController.php
-
-		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
 			count: 3
@@ -577,12 +475,6 @@ parameters:
 			path: app/Http/Controllers/Auth/RegisteredUserController.php
 
 		-
-			message: '#^Cannot access offset ''access_level'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: app/Http/Controllers/BuildController.php
-
-		-
 			message: '#^Cannot access offset ''avatar_url'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 4
@@ -604,12 +496,6 @@ parameters:
 			message: '#^Cannot access offset ''created_by'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 3
-			path: app/Http/Controllers/BuildController.php
-
-		-
-			message: '#^Cannot access offset ''creator_name'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
 			path: app/Http/Controllers/BuildController.php
 
 		-
@@ -637,24 +523,6 @@ parameters:
 			path: app/Http/Controllers/BuildController.php
 
 		-
-			message: '#^Cannot access offset ''priority'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: app/Http/Controllers/BuildController.php
-
-		-
-			message: '#^Cannot access offset ''priority_color'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: app/Http/Controllers/BuildController.php
-
-		-
-			message: '#^Cannot access offset ''priority_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: app/Http/Controllers/BuildController.php
-
-		-
 			message: '#^Cannot access offset ''role'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 3
@@ -664,24 +532,6 @@ parameters:
 			message: '#^Cannot access offset ''roof_visible'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
-			path: app/Http/Controllers/BuildController.php
-
-		-
-			message: '#^Cannot access offset ''status'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: app/Http/Controllers/BuildController.php
-
-		-
-			message: '#^Cannot access offset ''status_color'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: app/Http/Controllers/BuildController.php
-
-		-
-			message: '#^Cannot access offset ''status_label'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
 			path: app/Http/Controllers/BuildController.php
 
 		-
@@ -781,12 +631,6 @@ parameters:
 			path: app/Http/Controllers/CheckoutController.php
 
 		-
-			message: '#^Parameter \#1 \$string of function ucfirst expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/CheckoutController.php
-
-		-
 			message: '#^Property App\\Http\\Controllers\\CheckoutController\:\:\$supabaseUser has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
@@ -863,18 +707,6 @@ parameters:
 			identifier: argument.type
 			count: 2
 			path: app/Http/Controllers/DashboardController.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Requests\\SaveBiometricsRequest\:\:\$auth_user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Requests\\SaveBiometricsRequest\:\:\$descriptor\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
 
 		-
 			message: '#^Access to an undefined property App\\Http\\Requests\\UpdatePasswordRequest\:\:\$auth_user_email\.$#'
@@ -955,21 +787,9 @@ parameters:
 			path: app/Http/Controllers/ProfileController.php
 
 		-
-			message: '#^Parameter \#1 \$id of method App\\Services\\SupabaseUserService\:\:findById\(\) expects string, string\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/ProfileController.php
-
-		-
 			message: '#^Parameter \#1 \$id of method App\\Services\\SupabaseUserService\:\:update\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 2
-			path: app/Http/Controllers/ProfileController.php
-
-		-
-			message: '#^Parameter \#1 \$value of static method Illuminate\\Support\\Facades\\Crypt\:\:encryptString\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
 			path: app/Http/Controllers/ProfileController.php
 
 		-
@@ -1049,12 +869,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Http/Middleware/TrustProxies.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Requests\\SaveBiometricsRequest\:\:\$auth_user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Requests/SaveBiometricsRequest.php
 
 		-
 			message: '#^Access to an undefined property App\\Http\\Requests\\UpdatePasswordRequest\:\:\$auth_user_id\.$#'

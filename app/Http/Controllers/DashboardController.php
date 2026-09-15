@@ -100,7 +100,8 @@ class DashboardController extends Controller
             ->unique('user_id')
             ->count();
 
-        // Dynamic Storage Calculation (Safe Fallback)
+        // Storage usage is measured, not estimated: total the geometry actually
+        // stored for the builds this user owns, so the meter reflects real data.
         $currentUser = collect($allUsers)->firstWhere('id', $userId);
         $plan = $currentUser['plan'] ?? 'free'; // Falls back to free if key or column missing
 
@@ -112,18 +113,26 @@ class DashboardController extends Controller
         ];
 
         $storageLimit = $limits[strtolower((string) $plan)] ?? 1;
-        $buildCount = $builds->count();
 
-        // Simulated usage: ~45MB per build + base overhead
-        $usageInMB = ($buildCount * 45) + 120;
-        $usageInGB = round($usageInMB / 1024, 2);
-        $storagePercentage = min(100, round(($usageInGB / $storageLimit) * 100));
+        $usageBytes = 0;
+        if ($myBuildIds !== []) {
+            $storedParts = $this->supabase->select('build_parts', ['*'], ['build_id' => $myBuildIds]);
+            foreach ($storedParts as $storedPart) {
+                $usageBytes += strlen((string) json_encode($storedPart));
+            }
+        }
+
+        $usageInMB = $usageBytes / 1048576;
+        $usageInGB = round($usageInMB / 1024, 3);
+        $storagePercentage = min(100, (int) round(($usageInGB / $storageLimit) * 100));
 
         $storageData = (object) [
             'used' => $usageInGB,
             'limit' => $storageLimit,
             'percentage' => $storagePercentage,
-            'formatted' => $usageInGB.'GB',
+            'formatted' => $usageInMB >= 1024
+                ? round($usageInMB / 1024, 2).' GB'
+                : round($usageInMB, 2).' MB',
         ];
 
         return view('dashboard', compact('builds', 'sharedBuilds', 'userName', 'storageData', 'uniqueTeamMembersCount'));

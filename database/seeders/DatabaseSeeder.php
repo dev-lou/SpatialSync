@@ -11,17 +11,19 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create admin user
+        // Local development accounts only. These are created with factory-random
+        // passwords and are not meant to be run against the demo instance — use
+        // the app's register flow for accounts real people sign in with.
         $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@blueprintfow.com',
+            'name' => 'Local Admin',
+            'email' => 'admin@spatialsync.test',
             'is_admin' => true,
         ]);
 
         // Create demo user (editor)
         $user = User::factory()->create([
-            'name' => 'Demo Editor',
-            'email' => 'demo@example.com',
+            'name' => 'Local Editor',
+            'email' => 'editor@spatialsync.test',
             'is_admin' => false,
         ]);
 
