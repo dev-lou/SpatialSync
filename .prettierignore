@@ -1,0 +1,13 @@
+# Generated files — Prettier must never reformat build output.
+#
+# `public/build` holds the Vite bundles that this repository commits. The
+# pre-commit hook runs Prettier against every staged .js/.css file, which
+# reformatted the minified bundle into an expanded, pretty-printed version.
+# The content was still valid, but it no longer matched what `npm run build`
+# emits, so every build left the working tree dirty and the committed asset
+# stopped being a faithful build artifact. ESLint already ignores
+# `public/build/**`; this closes the same gap for Prettier.
+public/build
+
+vendor
+node_modules
