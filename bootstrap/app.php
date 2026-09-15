@@ -3,8 +3,11 @@
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BotSeoMiddleware;
 use App\Http\Middleware\CheckBuildPermission;
+use App\Http\Middleware\NormalizeRequest;
 use App\Http\Middleware\RedirectIfSupabaseAuthenticated;
+use App\Http\Middleware\ResolveCollaborator;
 use App\Http\Middleware\SupabaseAuthenticate;
+use App\Providers\AppServiceProvider;
 use App\Providers\ViewServiceProvider;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -22,11 +25,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withProviders([
+        AppServiceProvider::class,
         ViewServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         // Intercept social media bots FIRST — before sessions, CSRF, or auth
         $middleware->prepend(BotSeoMiddleware::class);
+
+        // Hand the rest of the pipeline an App\Http\AuthenticatedRequest. A
+        // normal web request already is one, so this only matters for entry
+        // points that hand the kernel a plain request (the HTTP test client).
+        $middleware->prepend(NormalizeRequest::class);
 
         $middleware->trustProxies(at: '*');
 
@@ -43,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => RedirectIfSupabaseAuthenticated::class,
             'admin' => AdminMiddleware::class,
             'build.permission' => CheckBuildPermission::class,
+            'collab.access' => ResolveCollaborator::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

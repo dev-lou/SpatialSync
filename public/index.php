@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\AuthenticatedRequest;
 use Illuminate\Contracts\Http\Kernel;
-use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
@@ -15,8 +15,14 @@ $app = require_once __DIR__.'/../bootstrap/app.php';
 
 $kernel = $app->make(Kernel::class);
 
-$response = $kernel->handle(
-    $request = Request::capture()
-)->send();
+// The middleware and controllers type-hint App\Http\AuthenticatedRequest.
+// Without this, Laravel builds a *blank* instance for those type hints while
+// the pipeline carries a plain Request: every guarded route then throws a
+// TypeError, and controllers read none of the submitted input. Creating the
+// request as AuthenticatedRequest and binding it makes one instance serve both.
+$request = AuthenticatedRequest::capture();
+$app->instance(AuthenticatedRequest::class, $request);
+
+$response = $kernel->handle($request)->send();
 
 $kernel->terminate($request, $response);
